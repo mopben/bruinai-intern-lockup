@@ -7,25 +7,33 @@ import { WorkersSection } from "./WorkersSection";
 import { useEffect } from "preact/hooks";
 import { acceptDroppedScan } from "../state/input-actions";
 import { installKeys } from "../state/keys";
-import { addNotice, bootError, currentStep, loading, panel, view } from "../state/store";
+import { addNotice, bootError, currentStep, importOpen, loading, panel, view } from "../state/store";
 import { STEPS, stepIndex } from "../app/steps";
 import { ActivityBar, KeyHints, Notices, ResultsSwitch, Sash } from "./Chrome";
 import { CompareView } from "./CompareView";
 import { PlayRail } from "./PlayRail";
 import { OrdersRail } from "./OrdersRail";
 import { RunRail } from "./RunRail";
-import { ScanRail } from "./ScanRail";
+import { ImportMenu } from "./ImportMenu";
+import { Btn } from "./bits";
 import { SceneHost } from "./SceneHost";
 import { TestRail } from "./TestRail";
+
+function BuildRail() {
+  return <>
+    <div class="st-row st-panel-actions"><Btn label="Import" onClick={() => (importOpen.value = true)} testId="btn-import" /></div>
+    <PlayRail />
+  </>;
+}
 
 function Rail() {
   switch (view.value) {
     case "scan":
-      return <ScanRail />;
+      return <BuildRail />;
     case "run":
       return <RunRail />;
     case "play":
-      return <PlayRail />;
+      return <BuildRail />;
     case "orders":
       return <OrdersRail />;
     case "test":
@@ -104,6 +112,7 @@ export function App() {
         ) : null}
       </main>
       {workersOpen.value ? <WorkersSection /> : null}
+      {importOpen.value ? <ImportMenu /> : null}
     </div>
   );
 }

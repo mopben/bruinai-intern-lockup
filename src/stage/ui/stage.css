@@ -1163,3 +1163,16 @@
   .st-worker-card { grid-template-columns: 1fr 1fr; gap: 14px; padding: 14px; }
   .st-worker-add-fields { grid-template-columns: 1fr; }
 }
+
+.st-import-body { gap: 20px; }
+.st-import-body .st-panel-actions { padding: 0; }
+.st-import-body .st-card { padding: 20px; border: 2px solid var(--dr-board-edge); border-radius: 14px; }
+.st-import-body .st-inputs { padding: 24px 0; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.st-import-body .st-inputs > h2, .st-import-body .st-inputs > h3, .st-import-body .st-inputs > .st-urls, .st-import-body .st-inputs > .st-field, .st-import-body .st-inputs > p { grid-column: 1 / -1; }
+.st-import-body .st-inputs > .st-field { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.st-import-body .st-select { max-width: 100%; width: 100%; }
+.st-import-notices { display: grid; gap: 8px; }
+.st-import-notices .st-chip { white-space: normal; }
+@media (max-width: 750px) {
+  .st-import-body .st-inputs, .st-import-body .st-inputs > .st-field { grid-template-columns: 1fr; }
+}

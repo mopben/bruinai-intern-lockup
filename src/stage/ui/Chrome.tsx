@@ -9,9 +9,9 @@ import { activate, beginDrag, endDrag, resetPanelWidth, setPanelWidth } from "..
 import { nextRunIsLive } from "../state/runs";
 import { currentStep, notices, session, view } from "../state/store";
 import { Key } from "./bits";
-import { BuildIcon, EditIcon, OrdersIcon, RunIcon } from "./icons";
+import { BuildIcon, OrdersIcon, RunIcon } from "./icons";
 
-const ICONS = [BuildIcon, EditIcon, OrdersIcon, RunIcon] as const;
+const ICONS = [BuildIcon, OrdersIcon, RunIcon] as const;
 
 export function ActivityBar() {
   const here = stepIndex(currentStep.value);

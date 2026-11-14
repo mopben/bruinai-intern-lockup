@@ -81,7 +81,7 @@ export async function boot(p: StageParams): Promise<void> {
   loadPanel();
   batch(() => {
     params.value = p;
-    view.value = p.view;
+    view.value = p.view === "scan" ? "play" : p.view;
     sources.value = { scan: mode, taps: mode, positions: mode };
   });
   connectStage();

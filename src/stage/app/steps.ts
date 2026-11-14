@@ -3,8 +3,7 @@
  */
 
 export const STEPS = [
-  { id: "build", name: "Import", views: ["scan"] },
-  { id: "edit", name: "Edit", views: ["play"] },
+  { id: "build", name: "Build", views: ["play", "scan"] },
   { id: "orders", name: "Orders", views: ["orders"] },
   { id: "results", name: "Run", views: ["compare", "run", "test"] },
 ] as const;
@@ -12,7 +11,7 @@ export const STEPS = [
 export type StepId = (typeof STEPS)[number]["id"];
 export type ViewId = (typeof STEPS)[number]["views"][number];
 export const STEP_IDS: readonly StepId[] = STEPS.map((s) => s.id);
-export const VIEW_ORDER: readonly ViewId[] = ["scan", "play", "orders", "compare", "run", "test"];
+export const VIEW_ORDER: readonly ViewId[] = ["play", "orders", "compare", "run", "test"];
 
 export function stepOf(view: ViewId): StepId {
   return STEPS.find((s) => (s.views as readonly ViewId[]).includes(view))!.id;
@@ -102,7 +101,7 @@ export function keyAction(key: string): KeyAction | null {
 
 /** The view after a navigation action, or the same view for anything else. */
 export function navigate(current: ViewId, action: KeyAction): ViewId {
-  const i = VIEW_ORDER.indexOf(current);
+  const i = VIEW_ORDER.indexOf(current === "scan" ? "play" : current);
   if (action.type === "next") return viewAt(i + 1);
   if (action.type === "back") return viewAt(i - 1);
   if (action.type === "jump") return defaultView(action.step);
@@ -127,8 +126,7 @@ export function keyHints(view: ViewId, live: boolean): readonly { readonly keys:
       return [
         ...nav,
         { keys: "Del", does: "delete selected component" },
-        { keys: "M", does: "rehearsed move" },
-        { keys: "W", does: "rehearsed worker" },
+        { keys: "W", does: "workers" },
         { keys: "A", does: "suggest" },
         { keys: "C", does: "costs" },
         { keys: "⌫", does: "reset" },

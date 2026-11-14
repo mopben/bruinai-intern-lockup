@@ -77,7 +77,7 @@ export interface TestPlan {
   readonly loadError: string | null;
 }
 
-export const params = signal<StageParams>({ runId: "counter-a", mode: "replay", speed: 1, view: "scan" });
+export const params = signal<StageParams>({ runId: "counter-a", mode: "replay", speed: 1, view: "play" });
 export const bootError = signal<string | null>(null);
 export const loading = signal(true);
 
@@ -95,12 +95,13 @@ export const panel = signal<{ open: boolean; width: number }>({ open: true, widt
 /** "auto" picks the recorded run matching the judge's change. */
 export const secondChoice = signal<string>("auto");
 
-export const view = signal<ViewId>("scan");
+export const view = signal<ViewId>("play");
 export const currentStep = computed(() => stepOf(view.value));
 export const orderCount = signal<number | null>(null);
 export const kitchen = signal<Kitchen | null>(null);
 export const kitchenOrigin = signal<"recorded" | "live">("recorded");
 export const latestLiveScan = signal<Scan | null>(null);
+export const importOpen = signal(false);
 export const scanState = signal<ScanState>("waiting");
 export const scanNotes = signal<readonly string[]>([]);
 export const selectedId = signal<string | null>(null);

@@ -9,7 +9,7 @@ import { cancelSuggest, startSuggest } from "./suggest";
 import { goTo, resetPlay, startOrReplay } from "./flow";
 import { editKitchen, reveal } from "./kitchen-actions";
 import { retrySave, skipToEnd, toggleFaster } from "./runs";
-import { addNotice, dropNotice, selectedId, sendCompare, session, view } from "./store";
+import { addNotice, dropNotice, importOpen, selectedId, sendCompare, session, view } from "./store";
 import { openPanel } from "./panel-actions";
 
 const HINT_MS = 3500;
@@ -56,7 +56,7 @@ function play(): void {
       sendCompare("replay");
       return;
     default:
-      keyHint("P plays Original run, After the change, and Before vs after in step 4.");
+      keyHint("P plays Original run, After the change, and Before vs after in step 3.");
       return;
   }
 }
@@ -100,16 +100,16 @@ export function perform(action: KeyAction): void {
       return;
     case "reset":
       if (here === "play") resetPlay();
-      else keyHint("Backspace undoes the change in Edit (step 2).");
+      else keyHint("Backspace undoes the change in Build (step 1).");
       return;
     case "rehearsed":
       if (action.key === "m") return;
       if (here === "play") workersOpen.value = true;
-      else keyHint("W opens Workers in Edit (step 2).");
+      else keyHint("W opens Workers in Build (step 1).");
       return;
     case "suggest":
       if (here === "play") startSuggest();
-      else keyHint("A suggests changes in Edit (step 2).");
+      else keyHint("A suggests changes in Build (step 1).");
       return;
     case "costs":
       if (here !== "play") {
@@ -139,7 +139,7 @@ function fasterWhyNot(here: string): string {
 
 export function installKeys(): () => void {
   const onKey = (e: KeyboardEvent) => {
-    if (workersOpen.value) return;
+    if (workersOpen.value || importOpen.value) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (isTyping(e.target)) {
       // Esc still closes the costs section from inside one of its fields; every other key is typing.
