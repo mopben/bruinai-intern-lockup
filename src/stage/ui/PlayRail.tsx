@@ -9,13 +9,13 @@ import { changeKind } from "../app/layout-match";
 import { clampOrders, MAX_ORDERS, MIN_ORDERS } from "../app/orders";
 import { changeDirection } from "../app/words";
 import { baselineNumbers, calibration, firstRunProblem, originalLayout, playNumbers } from "../state/derive";
-import { baselineProfit, costsOpen, economics, economicsAreExamples, playProfit } from "../state/economics";
+import { baselineProfit, costsOpen, economics, playProfit } from "../state/economics";
 import { applySuggestion, startSuggest, suggestState, undoSuggestion } from "../state/suggest";
 import { applyRehearsed, resetPlay } from "../state/flow";
 import { candidates, kitchen, orderCount, playLayout } from "../state/store";
 import { BigNum, Btn } from "./bits";
 import { CostsSection } from "./CostsSection";
-import { ExtrapolationNote, NumbersBasis } from "./Basis";
+import { ExtrapolationNote } from "./Basis";
 
 function Staffing() {
   const k = kitchen.value;
@@ -124,7 +124,6 @@ function Money() {
                 ? `Sells ${Math.round(value.salesPerHour.p50)} of ${Math.round(econ.demandPerHour)} orders an hour (all it can make)`
                 : `Sells all ${Math.round(econ.demandPerHour)} orders an hour (could make ${Math.round(value.capacityPerHour.p50)})`}
               {`: ${formatMoney(value.marginPerOrder, cur)} each after ingredients, less ${formatMoney(value.wagesPerHour, cur)} wages and ${formatMoney(value.fixedPerHour, cur)} running costs.`}
-              {economicsAreExamples.value ? <span class="st-roomy"> Example prices: C to set yours.</span> : null}
             </span>
           ) : (
             ""
@@ -140,19 +139,13 @@ function Suggestions() {
   const st = suggestState.value;
   const econ = economics.value;
   if (!econ) return null;
-  if (st.kind === "running") {
-    return (
-      <p class="st-small" data-testid="suggest-progress">
-        Trying a worker more or less at each station, and every spot and turn for each unlocked box.
-      </p>
-    );
-  }
+  if (st.kind === "running") return null;
   if (st.kind === "failed") return <p class="st-note" data-testid="suggest-result">{st.reason}</p>;
   if (st.kind !== "done") return null;
   if (st.list.length === 0) {
     return (
       <p class="st-small" data-testid="suggest-result">
-        Nothing we tried makes more profit than this layout, or makes orders quicker.
+        No better change found.
       </p>
     );
   }
@@ -172,15 +165,13 @@ function Suggestions() {
           </div>
         );
       })}
-      <p class="st-small">
-        Best first. Moves keep locked boxes where they are and know nothing of customers, doors or sockets: lock what must stay in Build. A second worker at a station is assumed
-        not to get in the first one's way.{" "}
-        {st.list.some((x) => x.s.layout === onBoard) ? (
+      {st.list.some((x) => x.s.layout === onBoard) ? (
+        <p class="st-small">
           <button type="button" class="st-link" onClick={undoSuggestion} data-testid="btn-undo-suggestion">
             Back to before
           </button>
-        ) : null}
-      </p>
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -224,7 +215,6 @@ export function PlayRail() {
       <Money />
       <Rehearsed />
       <CostsSection />
-      <p class="st-small st-roomy">Change one thing: drag the fridge, a station or the pickup, or add a worker.</p>
       <div class="st-nums pair">
         <BigNum
           what="Walking per order"
@@ -232,7 +222,7 @@ export function PlayRail() {
           cannot={n.walking.ok ? null : n.walking.message}
           was={walkChanged && walkBefore !== null ? formatMetres(walkBefore) : null}
           dir={walkChanged && walk !== null && walkBefore !== null ? (walk < walkBefore ? "less walking" : "more walking") : null}
-          how="Exact, from the layout."
+          how=""
           testId="walking-per-order"
         />
         <BigNum
@@ -241,27 +231,20 @@ export function PlayRail() {
           cannot={n.time.ok ? null : n.time.message}
           was={timeChanged && timeBefore ? formatRange(timeBefore.meanOrderTime) : null}
           dir={dir}
-          how="A range from simulated runs. Assumptions below."
+          how=""
           testId="time-per-order"
         />
       </div>
       {problem ? <p class="st-note">{problem}</p> : null}
       {time ? (
         <p class="st-say st-predict">
-          {countChanged ? `With ${count} orders, orders should take ` : "Next run with this kitchen: orders should take "}<span data-testid="prediction-range">{formatRange(time.meanOrderTime)}</span> on average.
+          Prediction{countChanged ? ` (${count} orders)` : ""}: <span data-testid="prediction-range">{formatRange(time.meanOrderTime)}</span>
         </p>
       ) : null}
-      {countChanged ? <p class="st-small">The real run in step 3 keeps its own {originalCount} orders.</p> : null}
       <Staffing />
       <Orders />
       <Suggestions />
       <ExtrapolationNote prediction={time} />
-      {time ? (
-        <p class="st-small" data-testid="assumption">
-          {time.assumption}
-        </p>
-      ) : null}
-      <NumbersBasis />
     </div>
   );
 }

@@ -114,6 +114,41 @@ export function framePoints(points: readonly V3[], aspect: number, opts: FrameOp
   return { target, dir, halfW: halfW / zoom, halfH: halfH / zoom };
 }
 
+/**
+ * World-space pan offset for a pointer drag of (dxPx, dyPx) CSS px, so the
+ * content follows the pointer. `wpp` is world units per CSS px (2*halfW/width).
+ */
+export function panDelta(right: V3, up: V3, dxPx: number, dyPx: number, wpp: number): V3 {
+  return {
+    x: (up.x * dyPx - right.x * dxPx) * wpp,
+    y: (up.y * dyPx - right.y * dxPx) * wpp,
+    z: (up.z * dyPx - right.z * dxPx) * wpp,
+  };
+}
+
+/**
+ * Camera-target shift that keeps the world point under the cursor (cssX, cssY
+ * inside the container) fixed when the scale changes from wppOld to wppNew.
+ */
+export function zoomAtDelta(right: V3, up: V3, cssX: number, cssY: number, width: number, height: number, wppOld: number, wppNew: number): V3 {
+  const sx = cssX - width / 2;
+  const sy = cssY - height / 2;
+  const d = wppOld - wppNew;
+  return {
+    x: (right.x * sx - up.x * sy) * d,
+    y: (right.y * sx - up.y * sy) * d,
+    z: (right.z * sx - up.z * sy) * d,
+  };
+}
+
+/** Cap the pan offset's length so the room can never be dragged out of frame. */
+export function clampPan(pan: V3, limit: number): V3 {
+  const l = Math.hypot(pan.x, pan.y, pan.z);
+  if (l <= limit || l === 0) return pan;
+  const s = limit / l;
+  return { x: pan.x * s, y: pan.y * s, z: pan.z * s };
+}
+
 /** Corners of a floor rect from y = bottom to y = top. */
 export function rectCorners(r: Rect, bottom: number, top: number): V3[] {
   const out: V3[] = [];

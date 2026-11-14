@@ -3,7 +3,7 @@
  * layout it shows, who stands where, the walking paths, the ghost, dragging.
  */
 import { computed, effect } from "@preact/signals";
-import { useEffect, useRef } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { formatMetres, type Layout } from "../../core";
 import type { WalkLeg } from "../../core";
 import { standingWorkers } from "../app/playback";
@@ -95,11 +95,14 @@ function syncScene(scene: KitchenSceneHandle): () => void {
 
 export function SceneHost(props: { readonly hidden: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [moved, setMoved] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const scene = createKitchenScene(el, {
       initialLabels: "scan",
+      cameraControls: true,
+      onCameraChange: setMoved,
       onLayoutChange: (layout) => {
         if (view.value === "play") playLayout.value = layout;
       },
@@ -120,7 +123,15 @@ export function SceneHost(props: { readonly hidden: boolean }) {
     };
   }, []);
   const k = kitchen.value;
-  return <div ref={ref} class={`st-scene${props.hidden || !k ? " dim" : ""}`} data-testid="kitchen-scene" />;
+  return (
+    <div ref={ref} class={`st-scene${props.hidden || !k ? " dim" : ""}`} data-testid="kitchen-scene">
+      {moved && (
+        <button type="button" class="st-chip st-reset-view" data-testid="reset-view" onClick={() => mainScene()?.reframe()}>
+          Reset view
+        </button>
+      )}
+    </div>
+  );
 }
 
 export { mainScene };

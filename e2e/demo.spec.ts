@@ -58,7 +58,6 @@ test("definition of done: full demo, replay, keyboard only (acceptance steps 1-3
   await expect(page.getByTestId("walking-per-order-before")).toHaveText(walkBefore);
   const range = await text(page, "prediction-range");
   expect(range).toMatch(/^(\d+–\d+ s|about \d+ s)$/);
-  await expect(page.getByTestId("assumption")).toContainText(/pace we measured/i);
 
   // After the change: the recorded second run plays with an honest verdict.
   await kb.press("ArrowRight");

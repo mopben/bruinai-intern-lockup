@@ -228,6 +228,17 @@
 .st-chip.warn .dot {
   background: var(--dr-alert);
 }
+.st-reset-view {
+  position: absolute;
+  top: var(--st-gap);
+  right: var(--st-gap);
+  z-index: 3;
+  color: var(--dr-ink);
+  font: inherit;
+  font-weight: 750;
+  font-size: var(--dr-size-small);
+  cursor: pointer;
+}
 
 /* centred message over the board (waiting for the phone, errors) */
 .st-center {

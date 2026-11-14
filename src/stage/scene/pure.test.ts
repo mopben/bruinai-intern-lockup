@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { resolveMove, clampToArea, overlaps, CONTACT_GAP_M } from "./collision";
-import { frameRoom, cameraAxes, viewDir, DEFAULT_VIEW } from "./framing";
+import { frameRoom, cameraAxes, viewDir, clampPan, panDelta, zoomAtDelta, DEFAULT_VIEW, type V3 } from "./framing";
 import {
   dragArea,
   footprintHalf,
@@ -168,6 +168,44 @@ describe("framing", () => {
 
   it("a narrower viewport needs a taller frustum", () => {
     expect(frameRoom(room, 0.8).halfH).toBeGreaterThan(frameRoom(room, 16 / 9).halfH);
+  });
+});
+
+describe("camera controls", () => {
+  const { right, up } = cameraAxes(viewDir(DEFAULT_VIEW));
+  const dot = (a: V3, b: V3) => a.x * b.x + a.y * b.y + a.z * b.z;
+  // Screen position of a world point for a target at the origin, in CSS px.
+  const screenX = (p: V3, t: V3, wpp: number, width: number) => dot({ x: p.x - t.x, y: p.y - t.y, z: p.z - t.z }, right) / wpp + width / 2;
+  const screenY = (p: V3, t: V3, wpp: number, height: number) => height / 2 - dot({ x: p.x - t.x, y: p.y - t.y, z: p.z - t.z }, up) / wpp;
+
+  it("pan moves a projected point by exactly the drag delta", () => {
+    const p = { x: 0.7, y: 0.4, z: -0.3 };
+    const wpp = 0.008;
+    const d = panDelta(right, up, 40, -25, wpp);
+    expect(screenX(p, d, wpp, 800)).toBeCloseTo(screenX(p, { x: 0, y: 0, z: 0 }, wpp, 800) + 40);
+    expect(screenY(p, d, wpp, 500)).toBeCloseTo(screenY(p, { x: 0, y: 0, z: 0 }, wpp, 500) - 25);
+  });
+
+  it("zoomAt keeps the point under the cursor fixed", () => {
+    const width = 800;
+    const height = 500;
+    const wppOld = 0.01;
+    const wppNew = 0.005;
+    // The world point sitting under the cursor before the zoom (target at the origin).
+    const p = { x: right.x * 220 * wppOld - up.x * -120 * wppOld, y: right.y * 220 * wppOld - up.y * -120 * wppOld, z: right.z * 220 * wppOld - up.z * -120 * wppOld };
+    expect(screenX(p, { x: 0, y: 0, z: 0 }, wppOld, width)).toBeCloseTo(620);
+    expect(screenY(p, { x: 0, y: 0, z: 0 }, wppOld, height)).toBeCloseTo(130);
+    const d = zoomAtDelta(right, up, 620, 130, width, height, wppOld, wppNew);
+    expect(screenX(p, d, wppNew, width)).toBeCloseTo(620);
+    expect(screenY(p, d, wppNew, height)).toBeCloseTo(130);
+    // Away from the cursor the shift is not identity.
+    expect(d.x !== 0 || d.y !== 0 || d.z !== 0).toBe(true);
+  });
+
+  it("clampPan caps the offset magnitude", () => {
+    const c = clampPan({ x: 3, y: 0, z: 4 }, 2.5);
+    expect(Math.hypot(c.x, c.y, c.z)).toBeCloseTo(2.5);
+    expect(clampPan({ x: 0.1, y: 0, z: 0 }, 2.5)).toEqual({ x: 0.1, y: 0, z: 0 });
   });
 });
 

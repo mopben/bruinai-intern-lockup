@@ -6,7 +6,7 @@ import type { BoxSide, ItemRole } from "../../core";
 import { canSplit, itemSetupOf, renameItem, setLocked, setRole, setStandSide, splitBox } from "../app/kitchen-edit";
 import { roleColors } from "../theme/tokens";
 import { editKitchen } from "../state/kitchen-actions";
-import { kitchen, moveInScan, selectedId } from "../state/store";
+import { kitchen, selectedId } from "../state/store";
 import { Btn } from "./bits";
 
 const ROLES: readonly { readonly role: ItemRole; readonly label: string }[] = [
@@ -41,7 +41,7 @@ export function ItemPanel(props: { readonly boxId: string }) {
   return (
     <div class="st-card" data-testid="item-panel">
       <label class="st-field">
-        <span>Name (the scanner called it “{box.category}”)</span>
+        <span>Name</span>
         <input
           class="st-input"
           value={item.name}
@@ -96,7 +96,6 @@ export function ItemPanel(props: { readonly boxId: string }) {
         {canSplit(box) ? <Btn label="Split in two" onClick={split} testId="btn-split" /> : null}
         <Btn label="Done" k="Esc" kind="primary" onClick={() => (selectedId.value = null)} testId="btn-panel-done" />
       </div>
-      {moveInScan.value ? <p class="st-small">Drag a box to put it where it really is.</p> : null}
     </div>
   );
 }

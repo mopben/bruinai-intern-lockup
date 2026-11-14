@@ -39,7 +39,6 @@ test("rule 5: the prediction frozen on leaving Play is the one tested, and it ne
   expect(await hook<Frozen>(page, "frozen")).toEqual(frozenAtLeave);
   const outcome = await hook<{ predicted: RangeV }>(page, "outcome");
   expect(outcome.predicted).toEqual(frozenAtLeave.judge);
-  await expect(page.getByTestId("range-meaning")).toHaveText(/^The range is where we expect \d+ runs in 10 to land\.$/);
   // Play again does not change it either.
   await page.keyboard.press("p");
   await waitForSession(page, "second", "ended");

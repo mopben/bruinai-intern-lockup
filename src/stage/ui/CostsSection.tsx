@@ -51,9 +51,6 @@ export function CostsSection() {
         <h2>Prices and costs</h2>
         <Btn small label="Close" k="Esc" onClick={() => (costsOpen.value = false)} testId="btn-close-costs" />
       </div>
-      <p class="st-small">
-        {economicsAreExamples.value ? "These are example numbers for a small café. Type yours: profit and the suggestions follow at once." : "Your numbers, kept in this browser."}
-      </p>
       <h3>Menu</h3>
       {k.setup.menu.map((m) => {
         const p = econ.menu[m.id] ?? { price: 0, ingredients: 0 };
@@ -87,10 +84,6 @@ export function CostsSection() {
           />
         </label>
       </div>
-      <p class="st-small">
-        The kitchen sells the orders that come in, up to as many as it can make; how fast it makes them comes from the measured run. Each worker is paid for the
-        whole hour. The example demand is the pace of the recorded run's orders.
-      </p>
       <div class="st-row">
         <Btn small label="Use the example numbers" onClick={() => { cancelSuggest(); useExampleEconomics(); }} disabled={economicsAreExamples.value} testId="btn-example-costs" />
       </div>
