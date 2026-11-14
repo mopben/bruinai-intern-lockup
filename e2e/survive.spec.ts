@@ -7,7 +7,7 @@ import { expectStep, openStage, STEP_IDS, text, waitForSession } from "./support
 import { REPLAY_PORT, origin } from "./support/ports";
 import { expect, test } from "./support/fixtures";
 
-test("rule 9: with the server gone after loading, steps 1 to 6 still complete", async ({ page }) => {
+test("rule 9: with the server gone after loading, steps 1 to 5 still complete", async ({ page }) => {
   let serverGone = false;
   const sockets: { close(): void }[] = [];
   await page.routeWebSocket(/\/ws/, (ws) => {
@@ -36,10 +36,12 @@ test("rule 9: with the server gone after loading, steps 1 to 6 still complete", 
   await page.keyboard.press("m");
   await page.keyboard.press("ArrowRight");
   await expectStep(page, "test");
+  await expect(page.getByTestId("compare-after-time")).toHaveText(/\d+ s$/);
+  await page.keyboard.press("c");
   await waitForSession(page, "second", "ended");
   await expect(page.getByTestId("verdict")).toBeVisible();
   await expect(page.getByText("Could not load the recorded run")).toHaveCount(0);
-  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("c");
   await expect(page.getByTestId("compare-after-time")).toHaveText(/\d+ s$/);
   test.info().annotations.push({ type: "offline", description: `${refused} requests to the server refused after it died` });
 });
@@ -60,12 +62,16 @@ for (const [i, step] of STEP_IDS.entries()) {
       run: "run-clock",
       trust: "trust-error",
       play: "walking-per-order",
-      test: "prediction-range",
-      compare: "compare-after-walking",
+      test: "compare-after-walking",
     };
     await expect(page.getByTestId(want[step]!)).toBeVisible();
-    if (step === "test") await expect(page.getByTestId("verdict")).toBeVisible({ timeout: 30_000 });
-    if (step !== "compare" && step !== "scan") expect((await page.locator(".st-rail").innerText()).trim().length).toBeGreaterThan(40);
+    if (step === "test") {
+      // The real-run check behind the simulation still works after the reload.
+      await page.getByTestId("btn-check-real").click();
+      await expect(page.getByTestId("prediction-range")).toBeVisible();
+      await expect(page.getByTestId("verdict")).toBeVisible({ timeout: 30_000 });
+    }
+    if (step !== "scan") expect((await page.locator(".st-rail").innerText()).trim().length).toBeGreaterThan(40);
   });
 }
 
@@ -100,7 +106,14 @@ test("keys that do nothing here say so, and steps entered early explain themselv
   for (const [i, step] of STEP_IDS.entries()) {
     await page.keyboard.press(String(i + 1));
     await expectStep(page, step);
-    if (step === "compare") await expect(page.getByTestId("compare-before-walking")).toBeVisible();
-    else expect((await page.locator(".st-rail").innerText()).trim().length).toBeGreaterThan(20);
+    if (step === "test") {
+      await expect(page.getByTestId("compare-before-walking")).toBeVisible();
+      await page.keyboard.press("c");
+      await expect(page.getByTestId("btn-back-to-sim")).toBeVisible();
+    }
+    expect((await page.locator(".st-rail").innerText()).trim().length).toBeGreaterThan(20);
   }
+  // There is no sixth step: 6 leaves the stage on Test.
+  await page.keyboard.press("6");
+  await expectStep(page, "test");
 });

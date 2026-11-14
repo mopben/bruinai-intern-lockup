@@ -93,9 +93,11 @@ test("rule 9: live with no tablet and no camera falls back to the recording, sur
   await page.keyboard.press("4");
   await page.keyboard.press("m");
   await page.keyboard.press("5");
+  await expect(page.getByTestId("compare-after-time")).toHaveText(/\d+ s$/);
+  await page.getByTestId("btn-check-real").click();
   await waitForSession(page, "second", "ended", 30_000);
   await expect(page.getByTestId("verdict")).toBeVisible();
-  await page.keyboard.press("6");
+  await page.getByTestId("btn-back-to-sim").click();
   await expect(page.getByTestId("compare-after-time")).toHaveText(/\d+ s$/);
 });
 
@@ -221,6 +223,7 @@ test("Test after a failover gives no verdict; with no matching recording nothing
   await openStage(page, { port: LIVE_PORT, speed: 32, step: 4 });
   await page.keyboard.press("m");
   await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("c");
   await waitForSession(page, "second", "ended");
 
   // The same change, run live; no tablet and no camera, so both inputs fail over to the matching recording.
@@ -241,6 +244,7 @@ test("Test after a failover gives no verdict; with no matching recording nothing
   await page.getByTestId(/btn-add-worker-61A93A22/).click();
   await setSources(page, { taps: "live", positions: "live" });
   await page.keyboard.press("5");
+  await page.keyboard.press("c");
   await waitForSession(page, "second", "idle");
   await page.keyboard.press("p");
   await waitForSession(page, "second", "running");

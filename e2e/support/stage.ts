@@ -5,7 +5,7 @@ import { expect, type Page } from "@playwright/test";
 import type { SceneDebug } from "../../src/stage/scene/api";
 import { REPLAY_PORT, origin } from "./ports";
 
-export const STEP_IDS = ["scan", "run", "trust", "play", "test", "compare"] as const;
+export const STEP_IDS = ["scan", "run", "trust", "play", "test"] as const;
 export type Step = (typeof STEP_IDS)[number];
 
 /** Box ids in the fixture scan (fixtures/counter-a/setup.json). */

@@ -1,6 +1,7 @@
 /**
- * Definition of done: the whole demo, steps 1 to 6, from fixtures, with the
- * keyboard only (the runbook's keys), at an accelerated replay speed.
+ * Definition of done: the whole demo, steps 1 to 5, from fixtures, with the
+ * keyboard (the runbook's keys) and the two check buttons in Test, at an
+ * accelerated replay speed.
  */
 import { BOX, STATIONS, clockSeconds, expectStep, mainDebug, openStage, startQueueSampler, stopQueueSampler, text, waitForSession } from "./support/stage";
 import { expect, test } from "./support/fixtures";
@@ -13,7 +14,7 @@ function parseHeadline(s: string): { lo: number; hi: number; measured: number } 
   return m ? { lo: Number(m[1]), hi: Number(m[2]), measured: Number(m[3]) } : null;
 }
 
-test("definition of done: full demo, replay, keyboard only (acceptance steps 1-6)", async ({ page }) => {
+test("definition of done: full demo, replay, keyboard and check buttons (acceptance steps 1-5)", async ({ page }) => {
   await openStage(page, { speed: SPEED });
   const kb = page.keyboard;
 
@@ -65,9 +66,25 @@ test("definition of done: full demo, replay, keyboard only (acceptance steps 1-6
   expect(range).toMatch(/^(\d+–\d+ s|about \d+ s)$/);
   await expect(page.getByTestId("assumption")).toContainText(/pace we measured/i);
 
-  // 5. The test: the recorded second run plays; a measured result and an honest verdict.
+  // 5. The test, simulated: two kitchens, both with numbers, the clock advancing, and it says it is a simulation.
   await kb.press("ArrowRight");
   await expectStep(page, "test");
+  await expect(page.getByTestId("compare-bar")).toContainText("Simulated");
+  await expect(page.getByTestId("compare-bar")).toContainText("Simulated. Same orders, same luck.");
+  for (const side of ["before", "after"]) {
+    await expect(page.getByTestId(`compare-${side}`)).toBeVisible();
+    await expect(page.getByTestId(`compare-${side}-walking`)).toHaveText(/^\d+\.\d m$/);
+    await expect(page.getByTestId(`compare-${side}-time`)).toHaveText(/\d+ s$/);
+    await expect(page.getByTestId(`compare-${side}-slow`)).toHaveText(/\d+ s$/);
+    await expect(page.getByTestId(`compare-${side}-bottleneck`)).not.toHaveText("—");
+    await expect(page.getByTestId(`compare-${side}-busiest`)).toHaveText(/^\S.* \d+%$/);
+    await expect(page.getByTestId(`compare-${side}-done`)).toHaveText(/^\d+ of 10$/);
+  }
+  await expect.poll(async () => clockSeconds(await text(page, "compare-clock"))).toBeGreaterThan(2);
+  await expect(page.getByTestId("compare-before-walking")).not.toHaveText(await text(page, "compare-after-walking"));
+
+  // The check: the recorded second run plays; a measured result and an honest verdict.
+  await page.getByTestId("btn-check-real").click();
   await expect(page.getByTestId("prediction-range")).toHaveText(range);
   await waitForSession(page, "second", "ended");
   const headline = await text(page, "measured-result");
@@ -87,15 +104,11 @@ test("definition of done: full demo, replay, keyboard only (acceptance steps 1-6
     if (!inside) expect(verdict).toMatch(/outside/i);
   }
 
-  // 6. The close: two kitchens, both with numbers, the clock advancing.
-  await kb.press("ArrowRight");
-  await expectStep(page, "compare");
-  for (const side of ["before", "after"]) {
-    await expect(page.getByTestId(`compare-${side}`)).toBeVisible();
-    await expect(page.getByTestId(`compare-${side}-walking`)).toHaveText(/^\d+\.\d m$/);
-    await expect(page.getByTestId(`compare-${side}-time`)).toHaveText(/\d+ s$/);
-    await expect(page.getByTestId(`compare-${side}-done`)).toHaveText(/^\d+ of 10$/);
-  }
-  await expect.poll(async () => clockSeconds(await text(page, "compare-clock"))).toBeGreaterThan(2);
-  await expect(page.getByTestId("compare-before-walking")).not.toHaveText(await text(page, "compare-after-walking"));
+  // Back to the two kitchens.
+  await page.getByTestId("btn-back-to-sim").click();
+  await expectStep(page, "test");
+  await expect(page.getByTestId("compare-before")).toBeVisible();
+  await expect(page.getByTestId("compare-after")).toBeVisible();
+  await expect(page.getByTestId("compare-bar")).toContainText("Simulated");
+  await expect(page.getByTestId("verdict")).toHaveCount(0);
 });

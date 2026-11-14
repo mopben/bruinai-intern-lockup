@@ -3,7 +3,7 @@
  * checked): the prediction is frozen on leaving Play and is the one Test
  * compares; it does not move when the second run loads and plays; a change
  * with no matching recording is said plainly and never compared with a run of
- * another layout; Compare always shows the layout in Play now.
+ * another layout; the simulated Test always shows the layout in Play now.
  */
 import { formatRange } from "../src/core";
 import { BOX, expectStep, hook, openStage, text, waitForSession, type RangeV } from "./support/stage";
@@ -41,6 +41,7 @@ test("rule 5: the prediction frozen on leaving Play is the one tested, and it ne
   await expectStep(page, "test");
   const frozenAtLeave = await hook<Frozen>(page, "frozen");
   expect(formatRange(frozenAtLeave.judge!)).toBe(shown);
+  await page.getByTestId("btn-check-real").click();
   await expect(page.getByTestId("prediction-range")).toHaveText(shown);
   await waitForSession(page, "second", "running");
   await waitForSession(page, "second", "ended");
@@ -54,6 +55,14 @@ test("rule 5: the prediction frozen on leaving Play is the one tested, and it ne
   await page.keyboard.press("p");
   await waitForSession(page, "second", "ended");
   expect(await hook<Frozen>(page, "frozen")).toEqual(frozenAtLeave);
+  // Nor does closing the check and opening it again: the run and its verdict are kept.
+  const verdict = await text(page, "verdict");
+  await page.keyboard.press("c");
+  await expect(page.getByTestId("compare-bar")).toBeVisible();
+  await page.keyboard.press("c");
+  await expect(page.getByTestId("verdict")).toHaveText(verdict);
+  await expect(page.getByTestId("prediction-range")).toHaveText(shown);
+  expect(await hook<Frozen>(page, "frozen")).toEqual(frozenAtLeave);
 });
 
 test("rule 5: a change with no recording says so and compares like with like", async ({ page }) => {
@@ -61,6 +70,7 @@ test("rule 5: a change with no recording says so and compares like with like", a
   await page.getByTestId(`btn-add-worker-${BOX.order}`).click();
   await page.keyboard.press("ArrowRight");
   await expectStep(page, "test");
+  await page.getByTestId("btn-check-real").click();
   await expect(page.getByTestId("match-note")).toContainText("No recorded run matches this exact change");
   const plan = await hook<Plan>(page, "testPlan");
   expect(plan.matched).toBe(false);
@@ -75,11 +85,12 @@ test("rule 5: a change with no recording says so and compares like with like", a
   expect(outcome.predicted).toEqual(forCandidate);
 });
 
-test("Compare shows the layout in Play now, not an earlier Test's (4 → 6 after a new change)", async ({ page }) => {
+test("Test shows the layout in Play now, not an earlier check's (4 → 5 after a new change)", async ({ page }) => {
   await openStage(page, { speed: 32, step: 4 });
   await page.keyboard.press("m");
   const walkM = await text(page, "walking-per-order");
   await page.keyboard.press("ArrowRight");
+  await page.getByTestId("btn-check-real").click();
   await waitForSession(page, "second", "ended");
   await page.keyboard.press("ArrowLeft");
   await expectStep(page, "play");
@@ -88,8 +99,11 @@ test("Compare shows the layout in Play now, not an earlier Test's (4 → 6 after
   const walkW = await text(page, "walking-per-order");
   const timeW = await text(page, "time-per-order");
   expect(walkW).not.toBe(walkM);
-  await page.keyboard.press("6");
-  await expectStep(page, "compare");
+  await page.keyboard.press("5");
+  await expectStep(page, "test");
   await expect(page.getByTestId("compare-after-walking")).toHaveText(walkW);
   await expect(page.getByTestId("compare-after-time")).toHaveText(timeW);
+  // The check after a changed layout starts fresh, planned for the new layout (four workers).
+  await page.getByTestId("btn-check-real").click();
+  await expect.poll(async () => (await hook<Plan>(page, "testPlan")).judgeWorkers).toBe(4);
 });

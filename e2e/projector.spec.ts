@@ -1,6 +1,7 @@
 /**
  * Rule 7 (readable on a projector) and the operator under pressure: at three
- * projector sizes, at every step, nothing essential is cut off or covered,
+ * projector sizes, at every step (and in Test's real-run check), nothing
+ * essential is cut off or covered,
  * and the big numbers never wrap. Screenshots go to e2e/screenshots/ for a
  * person to look at.
  */
@@ -24,11 +25,29 @@ const ESSENTIAL: Record<string, readonly string[]> = {
   run: ["run-clock", "orders-done", "btn-play", "btn-faster", "btn-skip", "run-story"],
   trust: ["trust-error", "trust-words"],
   play: ["walking-per-order", "time-per-order", "prediction-range", "btn-rehearsed-m", "btn-rehearsed-w", "btn-reset", `btn-add-worker-${BOX.make}`],
-  test: ["prediction-range", "run-clock", "btn-play", "measured-result", "verdict"],
-  compare: ["compare-before-walking", "compare-before-time", "compare-after-walking", "compare-after-time", "compare-clock", "btn-play", "btn-faster"],
+  test: [
+    "compare-bar",
+    ...["before", "after"].flatMap((side) => ["walking", "time", "slow", "bottleneck", "busiest", "done"].map((row) => `compare-${side}-${row}`)),
+    "compare-clock",
+    "btn-play",
+    "btn-faster",
+    "btn-check-real",
+  ],
+  check: ["prediction-range", "run-clock", "btn-play", "measured-result", "verdict"],
 };
 /** Numbers that must sit on one line. */
-const ONE_LINE = ["walking-per-order", "time-per-order", "trust-error", "run-clock", "compare-before-time", "compare-after-time", "compare-before-walking", "compare-after-walking"];
+const ONE_LINE = [
+  "walking-per-order",
+  "time-per-order",
+  "trust-error",
+  "run-clock",
+  "compare-before-time",
+  "compare-after-time",
+  "compare-before-slow",
+  "compare-after-slow",
+  "compare-before-walking",
+  "compare-after-walking",
+];
 
 async function checkStep(page: Page, step: string, size: string): Promise<string[]> {
   const problems: string[] = [];
@@ -63,7 +82,7 @@ async function settled(page: Page, step: string, size: string, problems: string[
   problems.push(...last);
 }
 
-const STEP_BUTTONS = ["step-scan", "step-run", "step-trust", "step-play", "step-test", "step-compare"];
+const STEP_BUTTONS = ["step-scan", "step-run", "step-trust", "step-play", "step-test"];
 
 for (const vp of SIZES) {
   const size = `${vp.width}x${vp.height}`;
@@ -99,21 +118,21 @@ for (const vp of SIZES) {
 
     await page.keyboard.press("ArrowRight");
     await expectStep(page, "test");
-    await waitForSession(page, "second", "ended");
-    await expect(page.getByTestId("verdict")).toBeVisible();
-    await settled(page, "test", size, problems);
-    await shot("5-test");
-
-    await page.keyboard.press("ArrowRight");
-    await expectStep(page, "compare");
     await expect(page.getByTestId("compare-after-time")).toBeVisible();
     // Let the two scenes draw a few frames before the picture.
     await page.waitForFunction(() => {
       const h = (globalThis as unknown as { __dryrun: { scene(n: string): { renders: number } | null } }).__dryrun;
       return (h.scene("compare-before")?.renders ?? 0) > 3 && (h.scene("compare-after")?.renders ?? 0) > 3;
     });
-    await settled(page, "compare", size, problems);
-    await shot("6-compare");
+    await settled(page, "test", size, problems);
+    await shot("5-test");
+
+    await page.getByTestId("btn-check-real").click();
+    await expectStep(page, "test");
+    await waitForSession(page, "second", "ended");
+    await expect(page.getByTestId("verdict")).toBeVisible();
+    await settled(page, "check", size, problems);
+    await shot("6-check");
 
     expect(problems).toEqual([]);
   });

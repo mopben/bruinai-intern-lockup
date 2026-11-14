@@ -11,7 +11,7 @@ import { expect, test } from "./support/fixtures";
 
 const truth = computeTruth();
 
-test("rule 6: walking, trust, prediction and measured result equal src/core on the fixtures", async ({ page }) => {
+test("rule 6: walking, trust, prediction, slow orders, bottleneck and measured result equal src/core on the fixtures", async ({ page }) => {
   await openStage(page, { speed: 32, step: 3 });
   await expectStep(page, "trust");
   await expect(page.getByTestId("trust-error")).toHaveText(truth.trustError);
@@ -34,8 +34,20 @@ test("rule 6: walking, trust, prediction and measured result equal src/core on t
   await page.keyboard.press("Backspace");
   await page.keyboard.press("m");
 
+  // Test, simulated: the before and after kitchens, every number from src/core.
   await page.keyboard.press("ArrowRight");
   await expectStep(page, "test");
+  await expect(page.getByTestId("compare-before-walking")).toHaveText(truth.walkA);
+  await expect(page.getByTestId("compare-after-walking")).toHaveText(truth.walkB);
+  await expect(page.getByTestId("compare-before-time")).toHaveText(truth.timeA);
+  await expect(page.getByTestId("compare-after-time")).toHaveText(truth.timeB);
+  await expect(page.getByTestId("compare-before-slow")).toHaveText(truth.slowA);
+  await expect(page.getByTestId("compare-after-slow")).toHaveText(truth.slowB);
+  await expect(page.getByTestId("compare-before-bottleneck")).toHaveText(truth.bottleneckA);
+  await expect(page.getByTestId("compare-after-bottleneck")).toHaveText(truth.bottleneckB);
+
+  // The check with a real run: the frozen prediction against the recorded second run.
+  await page.keyboard.press("c");
   await expect(page.getByTestId("prediction-range")).toHaveText(truth.timeB);
   await waitForSession(page, "second", "ended");
   const headline = await text(page, "measured-result");
@@ -44,13 +56,6 @@ test("rule 6: walking, trust, prediction and measured result equal src/core on t
   const inside = truth.measuredB >= truth.rangeB.p10 && truth.measuredB <= truth.rangeB.p90;
   await expect(page.getByTestId("verdict")).toHaveText(inside ? "Inside the range." : /^Outside the range: /);
   await expect(page.getByTestId("before-after")).toContainText(`Before ${truth.measuredA.toFixed(1)} s → after ${truth.measuredB.toFixed(1)} s`);
-
-  await page.keyboard.press("ArrowRight");
-  await expectStep(page, "compare");
-  await expect(page.getByTestId("compare-before-walking")).toHaveText(truth.walkA);
-  await expect(page.getByTestId("compare-after-walking")).toHaveText(truth.walkB);
-  await expect(page.getByTestId("compare-before-time")).toHaveText(truth.timeA);
-  await expect(page.getByTestId("compare-after-time")).toHaveText(truth.timeB);
 });
 
 function stageSources(dir: string): string[] {
