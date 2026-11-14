@@ -52,6 +52,21 @@ export interface Replication {
   readonly finishedAt: readonly number[];
   readonly lastFinish: number;
   readonly trace: RunTrace | null;
+  readonly stats: ReplicationStats;
+}
+
+/** Per-run counts for the metrics. Collected without random numbers; they change no time. */
+export interface ReplicationStats {
+  /** Per worker, layout order: seconds walking (to stations, fetch, carry, back, home) plus working. */
+  readonly busyS: readonly number[];
+  /** Per station, model order: sum over its tasks of (assigned − ready). */
+  readonly waitS: readonly number[];
+  /** Per station: number of tasks. */
+  readonly waits: readonly number[];
+  /** Per station: most tasks ready and unassigned at once, after all events of an instant. */
+  readonly peakQueue: readonly number[];
+  /** Metres walked to stations and home (roaming workers), not fetch or carry. */
+  readonly betweenM: number;
 }
 
 const ARRIVE = 0;
@@ -91,6 +106,12 @@ interface Loop {
   readonly lastJob: number[];
   readonly occupied: Int32Array;
   readonly moves: MovementSegment[] | null;
+  readonly busy: Float64Array;
+  readonly waitSum: Float64Array;
+  readonly waitN: Int32Array;
+  readonly queued: Int32Array;
+  readonly peak: Int32Array;
+  betweenM: number;
 }
 
 function workPools(model: EngineModel, seed: number, rep: number, bootstrap: boolean): readonly (readonly number[])[] {
@@ -164,6 +185,12 @@ function newLoop(model: EngineModel, releases: Releases, seed: number, rep: numb
     lastJob: model.workers.map(() => -1),
     occupied: new Int32Array(model.stationIds.length),
     moves: (opts.trace ?? false) ? [] : null,
+    busy: new Float64Array(model.workers.length),
+    waitSum: new Float64Array(model.stationIds.length),
+    waitN: new Int32Array(model.stationIds.length),
+    queued: new Int32Array(model.stationIds.length),
+    peak: new Int32Array(model.stationIds.length),
+    betweenM: 0,
   };
 }
 
@@ -182,6 +209,8 @@ function arrive(L: Loop, job: number, now: number): void {
   L.readyAt[job] = now;
   L.readySeq[job] = L.readyCount++;
   L.ready.push(job);
+  const s = taskOf(L, job).stationIndex;
+  L.queued[s] = (L.queued[s] as number) + 1;
 }
 
 /** Ready tasks this worker may take now: at a station it covers that has room. */
@@ -228,6 +257,11 @@ function take(L: Loop, w: number, job: number, now: number): void {
   L.finished[i] = Math.max(L.finished[i] as number, t);
   L.lastJob[w] = job;
   const c = task.carrySeconds;
+  L.queued[s] = (L.queued[s] as number) - 1;
+  L.waitSum[s] = (L.waitSum[s] as number) + (now - (L.readyAt[job] as number));
+  L.waitN[s] = (L.waitN[s] as number) + 1;
+  L.busy[w] = (L.busy[w] as number) + walkSec + task.fetchSeconds + work + (ew.roams ? c : 2 * c);
+  L.betweenM += walk ? walk.oneWayM : 0;
   if (Number.isFinite(L.model.capacity[s])) push(L, t, FREE, s);
   if (task.next !== null) push(L, t + c, ARRIVE, i * L.S + task.next);
   if (ew.roams) {
@@ -261,7 +295,10 @@ function sendHome(L: Loop, now: number): void {
     const at = L.atId[w] as string;
     if (!L.resting[w] || !ew.roams || at === ew.homeId) return;
     const leg = walkLeg(L, at, ew.homeId) as EngineLeg;
-    const t1 = now + walkSeconds(L.pace, leg.oneWayM);
+    const sec = walkSeconds(L.pace, leg.oneWayM);
+    const t1 = now + sec;
+    L.busy[w] = (L.busy[w] as number) + sec;
+    L.betweenM += leg.oneWayM;
     L.resting[w] = false;
     L.atId[w] = ew.homeId;
     push(L, t1, REST, w);
@@ -278,16 +315,28 @@ function handle(L: Loop, ev: Ev): void {
   sendHome(L, ev.t);
 }
 
+/** Queue peaks, seen once all events of an instant have run: a task taken in the same instant never queued. */
+function notePeaks(L: Loop): void {
+  for (let s = 0; s < L.queued.length; s += 1) if ((L.queued[s] as number) > (L.peak[s] as number)) L.peak[s] = L.queued[s] as number;
+}
+
 /** Run one replication. Deterministic in (model, releases, seed, rep, rule). */
 export function runEngine(model: EngineModel, releases: Releases, seed: number, rep: number, opts: EngineOptions = {}): Replication {
   const L = newLoop(model, releases, seed, rep, opts);
   L.plans.forEach((tasks, i) => {
     for (const t of tasks) if (t.after.length === 0) push(L, (releases[i] as Releases[number]).t, ARRIVE, i * L.S + t.index);
   });
-  for (let ev = L.heap.pop(); ev; ev = L.heap.pop()) handle(L, ev);
+  let now = -Infinity;
+  for (let ev = L.heap.pop(); ev; ev = L.heap.pop()) {
+    if (ev.t !== now) notePeaks(L);
+    now = ev.t;
+    handle(L, ev);
+  }
+  notePeaks(L);
   const finishedAt = Array.from(L.finished);
   const orderTimes = releases.map((r, i) => (finishedAt[i] as number) - r.t);
   const lastFinish = releases.length > 0 ? Math.max(...finishedAt) : 0;
   const trace = L.moves ? buildTrace(model, releases, L.plans, L, L.moves, L.S) : null;
-  return { orderTimes, finishedAt, lastFinish, trace };
+  const stats = { busyS: Array.from(L.busy), waitS: Array.from(L.waitSum), waits: Array.from(L.waitN), peakQueue: Array.from(L.peak), betweenM: L.betweenM };
+  return { orderTimes, finishedAt, lastFinish, trace, stats };
 }

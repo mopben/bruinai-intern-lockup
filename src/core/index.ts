@@ -89,12 +89,15 @@ export type {
   Releases,
   Replication,
   ReplicationOptions,
+  ReplicationStats,
   RuleWorker,
   TaskRule,
   WorkPool,
 } from "./engine/index";
 export { predict, simulateRun, assumptionText, hasSharedStation, DEFAULT_REPS, DEFAULT_SEED } from "./predict";
 export type { Prediction, PredictOptions, SimulateRunOptions } from "./predict";
+export { BOTTLENECK_MIN_WAIT_S, SLOW_ORDER_QUANTILE } from "./engine/metrics";
+export type { StationMetric, WorkerMetric } from "./engine/metrics";
 
 // Trust and checking a prediction
 export { trustCheck, MIN_CHECK_ORDERS, TRUST_SCOPE } from "./trust";

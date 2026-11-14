@@ -92,6 +92,21 @@ export function capacityKitchen(workers: number, capacity?: number): KitSpec {
 }
 
 /**
+ * One worker, one station: a chain of one task per order. Station s at x = 0, pickup at
+ * x = 3, so the carry is a 3 m walk out and (for this fixed worker) 3 m back.
+ */
+export function oneWorkerChainKitchen(): KitSpec {
+  return {
+    boxes: [
+      { id: "s", x: 0, z: 0, role: "station" },
+      { id: "P", x: 3, z: 0, role: "pickup" },
+    ],
+    menu: [{ id: "x", name: "X", steps: [{ stationId: "s" }] }],
+    workers: [worker("w", "s")],
+  };
+}
+
+/**
  * A covering worker walled off from its second station. Station z (stand (0, 5.85)) sits in a
  * closed ring of walls; its task hands its output across the south wall to b (stand (0, 6.75)).
  * Worker w1 lives at a (stand (3, 6.75)) and also covers z: that walk has no path.

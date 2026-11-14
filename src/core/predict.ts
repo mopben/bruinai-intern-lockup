@@ -6,6 +6,7 @@ import type { Calibration } from "./calibrate";
 import type { RunTrace } from "./trace";
 import { buildPathTable, walkingPerOrder, type PathTable, type WalkingSummary } from "./walking";
 import { compileEngineModel, runEngine, type Releases } from "./engine/index";
+import { metricsAccumulator, type StationMetric, type WorkerMetric } from "./engine/metrics";
 import { mean, rangeOf, type Range } from "./stats";
 import { walkExtrapolation, type WalkExtrapolation } from "./extrapolation";
 
@@ -33,8 +34,21 @@ export interface Prediction {
   /** When the last order is finished. */
   readonly lastFinish: Range;
   readonly completedBy: { readonly t: number; readonly orders: Range } | null;
-  /** Exact walking per order, from the layout alone. */
+  /** Per run, the 0.9 quantile of its order times (9 in 10 orders beat it). */
+  readonly slowOrderTime: Range;
+  /**
+   * Walking per order: fetch and carry walks from the layout alone (exact). When
+   * `walkingIsAverage`, plus the mean over runs of walks between stations per order.
+   */
   readonly walkingPerOrderM: number;
+  /** True when some worker covers several stations, so `walkingPerOrderM` is a mean over runs. */
+  readonly walkingIsAverage: boolean;
+  /** Per worker, layout order: busy seconds (walking + working) over the run's last finish, mean over runs. */
+  readonly workers: readonly WorkerMetric[];
+  /** Per station, in the order the menu first uses them: mean wait and peak queue, mean over runs. */
+  readonly stations: readonly StationMetric[];
+  /** Station with the largest mean wait; null when every mean wait is under 0.5 s. */
+  readonly bottleneckStationId: string | null;
   readonly walking: WalkingSummary;
   /** Some walk (a menu walk, or a covering worker's walk between stations) had no path and used a straight line. */
   readonly anyBlocked: boolean;
@@ -98,10 +112,12 @@ export function predict(world: World, calibration: Calibration, opts: PredictOpt
   const lasts: number[] = [];
   const doneBy: number[] = [];
   const perOrderSum = new Float64Array(releases.length);
+  const metrics = metricsAccumulator(model, releases.length);
   for (let r = 0; r < reps; r += 1) {
     const rep = runEngine(model, releases, seed, r, { bootstrap: opts.bootstrap ?? true, paceModels });
     means.push(mean(rep.orderTimes));
     lasts.push(rep.lastFinish);
+    metrics.add(rep);
     rep.orderTimes.forEach((v, i) => {
       perOrderSum[i] = (perOrderSum[i] as number) + v;
     });
@@ -110,11 +126,17 @@ export function predict(world: World, calibration: Calibration, opts: PredictOpt
       doneBy.push(rep.finishedAt.filter((f) => f <= by).length);
     }
   }
+  const m = metrics.finish();
   return {
     meanOrderTime: rangeOf(means),
+    slowOrderTime: m.slowOrderTime,
     lastFinish: rangeOf(lasts),
     completedBy: opts.byTime === undefined ? null : { t: opts.byTime, orders: rangeOf(doneBy) },
-    walkingPerOrderM: walking.perOrderM,
+    walkingPerOrderM: m.walkingIsAverage ? walking.perOrderM + m.betweenPerOrderM : walking.perOrderM,
+    walkingIsAverage: m.walkingIsAverage,
+    workers: m.workers,
+    stations: m.stations,
+    bottleneckStationId: m.bottleneckStationId,
     walking,
     anyBlocked: walking.anyBlocked || model.anyBlocked,
     perOrderMean: Array.from(perOrderSum, (s) => s / reps),
