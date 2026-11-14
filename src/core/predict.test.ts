@@ -8,6 +8,11 @@ const build = (spec: KitSpec) => resolveWorld(kitScan(spec), kitSetup(spec), kit
 const cafeCal = fixedCalibration({ order: [3, 4, 5, 4], make: [7, 9, 11, 8, 10], finish: [3, 4, 3.5] }, 1.2);
 
 describe("predict", () => {
+  it("rejects an empty schedule instead of returning a NaN time range", () => {
+    expect(() => predict(build({ ...cafeKit(), orders: [] }), cafeCal)).toThrow(/no orders/i);
+    expect(() => predict(build(cafeKit()), cafeCal, { releases: [] })).toThrow(/no orders/i);
+  });
+
   it("collapses to the hand-computed value when work times are fixed", () => {
     const spec: KitSpec = {
       boxes: [

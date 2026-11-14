@@ -5,7 +5,7 @@ import type { World } from "./world";
 import type { Calibration } from "./calibrate";
 import type { RunTrace } from "./trace";
 import { buildPathTable, walkingPerOrder, type PathTable, type WalkingSummary } from "./walking";
-import { compileModel } from "./model";
+import { compileModel, SimError } from "./model";
 import { runReplication, type Releases } from "./sim";
 import { mean, rangeOf, type Range } from "./stats";
 import { walkExtrapolation, type WalkExtrapolation } from "./extrapolation";
@@ -90,6 +90,7 @@ export function predict(world: World, calibration: Calibration, opts: PredictOpt
   const reps = Math.max(1, Math.floor(opts.reps ?? DEFAULT_REPS));
   const seed = opts.seed ?? DEFAULT_SEED;
   const releases = opts.releases ?? world.setup.schedule.orders;
+  if (releases.length === 0) throw new SimError("This shift has no orders. Set its quantities in Orders.");
   const table = opts.table ?? buildPathTable(world);
   const model = compileModel(world, calibration, table);
   const walking = walkingPerOrder(world, table);

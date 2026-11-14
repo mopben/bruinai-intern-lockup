@@ -68,7 +68,8 @@ export const economicsAreExamples = computed(() => storedEconomics.value === nul
 export function setEconomics(change: Partial<Economics>): void {
   const cur = economics.value;
   if (!cur) return;
-  const next: Partial<Economics> = { ...cur, ...change, menu: { ...cur.menu, ...(change.menu ?? {}) } };
+  const previous = storedEconomics.peek();
+  const next: Partial<Economics> = { ...previous, ...change, menu: { ...previous?.menu, ...(change.menu ?? {}) } };
   storedEconomics.value = next;
   save(next);
 }

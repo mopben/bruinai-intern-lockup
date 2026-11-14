@@ -48,6 +48,7 @@ describe("profit", () => {
     const p = profitFromCapacity(world, e, cap);
     expect(p.marginPerOrder).toBe(4);
     expect(p.wagesPerHour).toBe(3 * 20);
+    expect(p.revenuePerHour.p50).toBe(120 * 5);
     expect(p.profitPerHour.p50).toBeCloseTo(120 * 4 - 60 - 10);
     expect(p.limitedBy).toBe("capacity");
   });

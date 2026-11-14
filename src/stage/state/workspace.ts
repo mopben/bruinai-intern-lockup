@@ -31,6 +31,8 @@ export interface SavedSetup {
 export interface SavedShift extends ShiftOrders {
   readonly id: string;
   readonly name: string;
+  readonly durationSeconds?: number;
+  readonly prices?: Readonly<Record<string, import("../../core").MenuPrice>>;
 }
 export interface ScenarioChoice { readonly setupId: string; readonly shiftId: string }
 export const savedSetups = signal<readonly SavedSetup[]>([]);
@@ -53,7 +55,7 @@ const workspaceSchema = z.object({
     candidates: z.array(z.object({ id: z.string(), meta: runMetaSchema, layout: layoutSchema, url: z.string().optional() })).default([]),
     economics: z.object({}).passthrough().nullable(),
   })),
-  shifts: z.array(z.object({ id: z.string(), name: z.string(), menu: setupSchema.shape.menu, schedule: setupSchema.shape.schedule, items: setupSchema.shape.items })),
+  shifts: z.array(z.object({ id: z.string(), name: z.string(), menu: setupSchema.shape.menu, schedule: setupSchema.shape.schedule, items: setupSchema.shape.items, durationSeconds: z.number().positive().finite().default(3600), prices: z.record(z.string(), z.object({ price: z.number().nonnegative().finite(), ingredients: z.number().nonnegative().finite() })).optional() })),
   choices: z.array(z.object({ setupId: z.string(), shiftId: z.string() })).length(2),
 });
 
@@ -155,7 +157,7 @@ export function createShift(duplicate = false): void {
   const cal = calibration.peek();
   const orders = shiftOrders(k, cal?.ok ? cal.value : null);
   const shift: SavedShift = {
-    ...orders, id: crypto.randomUUID(), name: `Shift ${savedShifts.peek().length + 1}`,
+    ...orders, durationSeconds: 3600, prices: { ...(storedEconomics.peek()?.menu ?? {}) }, id: crypto.randomUUID(), name: `Shift ${savedShifts.peek().length + 1}`,
     schedule: duplicate ? orders.schedule : { orders: [] },
   };
   savedShifts.value = [...savedShifts.peek(), shift];
@@ -198,7 +200,7 @@ export function initializeWorkspace(): () => void {
       const data = workspaceSchema.parse(JSON.parse(raw));
       batch(() => {
         savedSetups.value = data.setups as readonly SavedSetup[];
-        savedShifts.value = data.shifts;
+        savedShifts.value = data.shifts.map(shift => ({ ...shift, prices: shift.prices ?? data.setups.find(setup => setup.id === data.activeSetupId)?.economics?.menu as SavedShift["prices"] ?? {} }));
         scenarioChoices.value = data.choices;
         activeShiftId.value = data.activeShiftId;
       });
@@ -220,4 +222,8 @@ export function initializeWorkspace(): () => void {
   const flush = () => { if (savedSetups.peek().length) { snapshotSetup(); snapshotShift(); saveWorkspace(); } };
   window.addEventListener("pagehide", flush);
   return () => { offSnapshot(); offSave(); clearTimeout(timer); window.removeEventListener("pagehide", flush); };
+}
+
+export function setShiftFinance(change: { durationSeconds?: number; prices?: Readonly<Record<string, import('../../core').MenuPrice>> }): void {
+  savedShifts.value = savedShifts.peek().map(entry => entry.id === activeShiftId.peek() ? { ...entry, ...change, prices: { ...entry.prices, ...change.prices } } : entry);
 }

@@ -4,7 +4,7 @@
  * how many orders come in a busy hour. Profit per hour and the suggestions
  * use these.
  */
-import { formatMoney, type Economics } from "../../core";
+import { type Economics } from "../../core";
 import { cancelSuggest } from "../state/suggest";
 import { costsOpen, economics, economicsAreExamples, setEconomics, useExampleEconomics } from "../state/economics";
 import { kitchen } from "../state/store";
@@ -51,27 +51,15 @@ export function CostsSection() {
         <h2>Prices and costs</h2>
         <Btn small label="Close" k="Esc" onClick={() => (costsOpen.value = false)} testId="btn-close-costs" />
       </div>
-      <h3>Menu</h3>
-      {k.setup.menu.map((m) => {
-        const p = econ.menu[m.id] ?? { price: 0, ingredients: 0 };
-        return (
-          <div class="st-cost-row" key={m.id}>
-            <span class="name">{m.name}</span>
-            <Money label="Price" value={p.price} unit={cur} testId={`cost-price-${m.id}`} onChange={(v) => change({ menu: { [m.id]: { ...p, price: v } } })} />
-            <Money label="Ingredients" value={p.ingredients} unit={cur} testId={`cost-ingredients-${m.id}`} onChange={(v) => change({ menu: { [m.id]: { ...p, ingredients: v } } })} />
-            <span class="st-small">{formatMoney(p.price - p.ingredients, cur)} an order</span>
-          </div>
-        );
-      })}
+      <p class="st-small">Set recipe selling prices and ingredient costs in Orders.</p>
       <h3>Running costs, per hour</h3>
       <div class="st-cost-grid">
         <Money label="Default hourly salary" value={econ.wagePerHour} unit={`${cur}/h`} step={0.5} testId="cost-wage" onChange={(v) => change({ wagePerHour: v })} />
         <Money label="Electricity" value={econ.electricityPerHour} unit={`${cur}/h`} testId="cost-electricity" onChange={(v) => change({ electricityPerHour: v })} />
         <Money label="Rent and other" value={econ.otherPerHour} unit={`${cur}/h`} step={0.5} testId="cost-other" onChange={(v) => change({ otherPerHour: v })} />
       </div>
-      <h3>A busy hour</h3>
+      <h3>Currency</h3>
       <div class="st-cost-grid">
-        <Money label="Orders that come in" value={econ.demandPerHour} unit="per hour" step={5} testId="cost-demand" onChange={(v) => change({ demandPerHour: Math.round(v) })} />
         <label class="st-field st-cost">
           <span>Currency</span>
           <input

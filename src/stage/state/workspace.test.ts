@@ -6,7 +6,7 @@ import { setRecipeQuantity, updateRecipe } from "../app/recipes";
 import { editKitchen } from "./kitchen-actions";
 import { storedEconomics } from "./economics";
 import { activeSetupId, activeShiftId, base, candidates, firstRun, kitchen, kitchenOrigin, playLayout, workspaceReady } from "./store";
-import { createSetup, createShift, initializeWorkspace, renameSetup, renameShift, saveWorkspace, savedSetups, savedShifts, selectSetup, selectShift } from "./workspace";
+import { createSetup, createShift, initializeWorkspace, renameSetup, renameShift, saveWorkspace, savedSetups, savedShifts, selectSetup, selectShift, setShiftFinance } from "./workspace";
 
 let cleanup: (() => void) | undefined;
 beforeEach(() => {
@@ -69,4 +69,33 @@ describe("saved setups and shifts", () => {
     expect(savedShifts.value[0]!.name).toBe("Lunch");
     expect(kitchen.value!.setup.schedule.orders).toHaveLength(7);
   });
+});
+
+it('persists shift duration and prices independently of setup costs', () => {
+  createSetup(); createShift();
+  const a = activeShiftId.value!;
+  setShiftFinance({ durationSeconds: 7200, prices: { latte: { price: 9, ingredients: 3 } } });
+  createShift();
+  setShiftFinance({ durationSeconds: 1800, prices: { latte: { price: 5, ingredients: 1 } } });
+  selectShift(a);
+  expect(savedShifts.value.find(s => s.id === a)?.durationSeconds).toBe(7200);
+  saveWorkspace(); cleanup?.();
+  activeSetupId.value = null; activeShiftId.value = null;
+  savedSetups.value = []; savedShifts.value = [];
+  cleanup = initializeWorkspace();
+  expect(savedShifts.value.find(s => s.id === a)?.prices?.latte).toEqual({ price: 9, ingredients: 3 });
+  expect(savedShifts.value.find(s => s.id === a)?.durationSeconds).toBe(7200);
+});
+
+it('migrates old saved shifts to one hour and preserves explicit legacy recipe prices', () => {
+  createSetup(); storedEconomics.value = { menu: { latte: { price: 8, ingredients: 2 } } }; createShift();
+  saveWorkspace(); cleanup?.();
+  const saved = JSON.parse(localStorage.getItem('dryrun.workspace.v1')!);
+  for (const shift of saved.shifts) { delete shift.durationSeconds; delete shift.prices; }
+  localStorage.setItem('dryrun.workspace.v1', JSON.stringify(saved));
+  activeSetupId.value = null; activeShiftId.value = null;
+  savedSetups.value = []; savedShifts.value = [];
+  cleanup = initializeWorkspace();
+  expect(savedShifts.value[0]?.durationSeconds).toBe(3600);
+  expect(savedShifts.value[0]?.prices?.latte).toEqual({ price: 8, ingredients: 2 });
 });

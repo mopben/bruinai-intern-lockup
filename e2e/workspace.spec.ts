@@ -1,6 +1,27 @@
 import { test, expect } from "./support/fixtures";
 import { BOX, chooseLibraryEntry, renameLibraryEntry, mainDebug, openStage, sceneDebug } from "./support/stage";
 
+test("an empty shift explains missing predictions and recovers when orders are added", async ({ page }) => {
+  await openStage(page);
+  await page.getByTestId("step-orders").click();
+  await chooseLibraryEntry(page, "shift", "__create_shift__");
+  await page.getByTestId("step-results").click();
+  for (const side of ["before", "after"]) {
+    await expect(page.getByTestId(`compare-${side}-sales`)).toHaveText("$0.00");
+  }
+  await expect(page.getByTestId("compare-scenarios")).not.toContainText("NaN");
+  await page.getByTestId("view-run").click();
+  await expect(page.getByTestId("compare-before-sales")).toHaveText("$0.00");
+  await page.getByTestId("step-orders").click();
+  await page.getByTestId("recipe-latte").locator("summary").click();
+  await page.getByTestId("recipe-latte").getByLabel("Quantity in simulation").fill("3");
+  await page.getByTestId("step-results").click();
+  await page.getByTestId("btn-play").click();
+  await expect(page.getByTestId("compare-before-time")).toHaveText(/s$/);
+  await page.getByTestId("btn-skip").click();
+  await expect(page.getByTestId("compare-before-done")).toHaveText("3 of 3");
+});
+
 test("Run offers only comparison and a single simulated scenario", async ({ page }) => {
   await openStage(page);
   await page.getByTestId("step-orders").click();
@@ -8,13 +29,14 @@ test("Run offers only comparison and a single simulated scenario", async ({ page
   await page.getByTestId("recipe-latte").locator("summary").click();
   await page.getByTestId("recipe-latte").getByLabel("Quantity in simulation").fill("3");
   await page.getByTestId("step-results").click();
-  await expect(page.getByRole("navigation", { name: "Results views" }).locator("button")).toHaveText(["Compare scenario", "Run scenario"]);
+  await expect(page.getByRole("navigation", { name: "Results views" }).locator("button")).toHaveText(["Compare scenarios", "Run scenario"]);
   await page.getByTestId("view-run").click();
   await expect(page.getByTestId("run-scenario")).toBeVisible();
   await expect(page.getByLabel("Scenario shift", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Scenario setup", { exact: true })).toBeVisible();
   await expect(page.getByTestId("scenario-1-shift")).toHaveCount(0);
   await expect(page.getByTestId("compare-after")).toHaveCount(0);
+  await page.getByTestId("btn-play").click();
   await expect(page.getByTestId("compare-before-done")).toHaveText(/of 3$/);
   await page.getByTestId("btn-skip").click();
   await expect(page.getByTestId("compare-before-done")).toHaveText("3 of 3");
@@ -101,6 +123,7 @@ test("compares independent shift/setup pairs and preserves them after reload", a
   await page.getByTestId("scenario-1-setup").selectOption(setupB);
   await expect(page.getByTestId("compare-before")).toContainText("Morning + Baseline");
   await expect(page.getByTestId("compare-after")).toContainText("Evening + Extra staff");
+  await page.getByTestId("btn-play").click();
   await expect(page.getByTestId("compare-before-done")).toHaveText(/of 2$/);
   await expect(page.getByTestId("compare-after-done")).toHaveText(/of 5$/);
   await expect.poll(async () => (await sceneDebug(page, "compare-before"))?.workers.length).toBe(3);
@@ -112,6 +135,7 @@ test("compares independent shift/setup pairs and preserves them after reload", a
   await page.reload();
   await expect(page.getByTestId("scenario-0-setup")).toHaveValue(setupA);
   await expect(page.getByTestId("scenario-1-shift")).toHaveValue(shiftB);
-  await expect(page.getByTestId("compare-before-done")).toHaveText(/of 2$/);
-  await expect(page.getByTestId("compare-after-done")).toHaveText(/of 5$/);
+  await expect(page.getByTestId("compare-before-profit")).toBeVisible();
+  await expect(page.getByTestId("compare-before-done")).toHaveCount(0);
+  await expect(page.getByTestId("compare-after-profit")).toBeVisible();
 });

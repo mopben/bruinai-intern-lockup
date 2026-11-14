@@ -5,8 +5,8 @@
 import { useRef } from "preact/hooks";
 import { addFloorMark } from "../app/kitchen-edit";
 import { acceptDroppedScan } from "../state/input-actions";
-import { editKitchen, reveal } from "../state/kitchen-actions";
-import { addNotice, kitchen, moveInScan, scanNotes, scanState, serverInfo } from "../state/store";
+import { editKitchen } from "../state/kitchen-actions";
+import { addNotice, kitchen, moveInScan, serverInfo } from "../state/store";
 import { Btn } from "./bits";
 import { InputsSection } from "./InputsSection";
 
@@ -47,37 +47,8 @@ export function ScanRail() {
         <Btn label="Add a floor mark" onClick={addMark} disabled={!kitchen.value} title={kitchen.value ? undefined : "Add a scan first"} testId="btn-add-mark" />
         <input ref={file} type="file" accept=".json,application/json" style={{ display: "none" }} onChange={pick} />
       </div>
-      <ScanBody />
+      {!kitchen.value ? <Waiting /> : null}
       <InputsSection />
     </>
-  );
-}
-
-function ScanBody() {
-  const k = kitchen.value;
-  if (!k) return <Waiting />;
-  if (scanState.value === "revealing") {
-    return (
-      <div class="st-card">
-        <h1>The kitchen, from a phone scan</h1>
-        <p class="st-say">
-          <span class="st-pulse" />
-          Reading the scan…
-        </p>
-      </div>
-    );
-  }
-  return (
-    <div class="st-card">
-      <h1>The kitchen, from a phone scan</h1>
-      {scanNotes.value.map((n) => (
-        <p class="st-warn" key={n}>
-          {n}
-        </p>
-      ))}
-      <div class="st-row">
-        <Btn label="Show the scan again" k="P" onClick={reveal} testId="btn-play" />
-      </div>
-    </div>
   );
 }

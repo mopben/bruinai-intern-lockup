@@ -30,7 +30,7 @@ export function ShiftControls() {
 
 export function ScenarioControls({ single = false }: { single?: boolean }) {
   return <div class="st-card st-library" data-testid="scenario-controls">
-    <h1>{single ? "Run scenario" : "Compare scenario"}</h1>
+    <h1>{single ? "Run scenario" : "Compare scenarios"}</h1>
     {(single ? [0] : [0, 1]).map((index) => {
       const choice = resolvedChoice(index);
       const name = single ? "Scenario" : index === 0 ? "Left" : "Right";

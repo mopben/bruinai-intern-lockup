@@ -52,6 +52,12 @@ const MAKE = "98EA7E27-B557-42A2-9AE3-1C7A609FDAC0";
 const FINISH = "9886D544-4186-4B47-978D-7D032CCECDEA";
 
 describe("Play numbers", () => {
+  it("explains an empty shift instead of treating NaN as a successful prediction", () => {
+    const n = layoutNumbers(a.scan, { ...a.setup, schedule: { orders: [] } }, a.layout, calA);
+    expect(n.walking.ok).toBe(true);
+    expect(n.time).toEqual({ ok: false, message: "This shift has no orders. Set its quantities in Orders." });
+  });
+
   it("uses the requested simulation releases", () => {
     const releases = releasesFor(a.setup.schedule.orders, 15);
     const n = layoutNumbers(a.scan, a.setup, a.layout, calA, releases);

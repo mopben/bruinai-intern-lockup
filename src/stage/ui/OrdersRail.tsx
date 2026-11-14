@@ -1,3 +1,5 @@
+import { savedShifts, setShiftFinance } from "../state/workspace";
+import { economics } from "../state/economics";
 import { useState } from "preact/hooks";
 import type { MenuItem, StepDef } from "../../core";
 import { createRecipe, setRecipeQuantity, updateRecipe } from "../app/recipes";
@@ -9,6 +11,9 @@ import { ShiftControls } from "./LibraryControls";
 
 function RecipeCard({ recipe, initiallyOpen }: { recipe: MenuItem; initiallyOpen: boolean }) {
   const k = kitchen.value!;
+  const shift = savedShifts.value.find(s => s.id === activeShiftId.value);
+  const price = shift?.prices?.[recipe.id] ?? economics.value?.menu[recipe.id];
+  const money = (field: "price" | "ingredients", value: number) => setShiftFinance({ prices: { [recipe.id]: { price: price?.price ?? 4.5, ingredients: price?.ingredients ?? 1.2, [field]: value } } });
   const stations = k.setup.items.filter((s) => s.role === "station");
   const storage = k.setup.items.filter((s) => s.role === "storage");
   const cal = calibration.value;
@@ -31,6 +36,10 @@ function RecipeCard({ recipe, initiallyOpen }: { recipe: MenuItem; initiallyOpen
           editKitchen((x) => setRecipeQuantity(x, recipe.id, value));
           orderCount.value = null;
         }} /></label>
+        <div class="st-cost-grid">
+          {(["price", "ingredients"] as const).map(field => <label class="st-field" key={field}>{field === "price" ? "Selling price" : "Ingredient cost"}<input aria-label={field === "price" ? "Selling price" : "Ingredient cost"} type="number" min="0" step="0.01" value={price?.[field] ?? (field === "price" ? 4.5 : 1.2)} onChange={event => { const v = event.currentTarget.valueAsNumber; if (Number.isFinite(v) && v >= 0) money(field, v); }} /></label>)}
+        </div>
+        {!shift?.prices?.[recipe.id] ? <p class="st-small">Prices use setup values or examples until you enter them here.</p> : null}
         <ol class="st-recipe-steps">
           {recipe.steps.map((step, i) => (
             <li key={i}>
@@ -76,6 +85,7 @@ export function OrdersRail() {
   const hasStations = k.setup.items.some((s) => s.role === "station");
   return <div class="st-card" data-testid="orders-rail">
     <ShiftControls />
+    {activeShiftId.value ? <label class="st-field">Shift duration (hours)<input data-testid="shift-hours" type="number" min="0.01" max="168" step="0.25" value={(savedShifts.value.find(s => s.id === activeShiftId.value)?.durationSeconds ?? 3600) / 3600} onChange={event => { const v = event.currentTarget.valueAsNumber; if (Number.isFinite(v) && v > 0 && v <= 168) setShiftFinance({ durationSeconds: v * 3600 }); }} /></label> : null}
     {activeShiftId.value ? <>
     <h2>Orders</h2>
     <div class="st-recipes">{k.setup.menu.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} initiallyOpen={created === recipe.id} />)}</div>

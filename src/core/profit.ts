@@ -139,8 +139,10 @@ export function profitFromCapacity(world: World, econ: Economics, capacity: Rang
   const demand = Math.max(0, econ.demandPerHour);
   const sell = (c: number) => Math.min(demand, c);
   const sales: Range = { p10: sell(capacity.p10), p50: sell(capacity.p50), p90: sell(capacity.p90) };
-  const revenue = (s: number) => s * margin;
-  const profit = (s: number) => revenue(s) - wages - fixed;
+  const mix = world.setup.schedule.orders.length ? world.setup.schedule.orders.map(o => o.itemId) : world.setup.menu.map(m => m.id);
+  const price = mix.length ? mix.reduce((sum, id) => sum + (econ.menu[id]?.price ?? 0), 0) / mix.length : 0;
+  const revenue = (s: number) => s * price;
+  const profit = (s: number) => s * margin - wages - fixed;
   // Profit only grows with sales when the margin is positive; keep p10 <= p90 either way.
   const ps = [profit(sales.p10), profit(sales.p50), profit(sales.p90)].sort((a, b) => a - b);
   const rs = [revenue(sales.p10), revenue(sales.p50), revenue(sales.p90)].sort((a, b) => a - b);
