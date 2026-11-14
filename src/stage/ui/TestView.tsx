@@ -57,7 +57,7 @@ function sidesKey(before: Layout | null, after: Layout | null): string {
 /** One row under a kitchen: what it is, the value, and how it was worked out. */
 function Row(props: { readonly what: string; readonly value: string | null; readonly cannot?: string | null; readonly how?: string; readonly testId: string }) {
   return (
-    <div class="st-row">
+    <div class="st-sim-row">
       <span class="what">{props.what}</span>
       {props.cannot ? (
         <span class="cannot" data-testid={`${props.testId}-cannot`}>

@@ -33,7 +33,8 @@ const ESSENTIAL: Record<string, readonly string[]> = {
     "btn-faster",
     "btn-check-real",
   ],
-  check: ["prediction-range", "run-clock", "btn-play", "measured-result", "verdict"],
+  // The way back from the check stays on screen, however long the rail card grows.
+  check: ["prediction-range", "run-clock", "btn-play", "measured-result", "verdict", "btn-back-to-sim"],
 };
 /** Numbers that must sit on one line. */
 const ONE_LINE = [

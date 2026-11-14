@@ -203,6 +203,12 @@
   display: flex;
   flex-direction: column;
 }
+/* Under the rail's card, not inside it: never scrolled out of view. */
+.st-rail-foot {
+  flex: none;
+  display: flex;
+  padding: 10px 0 0;
+}
 .st-card {
   flex: 1;
   min-height: 0;
@@ -701,37 +707,42 @@
 .st-half.after .label {
   background: var(--dr-select);
 }
-/* Under each kitchen: one row per number (what, value, how). */
+/*
+ * Under each kitchen: one row per number (what, value, how). Each value's line
+ * box holds the display font's whole text box, so a row's text never reaches
+ * into the row above or below it.
+ */
 .st-half .under {
   display: grid;
   grid-template-columns: max-content max-content minmax(0, 1fr);
   column-gap: clamp(10px, 1.2vw, 20px);
-  row-gap: 2px;
+  row-gap: clamp(2px, 0.5vh, 6px);
   align-items: baseline;
-  padding: 10px 6px 0;
+  padding: 8px 6px 0;
 }
-.st-row {
+.st-sim-row {
   display: contents;
 }
-.st-row .what,
-.st-row .how {
+.st-sim-row .what,
+.st-sim-row .how {
   font-size: var(--dr-size-small);
+  line-height: 1.5;
   color: var(--dr-ink-soft);
   white-space: nowrap;
 }
-.st-row .how {
+.st-sim-row .how {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.st-row .value {
+.st-sim-row .value {
   font-family: var(--dr-font-display);
   font-weight: 800;
-  font-size: clamp(20px, 1.9vw, 36px);
-  line-height: 1.15;
+  font-size: clamp(18px, min(1.8vw, 3.2vh), 34px);
+  line-height: 1.6;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.st-row .cannot {
+.st-sim-row .cannot {
   grid-column: span 2;
   font-size: var(--dr-size-small);
   color: var(--dr-alert);
