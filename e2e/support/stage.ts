@@ -45,13 +45,13 @@ export async function currentStep(page: Page): Promise<string> {
 }
 
 export async function expectStep(page: Page, view: View): Promise<void> {
-  const step = view === "scan" ? "build" : view === "play" ? "edit" : view === "orders" ? "orders" : "results";
+  const step = (view === "scan" || view === "play") ? "build" : view === "orders" ? "orders" : "results";
   await expect(page.getByTestId(`step-${step}`)).toHaveAttribute("aria-current", "step");
   if (step === "results") await expect(page.getByTestId(`view-${view}`)).toHaveAttribute("aria-current", "page");
 }
 
 export async function goView(page: Page, view: View): Promise<void> {
-  await page.keyboard.press(view === "scan" ? "1" : view === "play" ? "2" : view === "orders" ? "3" : "4");
+  await page.keyboard.press((view === "scan" || view === "play") ? "1" : view === "orders" ? "2" : "3");
   if (view === "run" || view === "test") await page.getByTestId(`view-${view}`).click();
   await expectStep(page, view);
 }

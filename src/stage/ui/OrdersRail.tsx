@@ -75,7 +75,6 @@ export function OrdersRail() {
   const hasStations = k.setup.items.some((s) => s.role === "station");
   return <div class="st-card" data-testid="orders-rail">
     <h1>Orders</h1>
-    <p class="st-note">Choose an order to customize how it is made. Set quantities to build your simulation’s order mix.</p>
     <div class="st-recipes">{k.setup.menu.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} initiallyOpen={created === recipe.id} />)}</div>
     <button type="button" class="st-add-recipe" aria-label="Create new order" disabled={!hasStations} onClick={() => {
       let id = "";
@@ -83,6 +82,5 @@ export function OrdersRail() {
       setCreated(id);
     }}><span aria-hidden="true">+</span> New order</button>
     {!hasStations ? <p class="st-note">Mark a kitchen item as a station in Edit to start making orders.</p> : null}
-    <p class="st-note">Changes apply to simulations. Original run replays the recorded orders.</p>
   </div>;
 }

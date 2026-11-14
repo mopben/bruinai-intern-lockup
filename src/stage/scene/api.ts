@@ -40,6 +40,8 @@ export interface KitchenSceneOptions {
   readonly onLayoutCommit?: (next: Layout) => void;
   /** Called on a click: the box id, or null for empty floor. */
   readonly onSelect?: (boxId: string | null) => void;
+  /** Right-click on empty floor, without a camera drag. */
+  readonly onFloorContextMenu?: (point: Vec2, client: { x: number; y: number }) => void;
   /** Let the operator pan (drag empty floor / middle-drag), zoom (wheel, pinch, +/-) and orbit (right- or Shift-drag). Default false. */
   readonly cameraControls?: boolean;
   /** Called after every camera move; `moved` is true while the view differs from the framed home view. */

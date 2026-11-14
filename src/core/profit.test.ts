@@ -34,6 +34,14 @@ const cal = calibrate(world, reconstructRun(setup, lines<TapEvent>("counter-a", 
 const econ = exampleEconomics(setup);
 
 describe("profit", () => {
+  it("uses individual salaries and the default for workers without an override", () => {
+    const first = world.workers[0]!;
+    const second = world.workers[1]!;
+    const e = { ...econ, wagePerHour: 20, workerWages: { [first.id]: 25.5, [second.id]: 0, removedWorker: 1000 } };
+    const p = profitFromCapacity(world, e, { p10: 100, p50: 120, p90: 140 });
+    expect(p.wagesPerHour).toBe(25.5 + (world.workers.length - 2) * 20);
+  });
+
   it("adds up: sales x margin, less wages and running costs", () => {
     const cap = { p10: 100, p50: 120, p90: 140 };
     const e = { ...econ, demandPerHour: 1000, wagePerHour: 20, electricityPerHour: 2, otherPerHour: 8, menu: { latte: { price: 5, ingredients: 1 } } };

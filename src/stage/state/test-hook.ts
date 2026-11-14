@@ -21,6 +21,7 @@ export interface DryRunTestHook {
   readonly firstRun: () => unknown;
   readonly playLayout: () => unknown;
   readonly main: () => SceneDebug | null;
+  readonly floorScreen: (x: number, z: number) => { x: number; y: number } | null;
   readonly scene: (name: string) => SceneDebug | null;
   readonly sceneNames: () => readonly string[];
 }
@@ -49,6 +50,7 @@ export function installTestHook(): void {
     },
     playLayout: () => playLayout.value,
     main: () => mainScene()?.debug() ?? null,
+    floorScreen: (x: number, z: number) => mainScene()?.projectToScreen(x, 0, z) ?? null,
     scene: (name: string) => namedScenes().get(name)?.debug() ?? null,
     sceneNames: () => [...namedScenes().keys()],
   });

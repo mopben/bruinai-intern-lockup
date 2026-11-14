@@ -1,0 +1,66 @@
+import { test, expect } from "./support/fixtures";
+import { goView, openStage } from "./support/stage";
+
+test("Edit lists current workers and saves each salary independently", async ({ page }) => {
+  await openStage(page);
+  await goView(page, "play");
+  await expect(page.getByTestId("profit-per-hour")).toHaveCount(0);
+  await expect(page.getByTestId("btn-rehearsed-m")).toHaveCount(0);
+  await expect(page.getByTestId("workers-section")).toHaveCount(0);
+  await page.getByTestId("btn-workers").click();
+  const dialog = page.getByRole("dialog", { name: "Workers" });
+  await expect(dialog).toBeVisible();
+  const bounds = await dialog.boundingBox();
+  const viewport = page.viewportSize()!;
+  expect(bounds!.width).toBeGreaterThan(viewport.width * 0.8);
+  expect(bounds!.height).toBeGreaterThan(viewport.height * 0.8);
+  expect(Math.abs(bounds!.x + bounds!.width / 2 - viewport.width / 2)).toBeLessThan(2);
+  const salaries = page.locator('[data-testid^="worker-salary-"]');
+  await expect(salaries).toHaveCount(3);
+  const otherSalary = await salaries.nth(1).inputValue();
+  const firstId = await salaries.first().getAttribute("data-testid");
+  await salaries.first().fill("27.50");
+  await salaries.first().blur();
+  await expect(salaries.first()).toHaveValue("27.5");
+  await expect(salaries.nth(1)).toHaveValue(otherSalary);
+  await page.reload();
+  await goView(page, "play");
+  await page.getByTestId("btn-workers").click();
+  await expect(page.getByTestId(firstId!)).toHaveValue("27.5");
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("workers-section")).toHaveCount(0);
+});
+
+test("Workers supports renaming, station assignment, adding, and removing", async ({ page }) => {
+  await openStage(page);
+  await goView(page, "play");
+  await page.getByTestId("btn-workers").click();
+  const names = page.locator('[data-testid^="worker-name-"]');
+  const firstNameId = await names.first().getAttribute("data-testid");
+  await names.first().fill("Alex");
+  await names.first().blur();
+  await expect(names.first()).toHaveValue("Alex");
+  const stations = page.locator('[data-testid^="worker-station-"]');
+  const targetStation = await stations.first().locator("option").last().getAttribute("value");
+  await stations.first().selectOption(targetStation!);
+  await expect(stations.first()).toHaveValue(targetStation!);
+  // App navigation shortcuts must leave the modal and its edits intact.
+  await page.getByTestId("btn-close-workers").focus();
+  await page.keyboard.press("Backspace");
+  await expect(names.first()).toHaveValue("Alex");
+  await page.getByTestId("new-worker-name").fill("Jamie");
+  await page.getByTestId("new-worker-station").selectOption(targetStation!);
+  await page.getByTestId("new-worker-salary").fill("24.75");
+  await page.getByTestId("btn-add-worker").click();
+  await expect(names).toHaveCount(4);
+  await expect(names.last()).toHaveValue("Jamie");
+  await expect(page.locator('[data-testid^="worker-salary-"]').last()).toHaveValue("24.75");
+  await expect(stations.last()).toHaveValue(targetStation!);
+  await page.locator('[data-testid^="worker-remove-"]').last().click();
+  await expect(names).toHaveCount(3);
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("workers-section")).toHaveCount(0);
+  await expect(page.getByTestId("btn-workers")).toBeFocused();
+  await page.keyboard.press("w");
+  await expect(page.getByTestId(firstNameId!)).toHaveValue("Alex");
+});

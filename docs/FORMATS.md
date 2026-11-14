@@ -174,7 +174,7 @@ A scanned box with no entry in `items` is treated as a fixture.
   "role": "station", "locked": true, "capacity": 1 }
 ```
 
-**`menu`**: the items you can order. Each step happens at a station. `fetchFrom` is optional: storage boxes the worker walks to and back from, once each, before working. Steps are numbered from 0. After the last step the item is carried to the pickup.
+**`menu`**: the items you can order. Each step happens at a station. `fetchFrom` is optional: storage boxes the worker walks to and back from, once each, before working. Steps are numbered from 0. After the last step the item is carried to the pickup. `workSeconds` is optional: a work time in seconds that the owner typed for this step. The simulator then uses that time as it is for this step, not the measured times, and the station needs no measured times for it.
 
 **`tasks`** (optional, per menu item): which steps must be done before which. Without it, `steps` is a chain: step k comes after step k−1. With it, `tasks[k]` describes `steps[k]`, and a tap's `step` is still the index in the list.
 

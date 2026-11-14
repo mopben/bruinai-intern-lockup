@@ -95,7 +95,7 @@ test("order count changes simulated Edit and compare numbers, not the real test 
   await expect(page.getByTestId("orders-count")).toHaveText(String(originalCount + 1));
   await expect(page.getByTestId("time-per-order")).not.toHaveText(originalTime);
   const simulated = await text(page, "time-per-order");
-  await expect(page.getByText(`The real run in step 3 keeps its own ${originalCount} orders.`)).toBeVisible();
+  await expect(page.getByText(`The real run in step 4 keeps its own ${originalCount} orders.`)).toBeVisible();
   await page.keyboard.press("4");
   await expect(page.getByTestId("compare-before-time")).toHaveText(simulated);
   await expect(page.getByTestId("compare-before-done")).toContainText(`of ${originalCount + 1}`);

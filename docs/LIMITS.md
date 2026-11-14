@@ -56,7 +56,7 @@ Everything below needs a real device, a real room or real people. None of it has
 
 1. **Take the first real scan** of the staged counter with the LiDAR iPhone, load it, and check sizes, categories and which side is the front. This is the first true test of level 2.
 2. **Run the first real staged run**: tablet, filming phone, three people in hats. Record it, validate the folder, and play it back. This is the first true test of level 3.
-3. **Rehearse the prediction and count.** Run the change for real five to ten times and record how often the measured mean lands inside the range. Keep the real-run check in the demo only if it holds most of the time.
+3. **Rehearse the prediction and count.** Run the change for real five to ten times and record how often the measured mean lands inside the range. Keep the real second run (After the change) in the demo only if it holds most of the time.
 4. **Measure the camera on the day's light**: average and worst dot error against tape marks, and how often each hat is lost.
 5. **Time the full live demo** on the real network and the real projector, with someone at the back of the room reading the numbers.
 6. **Practise every fallback** in the runbook at least once with the real devices.

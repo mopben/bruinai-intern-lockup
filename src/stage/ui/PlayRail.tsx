@@ -1,50 +1,19 @@
 /**
- * Step 2, Edit. The judge changes one thing; the two numbers answer during the drag,
- * and so does profit per hour. Suggestions rank changes by that profit.
+ * Step 2, Edit. Adjust the layout and staffing, then compare walking and order time.
  */
 import { formatMetres, formatRange, formatSeconds } from "../../core";
 import type { Suggestion } from "../app/suggest";
-import { addWorker, removeWorker, workersAt } from "../app/kitchen-edit";
-import { changeKind } from "../app/layout-match";
 import { clampOrders, MAX_ORDERS, MIN_ORDERS } from "../app/orders";
 import { changeDirection } from "../app/words";
-import { baselineNumbers, calibration, firstRunProblem, originalLayout, playNumbers } from "../state/derive";
+import { baselineNumbers, calibration, firstRunProblem, playNumbers } from "../state/derive";
 import { costsOpen, economics, workersOpen } from "../state/economics";
 import { applySuggestion, startSuggest, suggestState, undoSuggestion } from "../state/suggest";
-import { applyRehearsed, resetPlay } from "../state/flow";
-import { candidates, kitchen, orderCount, playLayout, selectedId } from "../state/store";
+import { resetPlay } from "../state/flow";
+import { kitchen, orderCount, playLayout, selectedId } from "../state/store";
 import { BigNum, Btn } from "./bits";
 import { CostsSection } from "./CostsSection";
-import { WorkersSection } from "./WorkersSection";
 import { ExtrapolationNote } from "./Basis";
 import { ItemPanel } from "./ItemPanel";
-
-function Staffing() {
-  const k = kitchen.value;
-  const layout = playLayout.value;
-  if (!k || !layout) return null;
-  const route = k.setup.menu.flatMap((m) => m.steps.map((s) => s.stationId));
-  const stations = [...new Set(route)];
-  const name = (id: string) => k.setup.items.find((i) => i.boxId === id)?.name ?? id;
-  return (
-    <div class="st-staff" data-testid="staffing">
-      {stations.map((id) => (
-        <div class="line" key={id}>
-          <span>{name(id)}</span>
-          <span class="st-hats">
-            {layout.workers
-              .filter((w) => w.stationId === id)
-              .map((w) => (
-                <span key={w.id} class="st-hat" style={{ background: w.color }} title={w.name} />
-              ))}
-          </span>
-          <Btn small label="−" onClick={() => (playLayout.value = removeWorker(layout, id))} disabled={workersAt(layout, id) === 0} testId={`btn-remove-worker-${id}`} title={`Take a worker away from ${name(id)}`} />
-          <Btn small label="+ worker" onClick={() => (playLayout.value = addWorker(layout, id))} testId={`btn-add-worker-${id}`} />
-        </div>
-      ))}
-    </div>
-  );
-}
 
 /** Lists changes ranked by profit; pressing again while it searches stops it. */
 function SuggestButton() {
@@ -68,15 +37,10 @@ function SuggestButton() {
 /** The quick changes: the rehearsed ones, suggestions, costs and reset. */
 function Rehearsed() {
   const k = kitchen.value;
-  const original = originalLayout.value;
-  if (!k || !original) return null;
-  const list = candidates.value.map((c) => ({ c, kind: changeKind(k.scan, k.setup, original, c.layout) }));
-  const move = list.find((x) => x.kind === "move");
-  const staff = list.find((x) => x.kind === "staff");
+  if (!k) return null;
   return (
     <div class="st-row">
-      {staff ? <Btn small label="Add worker" title={staff.c.meta.title} k="W" onClick={() => applyRehearsed("w")} testId="btn-rehearsed-w" /> : null}
-      <Btn small label="Workers" kind={workersOpen.value ? "on" : "plain"} onClick={() => (workersOpen.value = !workersOpen.value)} testId="btn-workers" />
+      <Btn small label="Workers" k="W" kind={workersOpen.value ? "on" : "plain"} onClick={() => (workersOpen.value = !workersOpen.value)} testId="btn-workers" />
       <SuggestButton />
       <Btn small label="Costs" title="Prices and costs" k="C" onClick={() => (costsOpen.value = !costsOpen.value)} testId="btn-costs" />
       <Btn small label="Reset" k="⌫" onClick={resetPlay} testId="btn-reset" />
@@ -169,7 +133,7 @@ export function PlayRail() {
       <div class="st-card">
         <h1>Change one thing</h1>
         <Rehearsed />
-        <WorkersSection />
+
         <p class="st-note">{problem}</p>
       </div>
     );
@@ -185,9 +149,7 @@ export function PlayRail() {
   const dir = time && timeBefore && timeChanged ? changeDirection(timeBefore.meanOrderTime.p50, time.meanOrderTime.p50) : null;
   return (
     <div class="st-card play">
-      <Money />
       <Rehearsed />
-      <WorkersSection />
       <CostsSection />
       <div class="st-nums pair">
         <BigNum
@@ -215,7 +177,6 @@ export function PlayRail() {
           Prediction{countChanged ? ` (${count} orders)` : ""}: <span data-testid="prediction-range">{formatRange(time.meanOrderTime)}</span>
         </p>
       ) : null}
-      <Staffing />
       <Orders />
       <Suggestions />
       <ExtrapolationNote prediction={time} />

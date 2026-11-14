@@ -1,0 +1,52 @@
+import { expect, test } from "./support/fixtures";
+import { BOX, goView, mainDebug, openStage } from "./support/stage";
+
+test("right-click a floor square in Edit to add and customize a component", async ({ page }) => {
+  await openStage(page, { step: 2 });
+  const scene = page.getByTestId("kitchen-scene");
+  const bounds = (await scene.boundingBox())!;
+  const point = await page.evaluate(() => (globalThis as unknown as { __dryrun: { floorScreen(x: number, z: number): { x: number; y: number } } }).__dryrun.floorScreen(2.5, 1.5));
+  const x = bounds.x + point.x;
+  const y = bounds.y + point.y;
+  await page.mouse.click(x, y, { button: "right" });
+  const menu = page.getByRole("menu", { name: "Add a component" });
+  await expect(menu).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(menu).toHaveCount(0);
+  await page.mouse.click(x, y, { button: "right" });
+  await menu.getByRole("menuitem", { name: "Espresso machine", exact: true }).click();
+  await expect(page.getByTestId("item-name")).toHaveValue("Espresso machine");
+  await page.getByTestId("item-name").fill("Second espresso machine");
+  const added = (await mainDebug(page)).items.find((item) => item.name === "Second espresso machine");
+  expect(added?.role).toBe("station");
+  expect(added?.locked).toBe(false);
+  await page.getByTestId("btn-panel-done").click();
+  await goView(page, "orders");
+  await page.locator(".st-recipe summary").first().click();
+  await expect(page.getByLabel("Add a preparation step").first().getByRole("option", { name: "Second espresso machine" })).toHaveCount(1);
+  await goView(page, "scan");
+  await page.mouse.click(x, y, { button: "right" });
+  await expect(menu).toHaveCount(0);
+});
+
+test("Delete removes the selected component in Edit but respects text fields", async ({ page }) => {
+  await openStage(page, { step: 2 });
+  const before = await mainDebug(page);
+  const point = before.screen[BOX.make]!;
+  await page.mouse.click(point.x, point.y);
+  const name = page.getByTestId("item-name");
+  await expect(name).toHaveValue("Espresso machine");
+  await name.focus();
+  await page.keyboard.press("Delete");
+  expect((await mainDebug(page)).items.some((item) => item.id === BOX.make)).toBe(true);
+  await name.blur();
+  await page.keyboard.press("Delete");
+  await expect(page.getByTestId("item-panel")).toHaveCount(0);
+  await expect.poll(async () => (await mainDebug(page)).items.some((item) => item.id === BOX.make)).toBe(false);
+  await page.keyboard.press("Delete");
+  expect((await mainDebug(page)).items).toHaveLength(before.items.length - 1);
+  await goView(page, "orders");
+  await page.locator(".st-recipe summary").first().click();
+  await expect(page.locator(".st-recipe").first().locator(".st-recipe-steps li")).toHaveCount(2);
+  await expect(page.getByLabel("Add a preparation step").first().getByRole("option", { name: "Espresso machine", exact: true })).toHaveCount(0);
+});

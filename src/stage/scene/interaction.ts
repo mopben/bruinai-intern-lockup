@@ -23,6 +23,7 @@ export interface InteractionHost {
   zoom(factor: number, clientX: number, clientY: number): void;
   resetCamera(): void;
   setHover(id: string | null): void;
+  floorContextMenu?(point: { x: number; z: number }, client: { x: number; y: number }): void;
 }
 
 /** A press that moves less than this (CSS px) is a click. */
@@ -35,7 +36,7 @@ type Gesture =
   | { kind: "press"; id: string | null; x0: number; y0: number; pointerId: number }
   | { kind: "drag"; id: string; offX: number; offZ: number; pointerId: number }
   | { kind: "pan"; lastX: number; lastY: number; pointerId: number }
-  | { kind: "orbit"; lastX: number; lastY: number; pointerId: number; moved: boolean }
+  | { kind: "orbit"; lastX: number; lastY: number; x0: number; y0: number; pointerId: number; moved: boolean }
   | { kind: "pinch"; a: number; b: number; dist: number; midX: number; midY: number };
 
 export class Interaction {
@@ -106,7 +107,7 @@ export class Interaction {
     }
     if (cc && e.pointerType === "mouse") {
       if (e.button === 2 || (e.button === 0 && e.shiftKey)) {
-        this.g = { kind: "orbit", lastX: e.clientX, lastY: e.clientY, pointerId: e.pointerId, moved: false };
+        this.g = { kind: "orbit", lastX: e.clientX, lastY: e.clientY, x0: e.clientX, y0: e.clientY, pointerId: e.pointerId, moved: false };
         this.updateCursor();
         return;
       }
@@ -156,7 +157,7 @@ export class Interaction {
       const dx = e.clientX - g.lastX;
       const dy = e.clientY - g.lastY;
       if (Math.abs(dx) + Math.abs(dy) > 0) {
-        this.g = { ...g, lastX: e.clientX, lastY: e.clientY, moved: true };
+        this.g = { ...g, lastX: e.clientX, lastY: e.clientY, moved: g.moved || Math.hypot(e.clientX - g.x0, e.clientY - g.y0) >= CLICK_SLOP_PX };
         this.host.orbit(dx, dy);
       }
       return;
@@ -194,6 +195,10 @@ export class Interaction {
     }
     if ("pointerId" in g && g.pointerId !== e.pointerId) return;
     if (g.kind === "drag") this.host.endDrag(g.id);
+    if (g.kind === "orbit" && !g.moved && e.button === 2 && this.host.isEditable() && !this.host.pickItem(e.clientX, e.clientY)) {
+      const point = this.host.floorPoint(e.clientX, e.clientY);
+      if (point) this.host.floorContextMenu?.(point, { x: e.clientX, y: e.clientY });
+    }
     if (g.kind === "press" && Math.hypot(e.clientX - g.x0, e.clientY - g.y0) < CLICK_SLOP_PX) this.host.select(g.id);
     this.g = { kind: "none" };
     if (this.el.hasPointerCapture(e.pointerId)) this.el.releasePointerCapture(e.pointerId);

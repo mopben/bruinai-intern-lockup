@@ -7,11 +7,12 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { DEFAULT_SEED, formatMetres, formatRange, simulateRun, type Layout, type RunTrace, type World } from "../../core";
 import { explainError, layoutNumbers, tryWorld, type LayoutNumbers } from "../app/numbers";
 import { indexMovements, ordersDoneBy, simulatedWorkers, ticketsAtTime } from "../app/playback";
+import { busiestWorker, waitsMostAt } from "../app/words";
 import { calibration, firstRunProblem, originalLayout, simReleases, usableFirstRun } from "../state/derive";
 import { registerScene } from "../state/scene-ref";
 import { compareCommand, kitchen, params, playLayout, testPlan } from "../state/store";
 import { createKitchenScene, type KitchenSceneHandle } from "../scene";
-import { BigNum, Btn, clock } from "./bits";
+import { Btn, clock } from "./bits";
 
 const FAST = 4;
 const TAIL_S = 1.5;
@@ -62,6 +63,25 @@ export function currentAfterLayout(): Layout | null {
   return plan && plan.judgeLayout === judge ? plan.layout : judge;
 }
 
+/** One row under a kitchen: what it is, the value, and how it was worked out. */
+function Row(props: { readonly what: string; readonly value: string | null; readonly cannot?: string | null; readonly how?: string; readonly testId: string }) {
+  return (
+    <div class="st-sim-row">
+      <span class="what">{props.what}</span>
+      {props.cannot ? (
+        <span class="cannot" data-testid={`${props.testId}-cannot`}>
+          {props.cannot}
+        </span>
+      ) : (
+        <span class="value" data-testid={props.testId}>
+          {props.value ?? "—"}
+        </span>
+      )}
+      <span class="how">{props.how ?? ""}</span>
+    </div>
+  );
+}
+
 function Half(props: { readonly side: Side; readonly t: number; readonly onScene: (h: KitchenSceneHandle | null) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const { side } = props;
@@ -87,6 +107,12 @@ function Half(props: { readonly side: Side; readonly t: number; readonly onScene
     };
   }, [side]);
   const n = side.numbers;
+  const p = n.time.ok ? n.time.value : null;
+  // With covering workers, walking includes walks between stations, averaged over the simulated runs.
+  const average = p?.walkingIsAverage ?? false;
+  const walking = n.walking.ok ? formatMetres(average && p ? p.walkingPerOrderM : n.walking.value.perOrderM) : null;
+  const stationName = (sid: string) => side.world?.itemsById.get(sid)?.name ?? sid;
+  const workerName = (wid: string) => side.layout.workers.find((w) => w.id === wid)?.name ?? wid;
   const done = side.trace ? ordersDoneBy(side.trace, props.t) : 0;
   const id = side.label.toLowerCase();
   return (
@@ -95,15 +121,12 @@ function Half(props: { readonly side: Side; readonly t: number; readonly onScene
         <span class="label">{side.label}</span>
       </div>
       <div class="under st-compare-rail">
-        <BigNum mid what="Walking per order" value={n.walking.ok ? formatMetres(n.walking.value.perOrderM) : null} cannot={n.walking.ok ? null : n.walking.message} how="Exact" testId={`compare-${id}-walking`} />
-        <BigNum mid what="Time per order" value={n.time.ok ? formatRange(n.time.value.meanOrderTime) : null} cannot={n.time.ok ? null : n.time.message} how="Simulated range" testId={`compare-${id}-time`} />
-        <div class="st-num">
-          <span class="what">This run</span>
-          <span class="value mid" data-testid={`compare-${id}-done`}>
-            {side.trace ? `${done} of ${side.trace.orders.length}` : "—"}
-          </span>
-          <span class="how">{side.problem ?? "orders done"}</span>
-        </div>
+        <Row what="Time per order" value={p ? formatRange(p.meanOrderTime) : null} cannot={n.time.ok ? null : n.time.message} how="Simulated range" testId={`compare-${id}-time`} />
+        <Row what="Slow orders" value={p ? formatRange(p.slowOrderTime) : null} how="1 in 10 is slower" testId={`compare-${id}-slow`} />
+        <Row what="Walking per order" value={walking} cannot={n.walking.ok ? null : n.walking.message} how={average ? "Average" : "Exact"} testId={`compare-${id}-walking`} />
+        <Row what="Waits most at" value={p ? waitsMostAt(p.bottleneckStationId, stationName) : null} testId={`compare-${id}-bottleneck`} />
+        <Row what="Busiest" value={p ? busiestWorker(p.workers, workerName) : null} testId={`compare-${id}-busiest`} />
+        <Row what="This run" value={side.trace ? `${done} of ${side.trace.orders.length}` : null} how={side.problem ?? "orders done"} testId={`compare-${id}-done`} />
       </div>
     </div>
   );

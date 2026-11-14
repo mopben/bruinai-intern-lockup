@@ -70,7 +70,8 @@ export function setRole(kitchen: Kitchen, boxId: string, role: ItemRole): Kitche
 
 function withoutFetch(step: StepDef, storageId: string): StepDef {
   const rest = (step.fetchFrom ?? []).filter((f) => f !== storageId);
-  return rest.length > 0 ? { ...step, fetchFrom: rest } : { stationId: step.stationId };
+  const { fetchFrom: _fetchFrom, ...remaining } = step;
+  return rest.length > 0 ? { ...step, fetchFrom: rest } : remaining;
 }
 
 // --- workers ----------------------------------------------------------------

@@ -23,6 +23,10 @@
 .st-add-recipe { display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; margin: 16px 0; padding: 12px; border: 2px dashed var(--dr-ink); border-radius: 12px; background: transparent; color: var(--dr-ink); font: inherit; font-weight: 800; cursor: pointer; }
 .st-add-recipe span { font-size: 1.6em; }
 .st-add-recipe:disabled { opacity: .4; cursor: default; }
+.st-component-menu { position: fixed; z-index: 100; width: 230px; padding: 8px; border: 2px solid var(--dr-ink); border-radius: 12px; background: var(--dr-paper); color: var(--dr-ink); box-shadow: 0 8px 24px #0003; cursor: default; }
+.st-component-menu strong { display: block; padding: 8px 10px; }
+.st-component-menu button { display: block; width: 100%; text-align: left; padding: 10px; border: 0; border-radius: 6px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.st-component-menu button:hover, .st-component-menu button:focus-visible { background: var(--dr-ink); color: var(--dr-paper); outline: none; }
 .st-root {
   position: fixed;
   inset: 0;
@@ -790,14 +794,45 @@
 .st-half.after .label {
   background: var(--dr-select);
 }
+/*
+ * Under each kitchen: one row per number (what, value, how). Each value's line
+ * box holds the display font's whole text box, so a row's text never reaches
+ * into the row above or below it.
+ */
 .st-half .under {
-  display: flex;
-  gap: 28px;
-  align-items: flex-end;
-  padding: 12px 6px 0;
+  display: grid;
+  grid-template-columns: max-content max-content minmax(0, 1fr);
+  column-gap: clamp(10px, 1.2vw, 20px);
+  row-gap: clamp(2px, 0.5vh, 6px);
+  align-items: baseline;
+  padding: 8px 6px 0;
 }
-.st-compare-rail .st-num .value {
-  font-size: var(--dr-size-display);
+.st-sim-row {
+  display: contents;
+}
+.st-sim-row .what,
+.st-sim-row .how {
+  font-size: var(--dr-size-small);
+  line-height: 1.5;
+  color: var(--dr-ink-soft);
+  white-space: nowrap;
+}
+.st-sim-row .how {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.st-sim-row .value {
+  font-family: var(--dr-font-display);
+  font-weight: 800;
+  font-size: clamp(18px, min(1.8vw, 3.2vh), 34px);
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.st-sim-row .cannot {
+  grid-column: span 2;
+  font-size: var(--dr-size-small);
+  color: var(--dr-alert);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -856,20 +891,6 @@
 }
 .st-runline .st-say {
   padding-bottom: 0.2em;
-}
-/* Compare: three numbers per side on one line each. */
-.st-half .under {
-  gap: clamp(14px, 1.6vw, 28px);
-}
-.st-compare-rail .st-num .what,
-.st-compare-rail .st-num .how {
-  white-space: nowrap;
-}
-.st-compare-rail .st-num .what {
-  font-size: var(--dr-size-small);
-}
-.st-compare-rail .st-num .value {
-  font-size: clamp(30px, 3.1vw, 64px);
 }
 
 @media (max-height: 860px), (max-width: 1100px) {
@@ -1111,3 +1132,65 @@
 .st-worker-name { display: flex; align-items: center; gap: 10px; font-weight: 800; }
 .st-worker-name small { display: block; font-weight: 600; color: var(--dr-ink-soft); }
 .st-worker-row .st-input { width: 100%; }
+
+/* Worker management occupies the viewport independently of the side panel. */
+.st-workers-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: 92vw;
+  max-width: 1600px;
+  height: 88dvh;
+  max-height: 940px;
+  box-sizing: border-box;
+  padding: 0;
+  border: 3px solid var(--dr-ink);
+  border-radius: 22px;
+  background: var(--dr-paper);
+  color: var(--dr-ink);
+  font: inherit;
+  box-shadow: 0 24px 100px #0005;
+  overflow: hidden;
+}
+.st-workers-dialog[open] { display: flex; flex-direction: column; }
+.st-workers-dialog::backdrop { background: #211c18aa; backdrop-filter: blur(5px); }
+.st-workers-head, .st-workers-foot { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 22px 32px; flex-shrink: 0; }
+.st-workers-head { border-bottom: 2px solid var(--dr-board-edge); }
+.st-workers-head h1 { margin: 0; font: 800 clamp(30px, 3vw, 48px) var(--dr-font-display); }
+.st-workers-head p { margin: 4px 0 0; }
+.st-workers-body { overflow-y: auto; padding: 28px 32px; display: grid; gap: 32px; }
+.st-workers-body h2 { margin: 0 0 16px; font: 800 26px var(--dr-font-display); }
+.st-workers-count { opacity: .55; margin-left: 8px; }
+.st-workers-list { display: grid; gap: 14px; }
+.st-worker-card { display: grid; grid-template-columns: 70px minmax(150px, 1.2fr) minmax(150px, 1fr) minmax(150px, 1fr) auto; align-items: end; gap: 20px; padding: 20px; border: 2px solid var(--dr-board-edge); border-radius: 14px; }
+.st-workers-dialog .st-field { min-width: 0; }
+.st-workers-dialog .st-input { box-sizing: border-box; width: 100%; min-width: 0; font-size: 18px; }
+.st-worker-color input { width: 48px; height: 42px; padding: 2px; border: 1px solid var(--dr-board-edge); border-radius: 8px; background: transparent; cursor: pointer; }
+.st-worker-add { padding: 24px; background: var(--dr-table); border-radius: 14px; }
+.st-worker-add-fields { display: grid; grid-template-columns: 1.2fr 1fr 1fr auto; gap: 20px; align-items: end; }
+.st-workers-foot { border-top: 2px solid var(--dr-board-edge); font-size: 15px; margin-top: auto; }
+@media (max-width: 1000px) {
+  .st-worker-card { grid-template-columns: 60px 1fr 1fr; }
+  .st-worker-add-fields { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .st-workers-dialog { width: 96vw; height: 94dvh; border-radius: 14px; }
+  .st-workers-head, .st-workers-foot { padding: 16px; }
+  .st-workers-body { padding: 16px; }
+  .st-worker-card { grid-template-columns: 1fr 1fr; gap: 14px; padding: 14px; }
+  .st-worker-add-fields { grid-template-columns: 1fr; }
+}
+
+.st-build-import { border-bottom: 2px dashed var(--dr-board-edge); }
+.st-import-body { gap: 20px; }
+.st-import-body .st-panel-actions { padding: 0; }
+.st-import-body .st-card { padding: 20px; border: 2px solid var(--dr-board-edge); border-radius: 14px; }
+.st-import-body .st-inputs { padding: 24px 0; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.st-import-body .st-inputs > h2, .st-import-body .st-inputs > h3, .st-import-body .st-inputs > .st-urls, .st-import-body .st-inputs > .st-field, .st-import-body .st-inputs > p { grid-column: 1 / -1; }
+.st-import-body .st-inputs > .st-field { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.st-import-body .st-select { max-width: 100%; width: 100%; }
+.st-import-notices { display: grid; gap: 8px; }
+.st-import-notices .st-chip { white-space: normal; }
+@media (max-width: 750px) {
+  .st-import-body .st-inputs, .st-import-body .st-inputs > .st-field { grid-template-columns: 1fr; }
+}

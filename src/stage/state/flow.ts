@@ -204,6 +204,7 @@ export function resetPlay(): void {
 
 /** Everything that happens when the step changes. */
 export function goTo(next: ViewId): void {
+  if (next === "scan") next = "play";
   const prev = view.value;
   if (next === prev) return;
   if (prev === "scan") settleReveal();
