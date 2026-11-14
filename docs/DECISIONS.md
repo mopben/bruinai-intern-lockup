@@ -170,3 +170,9 @@ Short entries: what we chose and why. Append under your own heading.
 - **Compare and the Test layout follow Play**: a test plan remembers the Play layout it was made for; if Play changed since, Compare shows the layout in Play now. P and the Start button follow the inputs as they are now: switching a prepared live run's inputs to recorded prepares (plays) the recording instead.
 - **A saved live first run's id is the base of a later second run** (`baseRunId: rec-…`), so the second run is listed under it.
 - **Live-path test uses a real tablet page and a simulated camera** (a WebSocket client sending the counter-a position log at its own times, 10 Hz). Tickets are tapped as soon as they appear, so work times are short; the test checks the plumbing (dots, tickets, end, save, validator, Trust), not realistic numbers. It runs in real time (about a minute): the stage is the run clock and the schedule is the kitchen's own.
+
+## 2026-11-14: The task-centred engine replaces the station-queue simulator
+
+- **`predict`, `simulateRun` and `trustCheck` now run on `compileEngineModel` + `runEngine`** (`src/core/engine/`); `src/core/sim.ts` and `src/core/model.ts` are deleted. Names, signatures and options are unchanged. Before the switch the two engines agreed to 1e-9 s on 123 kitchens; `src/core/engine/golden.json` keeps 18 old-engine runs (three fixtures, replications 0–2, both pace modes) and `golden.test.ts` holds the engine to them. Coverage is unchanged: 39/40 and 24/40.
+- **A prediction's `anyBlocked` also counts a covering worker's walk between stations that has no path** (`walking.anyBlocked || model.anyBlocked`).
+- **Speed** (`npx tsx tools/coverage/bench.ts`: `predict` on counter-a, 200 replications, 2,000 calls, Node 26, same machine, two runs each): old engine 1.553 / 1.504 ms per call; new engine 2.665 / 2.609 ms per call. About 1.7 times slower, inside the 3 times allowed; still far below a drag frame.

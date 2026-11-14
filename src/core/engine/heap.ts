@@ -1,7 +1,7 @@
 /**
  * The engine's event queue: a binary min-heap ordered by time, then by creation
  * sequence, so two events at one moment run in the order they were made.
- * The same order as the old engine's heap (sim.ts), which the equivalence test needs.
+ * The same order as the old station-queue engine's heap, which golden.test.ts needs.
  */
 
 export interface Timed {

@@ -78,10 +78,21 @@ export { detectTrips, TRIP_EXCURSION_M, TRIP_HOME_M, TRIP_MATCH_M, REST_SPEED_MP
 export type { Trip } from "./trips";
 
 // Simulation and prediction
-export { compileModel, SimError } from "./model";
-export type { SimModel } from "./model";
-export { runReplication } from "./sim";
-export type { Releases, Replication, ReplicationOptions } from "./sim";
+export { compileEngineModel, runEngine, oldestFirst, walkKey, SimError } from "./engine/index";
+export type {
+  EngineLeg,
+  EngineModel,
+  EngineOptions,
+  EngineTask,
+  EngineWorker,
+  ReadyTask,
+  Releases,
+  Replication,
+  ReplicationOptions,
+  RuleWorker,
+  TaskRule,
+  WorkPool,
+} from "./engine/index";
 export { predict, simulateRun, assumptionText, hasSharedStation, DEFAULT_REPS, DEFAULT_SEED } from "./predict";
 export type { Prediction, PredictOptions, SimulateRunOptions } from "./predict";
 

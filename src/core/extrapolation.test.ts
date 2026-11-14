@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 import { resolveWorld } from "./world";
 import { walkExtrapolation } from "./extrapolation";
 import { predict } from "./predict";
-import { compileModel } from "./model";
-import { runReplication } from "./sim";
+import { compileEngineModel, runEngine } from "./engine/index";
 import { walkingForItem } from "./walking";
 import { walkCheck } from "./walkcheck";
 import { rangeOf, mean } from "./stats";
@@ -59,10 +58,10 @@ describe("walk extrapolation", () => {
   });
 
   it("widens the range when extrapolating, by drawing the pace model per replication, without flicker", () => {
-    const m = compileModel(near, cal);
+    const m = compileEngineModel(near, cal);
     const orders = near.setup.schedule.orders;
     const meansFor = (mode: "calibrated" | "fit-or-speed") =>
-      Array.from({ length: 200 }, (_, r) => mean(runReplication(m, orders, 1, r, { paceModels: mode }).orderTimes));
+      Array.from({ length: 200 }, (_, r) => mean(runEngine(m, orders, 1, r, { paceModels: mode }).orderTimes));
     const width = (xs: number[]) => rangeOf(xs).p90 - rangeOf(xs).p10;
     expect(width(meansFor("fit-or-speed"))).toBeGreaterThan(width(meansFor("calibrated")));
     expect(meansFor("fit-or-speed")).toEqual(meansFor("fit-or-speed"));

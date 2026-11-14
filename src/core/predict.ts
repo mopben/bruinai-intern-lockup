@@ -5,8 +5,7 @@ import type { World } from "./world";
 import type { Calibration } from "./calibrate";
 import type { RunTrace } from "./trace";
 import { buildPathTable, walkingPerOrder, type PathTable, type WalkingSummary } from "./walking";
-import { compileModel } from "./model";
-import { runReplication, type Releases } from "./sim";
+import { compileEngineModel, runEngine, type Releases } from "./engine/index";
 import { mean, rangeOf, type Range } from "./stats";
 import { walkExtrapolation, type WalkExtrapolation } from "./extrapolation";
 
@@ -37,7 +36,7 @@ export interface Prediction {
   /** Exact walking per order, from the layout alone. */
   readonly walkingPerOrderM: number;
   readonly walking: WalkingSummary;
-  /** Some walk had no path and used a straight line. */
+  /** Some walk (a menu walk, or a covering worker's walk between stations) had no path and used a straight line. */
   readonly anyBlocked: boolean;
   /** Mean over replications of each order's time, in the order of the releases. */
   readonly perOrderMean: readonly number[];
@@ -91,7 +90,7 @@ export function predict(world: World, calibration: Calibration, opts: PredictOpt
   const seed = opts.seed ?? DEFAULT_SEED;
   const releases = opts.releases ?? world.setup.schedule.orders;
   const table = opts.table ?? buildPathTable(world);
-  const model = compileModel(world, calibration, table);
+  const model = compileEngineModel(world, calibration, table);
   const walking = walkingPerOrder(world, table);
   const extrapolation = walkExtrapolation(world, calibration, table);
   const paceModels = extrapolation.outside ? "fit-or-speed" : "calibrated";
@@ -100,7 +99,7 @@ export function predict(world: World, calibration: Calibration, opts: PredictOpt
   const doneBy: number[] = [];
   const perOrderSum = new Float64Array(releases.length);
   for (let r = 0; r < reps; r += 1) {
-    const rep = runReplication(model, releases, seed, r, { bootstrap: opts.bootstrap ?? true, paceModels });
+    const rep = runEngine(model, releases, seed, r, { bootstrap: opts.bootstrap ?? true, paceModels });
     means.push(mean(rep.orderTimes));
     lasts.push(rep.lastFinish);
     rep.orderTimes.forEach((v, i) => {
@@ -117,7 +116,7 @@ export function predict(world: World, calibration: Calibration, opts: PredictOpt
     completedBy: opts.byTime === undefined ? null : { t: opts.byTime, orders: rangeOf(doneBy) },
     walkingPerOrderM: walking.perOrderM,
     walking,
-    anyBlocked: walking.anyBlocked,
+    anyBlocked: walking.anyBlocked || model.anyBlocked,
     perOrderMean: Array.from(perOrderSum, (s) => s / reps),
     orderCount: releases.length,
     reps,
@@ -139,9 +138,9 @@ export interface SimulateRunOptions {
 /** One simulated run with its full trace, for the stage to animate. */
 export function simulateRun(world: World, calibration: Calibration, opts: SimulateRunOptions = {}): RunTrace {
   const table = opts.table ?? buildPathTable(world);
-  const model = compileModel(world, calibration, table);
+  const model = compileEngineModel(world, calibration, table);
   const outside = walkExtrapolation(world, calibration, table).outside;
-  const rep = runReplication(model, opts.releases ?? world.setup.schedule.orders, opts.seed ?? DEFAULT_SEED, opts.rep ?? 0, {
+  const rep = runEngine(model, opts.releases ?? world.setup.schedule.orders, opts.seed ?? DEFAULT_SEED, opts.rep ?? 0, {
     bootstrap: opts.bootstrap ?? true,
     trace: true,
     paceModels: outside ? "fit-or-speed" : "calibrated",

@@ -9,9 +9,26 @@ import { buildPathTable, pathBetween, type PathTable } from "../walking";
 import { planItems, type StepPlan } from "../plan";
 import { menuStations } from "../timeline";
 import { itemTasks, workerCovers, type ResolvedTask } from "../tasks";
-import { hashString, SimError } from "../model";
 import type { Pace, PaceMethod } from "../pace";
 import type { Trip } from "../trips";
+
+/** A layout or calibration the engine cannot run, in words safe to show. */
+export class SimError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "SimError";
+  }
+}
+
+/** FNV-1a hash of a string: a stable integer key for random streams. */
+export function hashString(s: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i += 1) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
 
 export interface EngineLeg {
   /** One-way walking length; 0 for a hand-off. */

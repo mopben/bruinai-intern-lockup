@@ -1,0 +1,3408 @@
+{
+ "seed": 1,
+ "calibratedOn": "counter-a",
+ "runs": [
+  {
+   "fixture": "counter-a",
+   "paceModels": "calibrated",
+   "rep": 0,
+   "orderTimes": [
+    13.249199999999998,
+    14.735399999999998,
+    16.5456,
+    19.159800000000008,
+    20.300000000000008,
+    23.124200000000005,
+    25.684400000000018,
+    27.53060000000002,
+    28.9268,
+    32.08300000000001
+   ],
+   "steps": [
+    [
+     {
+      "workerId": "red",
+      "startedAt": 1.37,
+      "tapAt": 4.0040000000000004
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 4.0040000000000004,
+      "tapAt": 12.480200000000002
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 12.480200000000002,
+      "tapAt": 14.619199999999998
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 6.78,
+      "tapAt": 9.529000000000003
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 12.480200000000002,
+      "tapAt": 19.376400000000004
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 19.376400000000004,
+      "tapAt": 21.5154
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 12.67,
+      "tapAt": 15.304
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 19.376400000000004,
+      "tapAt": 27.076600000000006
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 27.076600000000006,
+      "tapAt": 29.215600000000002
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 18.59,
+      "tapAt": 21.339000000000002
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 27.076600000000006,
+      "tapAt": 35.54580000000001
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 35.54580000000001,
+      "tapAt": 37.74980000000001
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 25.48,
+      "tapAt": 28.036000000000005
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 35.54580000000001,
+      "tapAt": 44.01500000000001
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 44.01500000000001,
+      "tapAt": 45.78000000000001
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 30.73,
+      "tapAt": 32.762
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 44.01500000000001,
+      "tapAt": 51.71520000000001
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 51.71520000000001,
+      "tapAt": 53.854200000000006
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 37.37,
+      "tapAt": 39.95
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 51.71520000000001,
+      "tapAt": 60.18440000000001
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 60.18440000000001,
+      "tapAt": 63.054400000000015
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 42.69,
+      "tapAt": 45.269999999999996
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 60.18440000000001,
+      "tapAt": 68.34060000000001
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 68.34060000000001,
+      "tapAt": 70.22060000000002
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 49.45,
+      "tapAt": 52.199000000000005
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 68.34060000000001,
+      "tapAt": 76.49680000000001
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 76.49680000000001,
+      "tapAt": 78.3768
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 55.11,
+      "tapAt": 57.69
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 76.49680000000001,
+      "tapAt": 84.96600000000001
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 84.96600000000001,
+      "tapAt": 87.19300000000001
+     }
+    ]
+   ]
+  },
+  {
+   "fixture": "counter-a",
+   "paceModels": "calibrated",
+   "rep": 1,
+   "orderTimes": [
+    12.4679,
+    14.253799999999998,
+    17.374700000000004,
+    19.4776,
+    21.479500000000005,
+    24.252399999999998,
+    26.096300000000006,
+    27.6122,
+    28.025100000000023,
+    32.08700000000003
+   ],
+   "steps": [
+    [
+     {
+      "workerId": "red",
+      "startedAt": 1.37,
+      "tapAt": 3.5229999999999997
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 3.5229999999999997,
+      "tapAt": 11.633899999999999
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 11.633899999999999,
+      "tapAt": 13.8379
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 6.78,
+      "tapAt": 8.239
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 11.633899999999999,
+      "tapAt": 19.2688
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 19.2688,
+      "tapAt": 21.0338
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 12.67,
+      "tapAt": 14.823
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 19.2688,
+      "tapAt": 27.3797
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 27.3797,
+      "tapAt": 30.044700000000006
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 18.59,
+      "tapAt": 21.17
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 27.3797,
+      "tapAt": 35.8406
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 35.8406,
+      "tapAt": 38.0676
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 25.48,
+      "tapAt": 27.633
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 35.8406,
+      "tapAt": 44.2945
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 44.2945,
+      "tapAt": 46.959500000000006
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 30.73,
+      "tapAt": 32.189
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 44.2945,
+      "tapAt": 52.7554
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 52.7554,
+      "tapAt": 54.9824
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 37.37,
+      "tapAt": 39.522999999999996
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 52.7554,
+      "tapAt": 60.4403
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 60.4403,
+      "tapAt": 63.466300000000004
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 42.69,
+      "tapAt": 45.269999999999996
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 60.4403,
+      "tapAt": 68.07520000000001
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 68.07520000000001,
+      "tapAt": 70.3022
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 49.45,
+      "tapAt": 51.356
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 68.07520000000001,
+      "tapAt": 75.71010000000003
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 75.71010000000003,
+      "tapAt": 77.47510000000003
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 55.11,
+      "tapAt": 56.569
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 75.71010000000003,
+      "tapAt": 84.17100000000003
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 84.17100000000003,
+      "tapAt": 87.19700000000003
+     }
+    ]
+   ]
+  },
+  {
+   "fixture": "counter-a",
+   "paceModels": "calibrated",
+   "rep": 2,
+   "orderTimes": [
+    11.773999999999997,
+    14.489000000000004,
+    17.034,
+    18.047,
+    19.288,
+    20.798,
+    22.839000000000006,
+    25.494000000000014,
+    25.65000000000002,
+    27.756000000000014
+   ],
+   "steps": [
+    [
+     {
+      "workerId": "red",
+      "startedAt": 1.37,
+      "tapAt": 2.829
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 2.829,
+      "tapAt": 10.917000000000002
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 10.917000000000002,
+      "tapAt": 13.143999999999998
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 6.78,
+      "tapAt": 8.749000000000002
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 10.917000000000002,
+      "tapAt": 18.399
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 18.399,
+      "tapAt": 21.269000000000005
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 12.67,
+      "tapAt": 14.639000000000001
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 18.399,
+      "tapAt": 26.677999999999997
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 26.677999999999997,
+      "tapAt": 29.704
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 18.59,
+      "tapAt": 20.743
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 26.677999999999997,
+      "tapAt": 34.16
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 34.16,
+      "tapAt": 36.637
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 25.48,
+      "tapAt": 28.036000000000005
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 34.16,
+      "tapAt": 41.742
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 41.742,
+      "tapAt": 44.768
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 30.73,
+      "tapAt": 33.286
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 41.742,
+      "tapAt": 49.324
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 49.324,
+      "tapAt": 51.528
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 37.37,
+      "tapAt": 40.119
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 49.324,
+      "tapAt": 57.732
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 57.732,
+      "tapAt": 60.209
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 42.69,
+      "tapAt": 45.246
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 57.732,
+      "tapAt": 65.31400000000001
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 65.31400000000001,
+      "tapAt": 68.18400000000001
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 49.45,
+      "tapAt": 52.03
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 65.31400000000001,
+      "tapAt": 72.89600000000002
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 72.89600000000002,
+      "tapAt": 75.10000000000002
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 55.11,
+      "tapAt": 57.859
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 72.89600000000002,
+      "tapAt": 80.38900000000001
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 80.38900000000001,
+      "tapAt": 82.86600000000001
+     }
+    ]
+   ]
+  },
+  {
+   "fixture": "counter-a",
+   "paceModels": "fit-or-speed",
+   "rep": 0,
+   "orderTimes": [
+    13.824600181648563,
+    15.886200363297135,
+    18.271800544945698,
+    21.461400726594267,
+    23.177000908242828,
+    26.576601089891387,
+    29.71220127153996,
+    32.13380145318851,
+    34.105401634837065,
+    37.837001816485625
+   ],
+   "steps": [
+    [
+     {
+      "workerId": "red",
+      "startedAt": 1.37,
+      "tapAt": 4.0040000000000004
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 4.0040000000000004,
+      "tapAt": 13.055600181648568
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 13.055600181648568,
+      "tapAt": 15.194600181648564
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 6.78,
+      "tapAt": 9.529000000000003
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 13.055600181648568,
+      "tapAt": 20.52720036329714
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 20.52720036329714,
+      "tapAt": 22.666200363297136
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 12.67,
+      "tapAt": 15.304
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 20.52720036329714,
+      "tapAt": 28.802800544945704
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 28.802800544945704,
+      "tapAt": 30.9418005449457
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 18.59,
+      "tapAt": 21.339000000000002
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 28.802800544945704,
+      "tapAt": 37.847400726594266
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 37.847400726594266,
+      "tapAt": 40.05140072659427
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 25.48,
+      "tapAt": 28.036000000000005
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 37.847400726594266,
+      "tapAt": 46.89200090824283
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 46.89200090824283,
+      "tapAt": 48.65700090824283
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 30.73,
+      "tapAt": 32.762
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 46.89200090824283,
+      "tapAt": 55.16760108989139
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 55.16760108989139,
+      "tapAt": 57.30660108989139
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 37.37,
+      "tapAt": 39.95
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 55.16760108989139,
+      "tapAt": 64.21220127153995
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 64.21220127153995,
+      "tapAt": 67.08220127153996
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 42.69,
+      "tapAt": 45.269999999999996
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 64.21220127153995,
+      "tapAt": 72.94380145318851
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 72.94380145318851,
+      "tapAt": 74.82380145318851
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 49.45,
+      "tapAt": 52.199000000000005
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 72.94380145318851,
+      "tapAt": 81.67540163483707
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 81.67540163483707,
+      "tapAt": 83.55540163483707
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 55.11,
+      "tapAt": 57.69
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 81.67540163483707,
+      "tapAt": 90.72000181648563
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 90.72000181648563,
+      "tapAt": 92.94700181648562
+     }
+    ]
+   ]
+  },
+  {
+   "fixture": "counter-a",
+   "paceModels": "fit-or-speed",
+   "rep": 1,
+   "orderTimes": [
+    12.4679,
+    14.253799999999998,
+    17.374700000000004,
+    19.4776,
+    21.479500000000005,
+    24.252399999999998,
+    26.096300000000006,
+    27.6122,
+    28.025100000000023,
+    32.08700000000003
+   ],
+   "steps": [
+    [
+     {
+      "workerId": "red",
+      "startedAt": 1.37,
+      "tapAt": 3.5229999999999997
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 3.5229999999999997,
+      "tapAt": 11.633899999999999
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 11.633899999999999,
+      "tapAt": 13.8379
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 6.78,
+      "tapAt": 8.239
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 11.633899999999999,
+      "tapAt": 19.2688
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 19.2688,
+      "tapAt": 21.0338
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 12.67,
+      "tapAt": 14.823
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 19.2688,
+      "tapAt": 27.3797
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 27.3797,
+      "tapAt": 30.044700000000006
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 18.59,
+      "tapAt": 21.17
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 27.3797,
+      "tapAt": 35.8406
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 35.8406,
+      "tapAt": 38.0676
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 25.48,
+      "tapAt": 27.633
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 35.8406,
+      "tapAt": 44.2945
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 44.2945,
+      "tapAt": 46.959500000000006
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 30.73,
+      "tapAt": 32.189
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 44.2945,
+      "tapAt": 52.7554
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 52.7554,
+      "tapAt": 54.9824
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 37.37,
+      "tapAt": 39.522999999999996
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 52.7554,
+      "tapAt": 60.4403
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 60.4403,
+      "tapAt": 63.466300000000004
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 42.69,
+      "tapAt": 45.269999999999996
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 60.4403,
+      "tapAt": 68.07520000000001
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 68.07520000000001,
+      "tapAt": 70.3022
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 49.45,
+      "tapAt": 51.356
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 68.07520000000001,
+      "tapAt": 75.71010000000003
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 75.71010000000003,
+      "tapAt": 77.47510000000003
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 55.11,
+      "tapAt": 56.569
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 75.71010000000003,
+      "tapAt": 84.17100000000003
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 84.17100000000003,
+      "tapAt": 87.19700000000003
+     }
+    ]
+   ]
+  },
+  {
+   "fixture": "counter-a",
+   "paceModels": "fit-or-speed",
+   "rep": 2,
+   "orderTimes": [
+    12.382216746821683,
+    15.705433493643383,
+    18.858650240465067,
+    20.47986698728676,
+    22.329083734108448,
+    24.447300480930135,
+    27.096517227751825,
+    30.35973397457353,
+    31.123950721395218,
+    33.838167468216895
+   ],
+   "steps": [
+    [
+     {
+      "workerId": "red",
+      "startedAt": 1.37,
+      "tapAt": 2.829
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 2.829,
+      "tapAt": 11.525216746821688
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 11.525216746821688,
+      "tapAt": 13.752216746821684
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 6.78,
+      "tapAt": 8.749000000000002
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 11.525216746821688,
+      "tapAt": 19.61543349364338
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 19.61543349364338,
+      "tapAt": 22.485433493643384
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 12.67,
+      "tapAt": 14.639000000000001
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 19.61543349364338,
+      "tapAt": 28.502650240465066
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 28.502650240465066,
+      "tapAt": 31.52865024046507
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 18.59,
+      "tapAt": 20.743
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 28.502650240465066,
+      "tapAt": 36.592866987286754
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 36.592866987286754,
+      "tapAt": 39.06986698728676
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 25.48,
+      "tapAt": 28.036000000000005
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 36.592866987286754,
+      "tapAt": 44.783083734108445
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 44.783083734108445,
+      "tapAt": 47.80908373410845
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 30.73,
+      "tapAt": 33.286
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 44.783083734108445,
+      "tapAt": 52.973300480930135
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 52.973300480930135,
+      "tapAt": 55.177300480930136
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 37.37,
+      "tapAt": 40.119
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 52.973300480930135,
+      "tapAt": 61.989517227751826
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 61.989517227751826,
+      "tapAt": 64.46651722775182
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 42.69,
+      "tapAt": 45.246
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 61.989517227751826,
+      "tapAt": 70.17973397457352
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 70.17973397457352,
+      "tapAt": 73.04973397457353
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 49.45,
+      "tapAt": 52.03
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 70.17973397457352,
+      "tapAt": 78.36995072139521
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 78.36995072139521,
+      "tapAt": 80.57395072139522
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 55.11,
+      "tapAt": 57.859
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 78.36995072139521,
+      "tapAt": 86.47116746821689
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 86.47116746821689,
+      "tapAt": 88.9481674682169
+     }
+    ]
+   ]
+  },
+  {
+   "fixture": "counter-b-fridge-closer",
+   "paceModels": "calibrated",
+   "rep": 0,
+   "orderTimes": [
+    9.396333026306703,
+    9.9612330263067,
+    10.0461330263067,
+    10.166033026306703,
+    8.937333026306707,
+    9.662233026306705,
+    10.066333026306715,
+    10.46223302630672,
+    9.41813302630672,
+    9.821033026306722
+   ],
+   "steps": [
+    [
+     {
+      "workerId": "red",
+      "startedAt": 1.37,
+      "tapAt": 4.0040000000000004
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 4.0040000000000004,
+      "tapAt": 8.627333026306706
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 8.627333026306706,
+      "tapAt": 10.766333026306702
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 6.78,
+      "tapAt": 9.529000000000003
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 9.529000000000003,
+      "tapAt": 12.57233302630671
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 14.602233026306706,
+      "tapAt": 16.741233026306702
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 12.67,
+      "tapAt": 15.304
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 15.304,
+      "tapAt": 19.151333026306702
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 20.577133026306704,
+      "tapAt": 22.7161330263067
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 18.59,
+      "tapAt": 21.339000000000002
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 21.339000000000002,
+      "tapAt": 25.955333026306704
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 26.552033026306702,
+      "tapAt": 28.756033026306703
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 25.48,
+      "tapAt": 28.036000000000005
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 28.036000000000005,
+      "tapAt": 32.65233302630671
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 32.65233302630671,
+      "tapAt": 34.41733302630671
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 30.73,
+      "tapAt": 32.762
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 32.762,
+      "tapAt": 36.60933302630671
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 38.25323302630671,
+      "tapAt": 40.392233026306705
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 37.37,
+      "tapAt": 39.95
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 39.95,
+      "tapAt": 44.56633302630671
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 44.56633302630671,
+      "tapAt": 47.43633302630671
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 42.69,
+      "tapAt": 45.269999999999996
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 45.269999999999996,
+      "tapAt": 49.573333026306706
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 51.272233026306715,
+      "tapAt": 53.15223302630672
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 49.45,
+      "tapAt": 52.199000000000005
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 52.199000000000005,
+      "tapAt": 56.502333026306715
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 56.98813302630672,
+      "tapAt": 58.86813302630672
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 55.11,
+      "tapAt": 57.69
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 57.69,
+      "tapAt": 62.3063330263067
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 62.704033026306725,
+      "tapAt": 64.93103302630672
+     }
+    ]
+   ]
+  },
+  {
+   "fixture": "counter-b-fridge-closer",
+   "paceModels": "calibrated",
+   "rep": 1,
+   "orderTimes": [
+    8.630668956668444,
+    8.815268956668444,
+    9.41986895666845,
+    9.556468956668446,
+    9.43466895666845,
+    10.241268956668446,
+    10.456868956668451,
+    11.193468956668447,
+    10.028068956668442,
+    11.223668956668448
+   ],
+   "steps": [
+    [
+     {
+      "workerId": "red",
+      "startedAt": 1.37,
+      "tapAt": 3.5229999999999997
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 3.5229999999999997,
+      "tapAt": 7.7966689566684435
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 7.7966689566684435,
+      "tapAt": 10.000668956668445
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 6.78,
+      "tapAt": 8.239
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 8.239,
+      "tapAt": 12.036668956668448
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 13.830268956668444,
+      "tapAt": 15.595268956668445
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 12.67,
+      "tapAt": 14.823
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 14.823,
+      "tapAt": 19.096668956668445
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 19.424868956668444,
+      "tapAt": 22.08986895666845
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 18.59,
+      "tapAt": 21.17
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 21.17,
+      "tapAt": 25.793668956668448
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 25.91946895666845,
+      "tapAt": 28.146468956668446
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 25.48,
+      "tapAt": 27.633
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 27.633,
+      "tapAt": 32.249668956668444
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 32.249668956668444,
+      "tapAt": 34.91466895666845
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 30.73,
+      "tapAt": 32.189
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 32.249668956668444,
+      "tapAt": 36.87333791333689
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 38.74426895666845,
+      "tapAt": 40.971268956668446
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 37.37,
+      "tapAt": 39.522999999999996
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 39.522999999999996,
+      "tapAt": 43.37066895666844
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 44.800868956668445,
+      "tapAt": 47.82686895666845
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 42.69,
+      "tapAt": 45.269999999999996
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 45.269999999999996,
+      "tapAt": 49.06766895666844
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 51.65646895666845,
+      "tapAt": 53.883468956668445
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 49.45,
+      "tapAt": 51.356
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 51.356,
+      "tapAt": 55.15366895666845
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 57.713068956668444,
+      "tapAt": 59.478068956668444
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 55.11,
+      "tapAt": 56.569
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 56.569,
+      "tapAt": 61.19266895666845
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 63.307668956668444,
+      "tapAt": 66.33366895666845
+     }
+    ]
+   ]
+  },
+  {
+   "fixture": "counter-b-fridge-closer",
+   "paceModels": "calibrated",
+   "rep": 2,
+   "orderTimes": [
+    8.258347924441647,
+    9.680147924441652,
+    10.777947924441657,
+    11.29674792444166,
+    11.394547924441664,
+    12.310347924441668,
+    12.109147924441679,
+    13.620947924441687,
+    13.026747924441686,
+    13.805547924441697
+   ],
+   "steps": [
+    [
+     {
+      "workerId": "red",
+      "startedAt": 1.37,
+      "tapAt": 2.829
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 2.829,
+      "tapAt": 7.40134792444165
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 7.40134792444165,
+      "tapAt": 9.628347924441647
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 6.78,
+      "tapAt": 8.749000000000002
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 8.749000000000002,
+      "tapAt": 12.715347924441653
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 13.590147924441649,
+      "tapAt": 16.460147924441653
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 12.67,
+      "tapAt": 14.639000000000001
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 14.639000000000001,
+      "tapAt": 19.40234792444165
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 20.421947924441653,
+      "tapAt": 23.447947924441657
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 18.59,
+      "tapAt": 20.743
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 20.743,
+      "tapAt": 24.70934792444165
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 27.40974792444166,
+      "tapAt": 29.88674792444166
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 25.48,
+      "tapAt": 28.036000000000005
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 28.036000000000005,
+      "tapAt": 32.10234792444166
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 33.84854792444166,
+      "tapAt": 36.874547924441664
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 30.73,
+      "tapAt": 33.286
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 33.286,
+      "tapAt": 37.35234792444165
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 40.83634792444167,
+      "tapAt": 43.04034792444167
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 37.37,
+      "tapAt": 40.119
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 40.119,
+      "tapAt": 45.01134792444165
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 47.00214792444167,
+      "tapAt": 49.479147924441676
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 42.69,
+      "tapAt": 45.246
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 45.246,
+      "tapAt": 49.31234792444165
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 53.44094792444168,
+      "tapAt": 56.310947924441685
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 49.45,
+      "tapAt": 52.03
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 52.03,
+      "tapAt": 56.09634792444165
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 60.27274792444169,
+      "tapAt": 62.47674792444169
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 55.11,
+      "tapAt": 57.859
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 57.859,
+      "tapAt": 61.836347924441654
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 66.43854792444169,
+      "tapAt": 68.9155479244417
+     }
+    ]
+   ]
+  },
+  {
+   "fixture": "counter-b-fridge-closer",
+   "paceModels": "fit-or-speed",
+   "rep": 0,
+   "orderTimes": [
+    8.61691409315721,
+    8.977383989617522,
+    8.857853886077832,
+    8.789914093157218,
+    8.15791409315722,
+    8.678383989617533,
+    9.286914093157222,
+    9.47838398961754,
+    8.229853886077855,
+    8.643914093157207
+   ],
+   "steps": [
+    [
+     {
+      "workerId": "red",
+      "startedAt": 1.37,
+      "tapAt": 4.0040000000000004
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 4.0040000000000004,
+      "tapAt": 7.847914093157215
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 7.847914093157215,
+      "tapAt": 9.98691409315721
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 6.78,
+      "tapAt": 9.529000000000003
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 9.529000000000003,
+      "tapAt": 11.79291409315722
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 13.618383989617525,
+      "tapAt": 15.757383989617521
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 12.67,
+      "tapAt": 15.304
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 15.304,
+      "tapAt": 18.37191409315721
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 19.388853886077836,
+      "tapAt": 21.527853886077832
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 18.59,
+      "tapAt": 21.339000000000002
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 21.339000000000002,
+      "tapAt": 25.175914093157218
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 25.175914093157218,
+      "tapAt": 27.37991409315722
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 25.48,
+      "tapAt": 28.036000000000005
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 28.036000000000005,
+      "tapAt": 31.87291409315722
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 31.87291409315722,
+      "tapAt": 33.63791409315722
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 30.73,
+      "tapAt": 32.762
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 32.762,
+      "tapAt": 35.829914093157214
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 37.26938398961754,
+      "tapAt": 39.40838398961753
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 37.37,
+      "tapAt": 39.95
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 39.95,
+      "tapAt": 43.786914093157215
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 43.786914093157215,
+      "tapAt": 46.65691409315722
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 42.69,
+      "tapAt": 45.269999999999996
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 45.269999999999996,
+      "tapAt": 48.79391409315721
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 50.288383989617536,
+      "tapAt": 52.16838398961754
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 49.45,
+      "tapAt": 52.199000000000005
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 52.199000000000005,
+      "tapAt": 55.72291409315722
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 55.799853886077855,
+      "tapAt": 57.67985388607786
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 55.11,
+      "tapAt": 57.69
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 57.69,
+      "tapAt": 61.52691409315721
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 61.52691409315721,
+      "tapAt": 63.753914093157206
+     }
+    ]
+   ]
+  },
+  {
+   "fixture": "counter-b-fridge-closer",
+   "paceModels": "fit-or-speed",
+   "rep": 1,
+   "orderTimes": [
+    8.630668956668444,
+    8.815268956668444,
+    9.41986895666845,
+    9.556468956668446,
+    9.43466895666845,
+    10.241268956668446,
+    10.456868956668451,
+    11.193468956668447,
+    10.028068956668442,
+    11.223668956668448
+   ],
+   "steps": [
+    [
+     {
+      "workerId": "red",
+      "startedAt": 1.37,
+      "tapAt": 3.5229999999999997
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 3.5229999999999997,
+      "tapAt": 7.7966689566684435
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 7.7966689566684435,
+      "tapAt": 10.000668956668445
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 6.78,
+      "tapAt": 8.239
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 8.239,
+      "tapAt": 12.036668956668448
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 13.830268956668444,
+      "tapAt": 15.595268956668445
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 12.67,
+      "tapAt": 14.823
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 14.823,
+      "tapAt": 19.096668956668445
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 19.424868956668444,
+      "tapAt": 22.08986895666845
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 18.59,
+      "tapAt": 21.17
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 21.17,
+      "tapAt": 25.793668956668448
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 25.91946895666845,
+      "tapAt": 28.146468956668446
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 25.48,
+      "tapAt": 27.633
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 27.633,
+      "tapAt": 32.249668956668444
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 32.249668956668444,
+      "tapAt": 34.91466895666845
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 30.73,
+      "tapAt": 32.189
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 32.249668956668444,
+      "tapAt": 36.87333791333689
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 38.74426895666845,
+      "tapAt": 40.971268956668446
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 37.37,
+      "tapAt": 39.522999999999996
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 39.522999999999996,
+      "tapAt": 43.37066895666844
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 44.800868956668445,
+      "tapAt": 47.82686895666845
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 42.69,
+      "tapAt": 45.269999999999996
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 45.269999999999996,
+      "tapAt": 49.06766895666844
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 51.65646895666845,
+      "tapAt": 53.883468956668445
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 49.45,
+      "tapAt": 51.356
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 51.356,
+      "tapAt": 55.15366895666845
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 57.713068956668444,
+      "tapAt": 59.478068956668444
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 55.11,
+      "tapAt": 56.569
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 56.569,
+      "tapAt": 61.19266895666845
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 63.307668956668444,
+      "tapAt": 66.33366895666845
+     }
+    ]
+   ]
+  },
+  {
+   "fixture": "counter-b-fridge-closer",
+   "paceModels": "fit-or-speed",
+   "rep": 2,
+   "orderTimes": [
+    7.202327583396209,
+    8.27441388129171,
+    9.022500179187213,
+    9.191586477082712,
+    8.93967277497821,
+    9.505759072873705,
+    9.062327583396218,
+    10.224413881291717,
+    9.280500179187207,
+    9.70958647708271
+   ],
+   "steps": [
+    [
+     {
+      "workerId": "red",
+      "startedAt": 1.37,
+      "tapAt": 2.829
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 2.829,
+      "tapAt": 6.345327583396213
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 6.345327583396213,
+      "tapAt": 8.57232758339621
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 6.78,
+      "tapAt": 8.749000000000002
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 8.749000000000002,
+      "tapAt": 11.659327583396218
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 12.184413881291707,
+      "tapAt": 15.054413881291712
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 12.67,
+      "tapAt": 14.639000000000001
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 14.639000000000001,
+      "tapAt": 18.34632758339621
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 18.66650017918721,
+      "tapAt": 21.692500179187213
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 18.59,
+      "tapAt": 20.743
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 20.743,
+      "tapAt": 23.653327583396212
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 25.30458647708271,
+      "tapAt": 27.781586477082712
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 25.48,
+      "tapAt": 28.036000000000005
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 28.036000000000005,
+      "tapAt": 31.04632758339622
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 31.39367277497821,
+      "tapAt": 34.41967277497821
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 30.73,
+      "tapAt": 33.286
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 33.286,
+      "tapAt": 36.29632758339621
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 38.031759072873704,
+      "tapAt": 40.235759072873705
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 37.37,
+      "tapAt": 40.119
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 40.119,
+      "tapAt": 43.95532758339621
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 43.95532758339621,
+      "tapAt": 46.432327583396216
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 42.69,
+      "tapAt": 45.246
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 45.246,
+      "tapAt": 48.256327583396214
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 50.04441388129171,
+      "tapAt": 52.914413881291715
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 49.45,
+      "tapAt": 52.03
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 52.03,
+      "tapAt": 55.04032758339621
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 56.52650017918721,
+      "tapAt": 58.73050017918721
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 55.11,
+      "tapAt": 57.859
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 57.859,
+      "tapAt": 60.780327583396215
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 62.342586477082705,
+      "tapAt": 64.81958647708271
+     }
+    ]
+   ]
+  },
+  {
+   "fixture": "counter-c-fourth-worker",
+   "paceModels": "calibrated",
+   "rep": 0,
+   "orderTimes": [
+    13.249199999999998,
+    13.814099999999996,
+    13.898999999999996,
+    14.018899999999999,
+    12.790200000000002,
+    13.5151,
+    13.91920000000001,
+    14.315100000000015,
+    13.271000000000015,
+    13.673900000000017
+   ],
+   "steps": [
+    [
+     {
+      "workerId": "red",
+      "startedAt": 1.37,
+      "tapAt": 4.0040000000000004
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 4.0040000000000004,
+      "tapAt": 12.480200000000002
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 12.480200000000002,
+      "tapAt": 14.619199999999998
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 6.78,
+      "tapAt": 9.529000000000003
+     },
+     {
+      "workerId": "green",
+      "startedAt": 9.529000000000003,
+      "tapAt": 16.425200000000007
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 18.4551,
+      "tapAt": 20.594099999999997
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 12.67,
+      "tapAt": 15.304
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 15.304,
+      "tapAt": 23.004199999999997
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 24.43,
+      "tapAt": 26.568999999999996
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 18.59,
+      "tapAt": 21.339000000000002
+     },
+     {
+      "workerId": "green",
+      "startedAt": 21.339000000000002,
+      "tapAt": 29.8082
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 30.404899999999998,
+      "tapAt": 32.6089
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 25.48,
+      "tapAt": 28.036000000000005
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 28.036000000000005,
+      "tapAt": 36.5052
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 36.5052,
+      "tapAt": 38.2702
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 30.73,
+      "tapAt": 32.762
+     },
+     {
+      "workerId": "green",
+      "startedAt": 32.762,
+      "tapAt": 40.4622
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 42.106100000000005,
+      "tapAt": 44.2451
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 37.37,
+      "tapAt": 39.95
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 39.95,
+      "tapAt": 48.419200000000004
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 48.419200000000004,
+      "tapAt": 51.28920000000001
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 42.69,
+      "tapAt": 45.269999999999996
+     },
+     {
+      "workerId": "green",
+      "startedAt": 45.269999999999996,
+      "tapAt": 53.4262
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 55.12510000000001,
+      "tapAt": 57.00510000000001
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 49.45,
+      "tapAt": 52.199000000000005
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 52.199000000000005,
+      "tapAt": 60.35520000000001
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 60.841000000000015,
+      "tapAt": 62.72100000000002
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 55.11,
+      "tapAt": 57.69
+     },
+     {
+      "workerId": "green",
+      "startedAt": 57.69,
+      "tapAt": 66.1592
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 66.55690000000003,
+      "tapAt": 68.78390000000002
+     }
+    ]
+   ]
+  },
+  {
+   "fixture": "counter-c-fourth-worker",
+   "paceModels": "calibrated",
+   "rep": 1,
+   "orderTimes": [
+    12.4679,
+    12.6525,
+    13.257100000000007,
+    13.393700000000003,
+    13.271900000000006,
+    14.078500000000002,
+    14.294100000000007,
+    15.030700000000003,
+    13.865299999999998,
+    15.060900000000018
+   ],
+   "steps": [
+    [
+     {
+      "workerId": "red",
+      "startedAt": 1.37,
+      "tapAt": 3.5229999999999997
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 3.5229999999999997,
+      "tapAt": 11.633899999999999
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 11.633899999999999,
+      "tapAt": 13.8379
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 6.78,
+      "tapAt": 8.239
+     },
+     {
+      "workerId": "green",
+      "startedAt": 8.239,
+      "tapAt": 15.873900000000004
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 17.6675,
+      "tapAt": 19.4325
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 12.67,
+      "tapAt": 14.823
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 14.823,
+      "tapAt": 22.9339
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 23.2621,
+      "tapAt": 25.927100000000006
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 18.59,
+      "tapAt": 21.17
+     },
+     {
+      "workerId": "green",
+      "startedAt": 21.17,
+      "tapAt": 29.630900000000004
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 29.756700000000006,
+      "tapAt": 31.983700000000002
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 25.48,
+      "tapAt": 27.633
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 27.633,
+      "tapAt": 36.0869
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 36.0869,
+      "tapAt": 38.751900000000006
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 30.73,
+      "tapAt": 32.189
+     },
+     {
+      "workerId": "green",
+      "startedAt": 32.189,
+      "tapAt": 40.6499
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 42.581500000000005,
+      "tapAt": 44.8085
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 37.37,
+      "tapAt": 39.522999999999996
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 39.522999999999996,
+      "tapAt": 47.207899999999995
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 48.6381,
+      "tapAt": 51.664100000000005
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 42.69,
+      "tapAt": 45.269999999999996
+     },
+     {
+      "workerId": "green",
+      "startedAt": 45.269999999999996,
+      "tapAt": 52.9049
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 55.493700000000004,
+      "tapAt": 57.7207
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 49.45,
+      "tapAt": 51.356
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 51.356,
+      "tapAt": 58.9909
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 61.5503,
+      "tapAt": 63.3153
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 55.11,
+      "tapAt": 56.569
+     },
+     {
+      "workerId": "green",
+      "startedAt": 56.569,
+      "tapAt": 65.0299
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 67.1449,
+      "tapAt": 70.17090000000002
+     }
+    ]
+   ]
+  },
+  {
+   "fixture": "counter-c-fourth-worker",
+   "paceModels": "calibrated",
+   "rep": 2,
+   "orderTimes": [
+    11.773999999999997,
+    13.195800000000006,
+    14.293600000000014,
+    14.812400000000014,
+    14.910200000000021,
+    15.826000000000025,
+    15.624800000000029,
+    17.136600000000037,
+    16.54240000000003,
+    17.321200000000033
+   ],
+   "steps": [
+    [
+     {
+      "workerId": "red",
+      "startedAt": 1.37,
+      "tapAt": 2.829
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 2.829,
+      "tapAt": 10.917000000000002
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 10.917000000000002,
+      "tapAt": 13.143999999999998
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 6.78,
+      "tapAt": 8.749000000000002
+     },
+     {
+      "workerId": "green",
+      "startedAt": 8.749000000000002,
+      "tapAt": 16.231000000000005
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 17.105800000000002,
+      "tapAt": 19.975800000000007
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 12.67,
+      "tapAt": 14.639000000000001
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 14.639000000000001,
+      "tapAt": 22.918
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 23.93760000000001,
+      "tapAt": 26.963600000000014
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 18.59,
+      "tapAt": 20.743
+     },
+     {
+      "workerId": "green",
+      "startedAt": 20.743,
+      "tapAt": 28.225
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 30.925400000000018,
+      "tapAt": 33.402400000000014
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 25.48,
+      "tapAt": 28.036000000000005
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 28.036000000000005,
+      "tapAt": 35.61800000000001
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 37.36420000000002,
+      "tapAt": 40.39020000000002
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 30.73,
+      "tapAt": 33.286
+     },
+     {
+      "workerId": "green",
+      "startedAt": 33.286,
+      "tapAt": 40.868
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 44.352000000000025,
+      "tapAt": 46.556000000000026
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 37.37,
+      "tapAt": 40.119
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 40.119,
+      "tapAt": 48.527
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 50.51780000000003,
+      "tapAt": 52.994800000000026
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 42.69,
+      "tapAt": 45.246
+     },
+     {
+      "workerId": "green",
+      "startedAt": 45.246,
+      "tapAt": 52.828
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 56.95660000000003,
+      "tapAt": 59.826600000000035
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 49.45,
+      "tapAt": 52.03
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 52.03,
+      "tapAt": 59.612
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 63.78840000000004,
+      "tapAt": 65.99240000000003
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 55.11,
+      "tapAt": 57.859
+     },
+     {
+      "workerId": "green",
+      "startedAt": 57.859,
+      "tapAt": 65.352
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 69.95420000000003,
+      "tapAt": 72.43120000000003
+     }
+    ]
+   ]
+  },
+  {
+   "fixture": "counter-c-fourth-worker",
+   "paceModels": "fit-or-speed",
+   "rep": 0,
+   "orderTimes": [
+    13.824600181648563,
+    14.185070078108872,
+    14.065539974569186,
+    13.997600181648568,
+    13.36560018164857,
+    13.886070078108883,
+    14.494600181648572,
+    14.68607007810889,
+    13.437539974569205,
+    13.85160018164855
+   ],
+   "steps": [
+    [
+     {
+      "workerId": "red",
+      "startedAt": 1.37,
+      "tapAt": 4.0040000000000004
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 4.0040000000000004,
+      "tapAt": 13.055600181648568
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 13.055600181648568,
+      "tapAt": 15.194600181648564
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 6.78,
+      "tapAt": 9.529000000000003
+     },
+     {
+      "workerId": "green",
+      "startedAt": 9.529000000000003,
+      "tapAt": 17.000600181648572
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 18.826070078108877,
+      "tapAt": 20.965070078108873
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 12.67,
+      "tapAt": 15.304
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 15.304,
+      "tapAt": 23.579600181648566
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 24.59653997456919,
+      "tapAt": 26.735539974569186
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 18.59,
+      "tapAt": 21.339000000000002
+     },
+     {
+      "workerId": "green",
+      "startedAt": 21.339000000000002,
+      "tapAt": 30.383600181648568
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 30.383600181648568,
+      "tapAt": 32.58760018164857
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 25.48,
+      "tapAt": 28.036000000000005
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 28.036000000000005,
+      "tapAt": 37.08060018164857
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 37.08060018164857,
+      "tapAt": 38.84560018164857
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 30.73,
+      "tapAt": 32.762
+     },
+     {
+      "workerId": "green",
+      "startedAt": 32.762,
+      "tapAt": 41.037600181648564
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 42.47707007810889,
+      "tapAt": 44.61607007810888
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 37.37,
+      "tapAt": 39.95
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 39.95,
+      "tapAt": 48.994600181648565
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 48.994600181648565,
+      "tapAt": 51.86460018164857
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 42.69,
+      "tapAt": 45.269999999999996
+     },
+     {
+      "workerId": "green",
+      "startedAt": 45.269999999999996,
+      "tapAt": 54.00160018164856
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 55.496070078108886,
+      "tapAt": 57.37607007810889
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 49.45,
+      "tapAt": 52.199000000000005
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 52.199000000000005,
+      "tapAt": 60.93060018164857
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 61.007539974569205,
+      "tapAt": 62.88753997456921
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 55.11,
+      "tapAt": 57.69
+     },
+     {
+      "workerId": "green",
+      "startedAt": 57.69,
+      "tapAt": 66.73460018164856
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 66.73460018164856,
+      "tapAt": 68.96160018164855
+     }
+    ]
+   ]
+  },
+  {
+   "fixture": "counter-c-fourth-worker",
+   "paceModels": "fit-or-speed",
+   "rep": 1,
+   "orderTimes": [
+    12.4679,
+    12.6525,
+    13.257100000000007,
+    13.393700000000003,
+    13.271900000000006,
+    14.078500000000002,
+    14.294100000000007,
+    15.030700000000003,
+    13.865299999999998,
+    15.060900000000018
+   ],
+   "steps": [
+    [
+     {
+      "workerId": "red",
+      "startedAt": 1.37,
+      "tapAt": 3.5229999999999997
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 3.5229999999999997,
+      "tapAt": 11.633899999999999
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 11.633899999999999,
+      "tapAt": 13.8379
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 6.78,
+      "tapAt": 8.239
+     },
+     {
+      "workerId": "green",
+      "startedAt": 8.239,
+      "tapAt": 15.873900000000004
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 17.6675,
+      "tapAt": 19.4325
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 12.67,
+      "tapAt": 14.823
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 14.823,
+      "tapAt": 22.9339
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 23.2621,
+      "tapAt": 25.927100000000006
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 18.59,
+      "tapAt": 21.17
+     },
+     {
+      "workerId": "green",
+      "startedAt": 21.17,
+      "tapAt": 29.630900000000004
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 29.756700000000006,
+      "tapAt": 31.983700000000002
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 25.48,
+      "tapAt": 27.633
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 27.633,
+      "tapAt": 36.0869
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 36.0869,
+      "tapAt": 38.751900000000006
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 30.73,
+      "tapAt": 32.189
+     },
+     {
+      "workerId": "green",
+      "startedAt": 32.189,
+      "tapAt": 40.6499
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 42.581500000000005,
+      "tapAt": 44.8085
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 37.37,
+      "tapAt": 39.522999999999996
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 39.522999999999996,
+      "tapAt": 47.207899999999995
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 48.6381,
+      "tapAt": 51.664100000000005
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 42.69,
+      "tapAt": 45.269999999999996
+     },
+     {
+      "workerId": "green",
+      "startedAt": 45.269999999999996,
+      "tapAt": 52.9049
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 55.493700000000004,
+      "tapAt": 57.7207
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 49.45,
+      "tapAt": 51.356
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 51.356,
+      "tapAt": 58.9909
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 61.5503,
+      "tapAt": 63.3153
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 55.11,
+      "tapAt": 56.569
+     },
+     {
+      "workerId": "green",
+      "startedAt": 56.569,
+      "tapAt": 65.0299
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 67.1449,
+      "tapAt": 70.17090000000002
+     }
+    ]
+   ]
+  },
+  {
+   "fixture": "counter-c-fourth-worker",
+   "paceModels": "fit-or-speed",
+   "rep": 2,
+   "orderTimes": [
+    12.382216746821683,
+    13.454303044717186,
+    14.202389342612689,
+    14.371475640508184,
+    14.119561938403681,
+    14.685648236299176,
+    14.24221674682169,
+    15.404303044717189,
+    14.460389342612679,
+    14.88947564050818
+   ],
+   "steps": [
+    [
+     {
+      "workerId": "red",
+      "startedAt": 1.37,
+      "tapAt": 2.829
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 2.829,
+      "tapAt": 11.525216746821688
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 11.525216746821688,
+      "tapAt": 13.752216746821684
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 6.78,
+      "tapAt": 8.749000000000002
+     },
+     {
+      "workerId": "green",
+      "startedAt": 8.749000000000002,
+      "tapAt": 16.83921674682169
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 17.364303044717182,
+      "tapAt": 20.234303044717187
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 12.67,
+      "tapAt": 14.639000000000001
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 14.639000000000001,
+      "tapAt": 23.52621674682169
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 23.846389342612685,
+      "tapAt": 26.87238934261269
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 18.59,
+      "tapAt": 20.743
+     },
+     {
+      "workerId": "green",
+      "startedAt": 20.743,
+      "tapAt": 28.83321674682169
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 30.484475640508187,
+      "tapAt": 32.96147564050818
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 25.48,
+      "tapAt": 28.036000000000005
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 28.036000000000005,
+      "tapAt": 36.22621674682169
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 36.57356193840368,
+      "tapAt": 39.59956193840368
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 30.73,
+      "tapAt": 33.286
+     },
+     {
+      "workerId": "green",
+      "startedAt": 33.286,
+      "tapAt": 41.47621674682169
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 43.211648236299176,
+      "tapAt": 45.41564823629918
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 37.37,
+      "tapAt": 40.119
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 40.119,
+      "tapAt": 49.13521674682169
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 49.13521674682169,
+      "tapAt": 51.61221674682169
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 42.69,
+      "tapAt": 45.246
+     },
+     {
+      "workerId": "green",
+      "startedAt": 45.246,
+      "tapAt": 53.43621674682169
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 55.22430304471718,
+      "tapAt": 58.094303044717186
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 49.45,
+      "tapAt": 52.03
+     },
+     {
+      "workerId": "blue",
+      "startedAt": 52.03,
+      "tapAt": 60.22021674682169
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 61.70638934261268,
+      "tapAt": 63.91038934261268
+     }
+    ],
+    [
+     {
+      "workerId": "red",
+      "startedAt": 55.11,
+      "tapAt": 57.859
+     },
+     {
+      "workerId": "green",
+      "startedAt": 57.859,
+      "tapAt": 65.96021674682169
+     },
+     {
+      "workerId": "yellow",
+      "startedAt": 67.52247564050818,
+      "tapAt": 69.99947564050818
+     }
+    ]
+   ]
+  }
+ ]
+}

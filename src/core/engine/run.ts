@@ -12,18 +12,17 @@
  * carry later. A fixed worker walks back and rests at home; a roaming worker rests at
  * the drop point. An order is finished at its last tap.
  *
- * Randomness uses common random numbers, as the old engine (sim.ts) does: the work time
+ * Randomness uses common random numbers, as the old station-queue engine did: the work time
  * of order i, task k is draw i × maxTasks + k of one stream, and pools and pace are
  * resampled from streams keyed by (seed, replication) alone. Mutable arrays are used
  * inside the event loop for speed; nothing passed in is changed.
  */
 import type { MovementSegment, RunTrace } from "../trace";
 import { streamFor } from "../rng";
-import { SimError } from "../model";
 import { bootstrapPace, walkSeconds, type Pace } from "../pace";
 import { EventHeap, type Timed } from "./heap";
 import { oldestFirst, type ReadyTask, type TaskRule } from "./rule";
-import { walkKey, type EngineLeg, type EngineModel } from "./model";
+import { SimError, walkKey, type EngineLeg, type EngineModel } from "./model";
 import { buildTrace, recordTask, recordWalkHome, type Releases, type TimedTask } from "./trace";
 
 export type { Releases } from "./trace";
