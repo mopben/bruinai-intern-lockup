@@ -83,7 +83,7 @@ function Suggestions() {
     <div class="st-suggestions" data-testid="suggest-result">
       {st.list.map((x, i) => {
         const on = onBoard === x.s.layout;
-        const gain = `Orders ${formatSeconds(x.waitBeforeS)} ? ${formatSeconds(x.waitAfterS)}`;
+        const gain = `Orders ${formatSeconds(x.waitBeforeS)} → ${formatSeconds(x.waitAfterS)}`;
         return (
           <div class={`st-suggestion${on ? " on" : ""}`} key={x.s.id} data-testid={`suggestion-${i}`}>
             <Btn small kind={on ? "on" : "plain"} label={on ? "Showing" : "Try"} onClick={() => applySuggestion(x.s)} testId={`btn-try-suggestion-${i}`} />

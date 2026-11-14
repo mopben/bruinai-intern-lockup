@@ -829,6 +829,15 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+/* Too narrow for the "how" notes (the side panel is open): hide them rather than cut them to a letter. */
+.st-half .under {
+  container-type: inline-size;
+}
+@container (max-width: 560px) {
+  .st-sim-row .how {
+    visibility: hidden;
+  }
+}
 .st-sim-row .cannot {
   grid-column: span 2;
   font-size: var(--dr-size-small);
