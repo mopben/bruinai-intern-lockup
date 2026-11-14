@@ -1,0 +1,62 @@
+{
+  "format": "dryrun.vocab",
+  "version": 1,
+  "templates": [
+    "a photo of a person {}.",
+    "a video frame of someone {} in a kitchen."
+  ],
+  "waitingLabel": "SIL",
+  "stations": [
+    {
+      "match": ["coffee"],
+      "labels": [
+        { "label": "take_cup", "prompts": ["taking a cup from a shelf", "picking up an empty cup"] },
+        { "label": "pour_coffee", "prompts": ["pouring coffee into a cup", "pouring coffee from a coffee pot"] },
+        { "label": "pour_milk", "prompts": ["pouring milk into a cup", "pouring milk from a carton"] },
+        { "label": "pour_sugar", "prompts": ["pouring sugar into a cup"] },
+        { "label": "stir_coffee", "prompts": ["stirring coffee in a cup with a spoon"] },
+        { "label": "SIL", "prompts": ["standing still, not doing anything", "standing in an empty kitchen"] }
+      ]
+    },
+    {
+      "match": ["tea"],
+      "labels": [
+        { "label": "take_cup", "prompts": ["taking a cup from a shelf", "picking up an empty cup"] },
+        { "label": "add_teabag", "prompts": ["putting a tea bag into a cup", "taking a tea bag out of a box"] },
+        { "label": "pour_water", "prompts": ["pouring hot water from a kettle into a cup", "pouring water from a kettle"] },
+        { "label": "spoon_sugar", "prompts": ["adding a spoonful of sugar to a cup", "scooping sugar with a spoon"] },
+        { "label": "SIL", "prompts": ["standing still, not doing anything", "standing in an empty kitchen"] }
+      ]
+    },
+    {
+      "match": ["milk"],
+      "labels": [
+        { "label": "pour_milk", "prompts": ["pouring milk into a cup", "pouring milk from a carton"] },
+        { "label": "spoon_powder", "prompts": ["scooping chocolate powder into a cup with a spoon", "adding cocoa powder to a cup"] },
+        { "label": "stir_milk", "prompts": ["stirring milk in a cup with a spoon", "stirring a drink with a spoon"] },
+        { "label": "SIL", "prompts": ["standing still, not doing anything", "standing in an empty kitchen"] }
+      ]
+    }
+  ],
+  "defaultStation": {
+    "labels": [
+      { "label": "take_cup", "prompts": ["taking a cup from a shelf", "picking up an empty cup"] },
+      { "label": "pour_coffee", "prompts": ["pouring coffee into a cup", "pouring coffee from a coffee pot"] },
+      { "label": "pour_milk", "prompts": ["pouring milk into a cup", "pouring milk from a carton"] },
+      { "label": "pour_sugar", "prompts": ["pouring sugar into a cup"] },
+      { "label": "stir_coffee", "prompts": ["stirring coffee in a cup with a spoon"] },
+      { "label": "add_teabag", "prompts": ["putting a tea bag into a cup", "taking a tea bag out of a box"] },
+      { "label": "pour_water", "prompts": ["pouring hot water from a kettle into a cup", "pouring water from a kettle"] },
+      { "label": "spoon_sugar", "prompts": ["adding a spoonful of sugar to a cup", "scooping sugar with a spoon"] },
+      { "label": "spoon_powder", "prompts": ["scooping chocolate powder into a cup with a spoon", "adding cocoa powder to a cup"] },
+      { "label": "stir_milk", "prompts": ["stirring milk in a cup with a spoon", "stirring a drink with a spoon"] },
+      { "label": "SIL", "prompts": ["standing still, not doing anything", "standing in an empty kitchen"] }
+    ]
+  },
+  "idle": {
+    "labels": [
+      { "label": "SIL", "prompts": ["standing still, not doing anything", "standing in an empty kitchen"] },
+      { "label": "take_cup", "prompts": ["taking a cup from a shelf", "picking up an empty cup"] }
+    ]
+  }
+}

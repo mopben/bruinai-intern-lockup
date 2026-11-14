@@ -1,0 +1,59 @@
+{
+  "format": "dryrun.vocab",
+  "version": 1,
+  "templates": [
+    "a photo of a barista {}.",
+    "a security camera image of a cafe worker {}."
+  ],
+  "waitingLabel": "waiting",
+  "stations": [
+    {
+      "match": ["espresso", "coffee machine"],
+      "labels": [
+        { "label": "pulling a shot", "prompts": ["pulling an espresso shot at an espresso machine", "locking a portafilter into an espresso machine"] },
+        { "label": "grinding and tamping", "prompts": ["grinding coffee beans into a portafilter", "tamping ground coffee in a portafilter"] },
+        { "label": "steaming milk", "prompts": ["steaming milk in a metal jug at the steam wand", "frothing milk in a metal pitcher"] },
+        { "label": "pouring", "prompts": ["pouring steamed milk into a coffee cup", "pouring coffee into a cup"] },
+        { "label": "waiting", "prompts": ["standing still and waiting with empty hands", "standing at the counter, not working"] }
+      ]
+    },
+    {
+      "match": ["till", "register", "order", "cashier", "pos"],
+      "labels": [
+        { "label": "taking an order", "prompts": ["taking an order from a customer at the till", "talking to a customer across the counter"] },
+        { "label": "using the till", "prompts": ["typing on a touchscreen cash register", "taking a card payment at the till"] },
+        { "label": "waiting", "prompts": ["standing still and waiting with empty hands", "standing at the counter, not working"] }
+      ]
+    },
+    {
+      "match": ["finish", "pickup", "hand", "pass"],
+      "labels": [
+        { "label": "putting on a lid", "prompts": ["putting a lid on a takeaway coffee cup", "closing a paper coffee cup with a lid"] },
+        { "label": "handing over a cup", "prompts": ["handing a coffee cup to a customer", "placing a finished drink on the counter"] },
+        { "label": "waiting", "prompts": ["standing still and waiting with empty hands", "standing at the counter, not working"] }
+      ]
+    },
+    {
+      "match": ["grinder"],
+      "labels": [
+        { "label": "grinding", "prompts": ["grinding coffee beans", "filling a portafilter from a coffee grinder"] },
+        { "label": "waiting", "prompts": ["standing still and waiting with empty hands", "standing at the counter, not working"] }
+      ]
+    }
+  ],
+  "defaultStation": {
+    "labels": [
+      { "label": "preparing a drink", "prompts": ["preparing a drink at the counter", "working with both hands at the counter"] },
+      { "label": "cleaning", "prompts": ["wiping the counter with a cloth", "rinsing a jug at the sink"] },
+      { "label": "waiting", "prompts": ["standing still and waiting with empty hands", "standing at the counter, not working"] }
+    ]
+  },
+  "idle": {
+    "labels": [
+      { "label": "talking", "prompts": ["talking to a coworker", "talking to a customer"] },
+      { "label": "using a phone", "prompts": ["looking at a mobile phone"] },
+      { "label": "cleaning", "prompts": ["wiping a table or counter with a cloth"] },
+      { "label": "waiting", "prompts": ["standing still and waiting with empty hands", "standing around, not working"] }
+    ]
+  }
+}

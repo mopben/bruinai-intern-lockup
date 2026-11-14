@@ -1,0 +1,384 @@
+{
+ "items": [
+  {
+   "item": {
+    "id": "chain",
+    "name": "Chain",
+    "steps": [
+     {
+      "stationId": "till"
+     },
+     {
+      "stationId": "esp",
+      "fetchFrom": [
+       "fridge"
+      ]
+     },
+     {
+      "stationId": "fin"
+     }
+    ]
+   },
+   "tasks": [
+    {
+     "index": 0,
+     "id": "s0",
+     "stationId": "till",
+     "fetchFrom": [],
+     "after": [],
+     "next": 1
+    },
+    {
+     "index": 1,
+     "id": "s1",
+     "stationId": "esp",
+     "fetchFrom": [
+      "fridge"
+     ],
+     "after": [
+      0
+     ],
+     "next": 2
+    },
+    {
+     "index": 2,
+     "id": "s2",
+     "stationId": "fin",
+     "fetchFrom": [],
+     "after": [
+      1
+     ],
+     "next": null
+    }
+   ],
+   "issues": []
+  },
+  {
+   "item": {
+    "id": "latte",
+    "name": "Latte",
+    "steps": [
+     {
+      "stationId": "till"
+     },
+     {
+      "stationId": "esp",
+      "fetchFrom": [
+       "fridge"
+      ]
+     },
+     {
+      "stationId": "fin"
+     }
+    ],
+    "tasks": [
+     {
+      "id": "take",
+      "stationId": "till"
+     },
+     {
+      "id": "brew",
+      "stationId": "esp",
+      "fetchFrom": [
+       "fridge"
+      ]
+     },
+     {
+      "id": "finish",
+      "stationId": "fin",
+      "after": [
+       "take",
+       "brew"
+      ]
+     }
+    ]
+   },
+   "tasks": [
+    {
+     "index": 0,
+     "id": "take",
+     "stationId": "till",
+     "fetchFrom": [],
+     "after": [],
+     "next": 2
+    },
+    {
+     "index": 1,
+     "id": "brew",
+     "stationId": "esp",
+     "fetchFrom": [
+      "fridge"
+     ],
+     "after": [],
+     "next": 2
+    },
+    {
+     "index": 2,
+     "id": "finish",
+     "stationId": "fin",
+     "fetchFrom": [],
+     "after": [
+      0,
+      1
+     ],
+     "next": null
+    }
+   ],
+   "issues": []
+  },
+  {
+   "item": {
+    "id": "two-ends",
+    "name": "Two ends",
+    "steps": [
+     {
+      "stationId": "a"
+     },
+     {
+      "stationId": "b"
+     },
+     {
+      "stationId": "c"
+     }
+    ],
+    "tasks": [
+     {
+      "id": "x",
+      "stationId": "a"
+     },
+     {
+      "id": "y",
+      "stationId": "b",
+      "after": [
+       "x"
+      ]
+     },
+     {
+      "id": "z",
+      "stationId": "c"
+     }
+    ]
+   },
+   "tasks": [
+    {
+     "index": 0,
+     "id": "x",
+     "stationId": "a",
+     "fetchFrom": [],
+     "after": [],
+     "next": 1
+    },
+    {
+     "index": 1,
+     "id": "y",
+     "stationId": "b",
+     "fetchFrom": [],
+     "after": [
+      0
+     ],
+     "next": null
+    },
+    {
+     "index": 2,
+     "id": "z",
+     "stationId": "c",
+     "fetchFrom": [],
+     "after": [],
+     "next": null
+    }
+   ],
+   "issues": []
+  },
+  {
+   "item": {
+    "id": "bad",
+    "name": "Bad",
+    "steps": [
+     {
+      "stationId": "a"
+     },
+     {
+      "stationId": "b"
+     }
+    ],
+    "tasks": [
+     {
+      "id": "x",
+      "stationId": "a",
+      "after": [
+       "y",
+       "nope"
+      ]
+     },
+     {
+      "id": "x",
+      "stationId": "q",
+      "fetchFrom": [
+       "f"
+      ]
+     }
+    ]
+   },
+   "tasks": [
+    {
+     "index": 0,
+     "id": "x",
+     "stationId": "a",
+     "fetchFrom": [],
+     "after": [],
+     "next": null
+    },
+    {
+     "index": 1,
+     "id": "x",
+     "stationId": "q",
+     "fetchFrom": [
+      "f"
+     ],
+     "after": [],
+     "next": null
+    }
+   ],
+   "issues": [
+    "\"Bad\" has two tasks with id \"x\".",
+    "\"Bad\" task \"x\" waits for \"y\", which is not a task of this item.",
+    "\"Bad\" task \"x\" waits for \"nope\", which is not a task of this item.",
+    "\"Bad\" task \"x\" is at station \"q\", but step 2 is at \"b\".",
+    "\"Bad\" task \"x\" fetches from other storage than step 2."
+   ]
+  },
+  {
+   "item": {
+    "id": "feeds-two",
+    "name": "Feeds two",
+    "steps": [
+     {
+      "stationId": "a"
+     },
+     {
+      "stationId": "b"
+     },
+     {
+      "stationId": "c"
+     }
+    ],
+    "tasks": [
+     {
+      "id": "x",
+      "stationId": "a"
+     },
+     {
+      "id": "y",
+      "stationId": "b",
+      "after": [
+       "x"
+      ]
+     },
+     {
+      "id": "z",
+      "stationId": "c",
+      "after": [
+       "x"
+      ]
+     }
+    ]
+   },
+   "tasks": [
+    {
+     "index": 0,
+     "id": "x",
+     "stationId": "a",
+     "fetchFrom": [],
+     "after": [],
+     "next": 1
+    },
+    {
+     "index": 1,
+     "id": "y",
+     "stationId": "b",
+     "fetchFrom": [],
+     "after": [
+      0
+     ],
+     "next": null
+    },
+    {
+     "index": 2,
+     "id": "z",
+     "stationId": "c",
+     "fetchFrom": [],
+     "after": [
+      0
+     ],
+     "next": null
+    }
+   ],
+   "issues": [
+    "\"Feeds two\" task \"x\" feeds \"y\" and \"z\"; a task can feed only one."
+   ]
+  },
+  {
+   "item": {
+    "id": "count",
+    "name": "Count",
+    "steps": [
+     {
+      "stationId": "a"
+     },
+     {
+      "stationId": "b"
+     }
+    ],
+    "tasks": [
+     {
+      "id": "x",
+      "stationId": "a"
+     }
+    ]
+   },
+   "tasks": [
+    {
+     "index": 0,
+     "id": "x",
+     "stationId": "a",
+     "fetchFrom": [],
+     "after": [],
+     "next": null
+    }
+   ],
+   "issues": [
+    "\"Count\" has 1 tasks but 2 steps; they must match one to one."
+   ]
+  }
+ ],
+ "workers": [
+  {
+   "worker": {
+    "id": "red",
+    "name": "A",
+    "color": "#e8312f",
+    "stationId": "till"
+   },
+   "covers": [
+    "till"
+   ]
+  },
+  {
+   "worker": {
+    "id": "blue",
+    "name": "B",
+    "color": "#1f6fe0",
+    "stationId": "till",
+    "covers": [
+     "esp",
+     "till",
+     "esp"
+    ]
+   },
+   "covers": [
+    "till",
+    "esp"
+   ]
+  }
+ ]
+}
