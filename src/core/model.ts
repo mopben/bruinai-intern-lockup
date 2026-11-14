@@ -25,6 +25,7 @@ export interface ModelLeg {
 }
 
 export interface ModelStep {
+  readonly workSeconds?: number;
   readonly stationIndex: number;
   readonly stationId: string;
   readonly fetch: readonly ModelLeg[];
@@ -74,7 +75,7 @@ export function compileModel(world: World, calibration: Calibration, table?: Pat
   const samples = stationIds.map((id) => calibration.workSamples[id] ?? []);
   samples.forEach((s, i) => {
     const name = world.itemsById.get(stationIds[i] as string)?.name ?? stationIds[i];
-    if (s.length === 0) throw new SimError(`No measured work times for "${name}"; record a run where it is used.`);
+    if (s.length === 0 && world.menu.some((m) => m.steps.some((step) => step.stationId === stationIds[i] && step.workSeconds === undefined))) throw new SimError(`No measured work times for "${name}"; record a run where it is used.`);
   });
   const plans = planItems(world, t);
   const items = new Map<string, readonly ModelStep[]>();
@@ -82,6 +83,7 @@ export function compileModel(world: World, calibration: Calibration, table?: Pat
     items.set(
       itemId,
       plan.steps.map((s) => ({
+        workSeconds: world.menuById.get(itemId)?.steps[s.step]?.workSeconds,
         stationIndex: stationIds.indexOf(s.stationId),
         stationId: s.stationId,
         fetch: s.fetchLegs.map((l) => ({ oneWayM: l.oneWayM, path: l.path })),

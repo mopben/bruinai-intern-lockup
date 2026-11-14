@@ -10,6 +10,7 @@ import { STEPS, stepIndex } from "../app/steps";
 import { ActivityBar, KeyHints, Notices, ResultsSwitch, Sash } from "./Chrome";
 import { CompareView } from "./CompareView";
 import { PlayRail } from "./PlayRail";
+import { OrdersRail } from "./OrdersRail";
 import { RunRail } from "./RunRail";
 import { ScanRail } from "./ScanRail";
 import { SceneHost } from "./SceneHost";
@@ -23,6 +24,8 @@ function Rail() {
       return <RunRail />;
     case "play":
       return <PlayRail />;
+    case "orders":
+      return <OrdersRail />;
     case "test":
       return <TestRail />;
     case "compare":

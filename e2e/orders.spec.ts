@@ -1,0 +1,32 @@
+import { expect, test } from "./support/fixtures";
+import { expectStep, goView, openStage } from "./support/stage";
+
+test("Orders is step 3: customize demo recipes and create an order", async ({ page }) => {
+  await openStage(page, { step: 3 });
+  await expectStep(page, "orders");
+  await expect(page.getByRole("button", { name: "4: Run", exact: true })).toBeVisible();
+  await expect(page.locator(".st-recipe summary")).toHaveCount(3);
+  const espresso = page.getByTestId("recipe-espresso");
+  await espresso.locator("summary").click();
+  await espresso.getByLabel("Seconds at step 2").fill("12");
+  await espresso.getByLabel("Quantity in simulation").fill("2");
+  await espresso.getByLabel("Order name", { exact: true }).fill("Double espresso");
+  await espresso.getByLabel("Order name", { exact: true }).blur();
+  await expect(espresso.locator("summary")).toContainText("Double espresso");
+  await expect(espresso.locator("summary")).toContainText("2 orders");
+  await page.getByRole("button", { name: "Create new order", exact: true }).click();
+  const created = page.getByTestId("recipe-recipe-1");
+  await expect(created.getByLabel("Order name", { exact: true })).toBeVisible();
+  await created.getByLabel("Order name", { exact: true }).fill("Mocha");
+  await created.getByLabel("Add a preparation step").selectOption({ label: "Espresso machine" });
+  await created.getByLabel("Seconds at step 2").fill("20");
+  await created.getByLabel("Seconds at step 2").blur();
+  await expect(created.locator(".st-recipe-steps li")).toHaveCount(2);
+  await created.getByRole("button", { name: "Move step 2 earlier", exact: true }).click();
+  await expect(created.locator(".st-recipe-steps li").first()).toContainText("Espresso machine");
+  await goView(page, "play");
+  await goView(page, "orders");
+  await expect(created.locator("summary")).toContainText("Mocha");
+  await goView(page, "compare");
+  await expectStep(page, "compare");
+});

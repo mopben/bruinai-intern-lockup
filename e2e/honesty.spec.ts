@@ -43,7 +43,7 @@ test("rule 6: walking, prediction and measured result equal src/core on the fixt
   await expect(page.getByTestId("verdict")).toHaveText(inside ? "Inside the range." : /^Outside the range: /);
   await expect(page.getByTestId("before-after")).toContainText(`Before ${truth.measuredA.toFixed(1)} s → after ${truth.measuredB.toFixed(1)} s`);
 
-  await page.keyboard.press("3");
+  await page.keyboard.press("4");
   await expectStep(page, "compare");
   await expect(page.getByTestId("compare-before-walking")).toHaveText(truth.walkA);
   await expect(page.getByTestId("compare-after-walking")).toHaveText(truth.walkB);

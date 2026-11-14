@@ -84,6 +84,7 @@ export const itemSetupSchema = z.object({
 export const stepDefSchema = z.object({
   stationId: id(),
   fetchFrom: z.array(id()).optional(),
+  workSeconds: nonNegative().optional(),
 });
 
 export const menuItemSchema = z.object({

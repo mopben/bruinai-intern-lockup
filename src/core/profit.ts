@@ -40,6 +40,8 @@ export interface Economics {
   readonly menu: Readonly<Record<string, MenuPrice>>;
   /** Pay per worker per hour, all-in. */
   readonly wagePerHour: number;
+  /** Individual hourly pay, keyed by worker id; otherwise use wagePerHour. */
+  readonly workerWages?: Readonly<Record<string, number>>;
   /** Electricity for the whole kitchen per hour. */
   readonly electricityPerHour: number;
   /** Rent and everything else per hour. */
@@ -132,7 +134,7 @@ export function capacityPerHour(world: World, calibration: Calibration, opts: Ca
 export function profitFromCapacity(world: World, econ: Economics, capacity: Range): ProfitEstimate {
   const margin = marginPerOrder(world.setup, econ);
   const workers = world.workers.length;
-  const wages = workers * econ.wagePerHour;
+  const wages = world.workers.reduce((total, worker) => total + (econ.workerWages?.[worker.id] ?? econ.wagePerHour), 0);
   const fixed = econ.electricityPerHour + econ.otherPerHour;
   const demand = Math.max(0, econ.demandPerHour);
   const sell = (c: number) => Math.min(demand, c);

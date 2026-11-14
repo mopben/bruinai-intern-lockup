@@ -102,6 +102,8 @@ export interface ItemSetup {
 
 /** One step of making a menu item. */
 export interface StepDef {
+  /** Explicit preparation time in seconds; otherwise use measured station times. */
+  readonly workSeconds?: number;
   /** boxId of the station where the step happens. */
   readonly stationId: string;
   /** boxIds of storage the worker walks to and back from, once each, before working. */

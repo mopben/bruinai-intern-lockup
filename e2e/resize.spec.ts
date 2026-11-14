@@ -26,7 +26,7 @@ async function renders(page: Page, name: string): Promise<number> {
 
 test("rule 9: Run and Compare redraw at once after resizes (projector mode change)", async ({ page }) => {
   await page.setViewportSize({ width: 1600, height: 900 });
-  await openStage(page, { speed: 2, step: 3, view: "run" });
+  await openStage(page, { speed: 2, step: 4, view: "run" });
   await expectStep(page, "run");
   await waitForSession(page, "first", "running");
   await expectDrawn(page, '[data-testid="kitchen-scene"] canvas');
@@ -38,7 +38,7 @@ test("rule 9: Run and Compare redraw at once after resizes (projector mode chang
   }
 
   await page.setViewportSize({ width: 1600, height: 900 });
-  await page.keyboard.press("3");
+  await page.keyboard.press("4");
   await expectStep(page, "compare");
   await expectDrawn(page, '[data-testid="compare-before"] canvas');
   await expectDrawn(page, '[data-testid="compare-after"] canvas');

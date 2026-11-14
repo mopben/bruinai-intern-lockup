@@ -39,7 +39,7 @@ test("rule 9: with the server gone after loading, steps 1 to 3 still complete", 
   await waitForSession(page, "second", "ended");
   await expect(page.getByTestId("verdict")).toBeVisible();
   await expect(page.getByText("Could not load the recorded run")).toHaveCount(0);
-  await page.keyboard.press("3");
+  await page.keyboard.press("4");
   await expect(page.getByTestId("compare-after-time")).toHaveText(/\d+ s$/);
   test.info().annotations.push({ type: "offline", description: `${refused} requests to the server refused after it died` });
 });

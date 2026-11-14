@@ -4,7 +4,6 @@
  */
 import type { BoxSide, ItemRole } from "../../core";
 import { canSplit, itemSetupOf, renameItem, setLocked, setRole, setStandSide, splitBox } from "../app/kitchen-edit";
-import { roleColors } from "../theme/tokens";
 import { editKitchen } from "../state/kitchen-actions";
 import { kitchen, selectedId } from "../state/store";
 import { Btn } from "./bits";
@@ -53,43 +52,47 @@ export function ItemPanel(props: { readonly boxId: string }) {
         />
       </label>
       <div class="st-field">
-        <span>What is it?</span>
-        <div class="st-chips">
+        <span>Type</span>
+        <select
+          class="st-select"
+          data-testid="item-type"
+          value={item.role}
+          onChange={(e) => editKitchen((x) => setRole(x, props.boxId, (e.target as HTMLSelectElement).value as ItemRole))}
+        >
           {ROLES.map((r) => (
-            <button
-              key={r.role}
-              type="button"
-              class={`st-pick${item.role === r.role ? " on" : ""}`}
-              data-testid={`role-${r.role}`}
-              onClick={() => editKitchen((x) => setRole(x, props.boxId, r.role))}
-            >
-              <span class="sw" style={{ background: roleColors[r.role].body }} />
+            <option key={r.role} value={r.role}>
               {r.label}
-            </button>
+            </option>
           ))}
-        </div>
+        </select>
       </div>
       <div class="st-field">
         <span>Can it move?</span>
-        <div class="st-chips">
-          <button type="button" class={`st-pick${!item.locked ? " on" : ""}`} data-testid="lock-off" onClick={() => editKitchen((x) => setLocked(x, props.boxId, false))}>
-            Can be moved
-          </button>
-          <button type="button" class={`st-pick${item.locked ? " on" : ""}`} data-testid="lock-on" onClick={() => editKitchen((x) => setLocked(x, props.boxId, true))}>
-            Fixed (plumbing or power)
-          </button>
-        </div>
+        <label class="st-check">
+          <input
+            type="checkbox"
+            data-testid="item-fixed"
+            checked={item.locked}
+            onChange={(e) => editKitchen((x) => setLocked(x, props.boxId, (e.target as HTMLInputElement).checked))}
+          />
+          Fixed (plumbing or power)
+        </label>
       </div>
       {item.role === "station" || item.role === "storage" || item.role === "pickup" ? (
         <div class="st-field">
           <span>Which side do people stand?</span>
-          <div class="st-chips">
+          <select
+            class="st-select"
+            data-testid="item-side"
+            value={side}
+            onChange={(e) => editKitchen((x) => setStandSide(x, props.boxId, (e.target as HTMLSelectElement).value as BoxSide))}
+          >
             {SIDES.map((s) => (
-              <button key={s.side} type="button" class={`st-pick${side === s.side ? " on" : ""}`} onClick={() => editKitchen((x) => setStandSide(x, props.boxId, s.side))}>
+              <option key={s.side} value={s.side}>
                 {s.label}
-              </button>
+              </option>
             ))}
-          </div>
+          </select>
         </div>
       ) : null}
       <div class="st-row">

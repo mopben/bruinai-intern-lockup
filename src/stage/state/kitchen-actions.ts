@@ -6,6 +6,7 @@ import { batch } from "@preact/signals";
 import type { Scan } from "../../core";
 import type { Kitchen } from "../app/kitchen-edit";
 import { buildStarterKitchen } from "../app/starter-setup";
+import { withDemoRecipes } from "../app/recipes";
 import { withScene } from "./scene-ref";
 import {
   base,
@@ -62,7 +63,7 @@ export function useRecordedKitchen(animate: boolean): void {
   const b = base.value;
   if (!b) return;
   batch(() => {
-    kitchen.value = { scan: b.scan, setup: b.setup, layout: b.layout };
+    kitchen.value = { scan: b.scan, setup: withDemoRecipes(b.setup), layout: b.layout };
     kitchenOrigin.value = "recorded";
     playLayout.value = b.layout;
     scanNotes.value = [];

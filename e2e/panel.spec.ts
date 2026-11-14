@@ -4,7 +4,7 @@
  * actions add a scan and a floor mark.
  */
 import { join } from "node:path";
-import { expectStep, goView, hook, mainDebug, openStage } from "./support/stage";
+import { BOX, expectStep, goView, hook, mainDebug, openStage } from "./support/stage";
 import { FIXTURES } from "./support/truth";
 import { expect, test } from "./support/fixtures";
 
@@ -82,4 +82,16 @@ test("Edit panel: clicking a station opens its panel; renaming it updates the ro
   await page.getByTestId("item-name").fill("Toastie press");
   await page.getByTestId("btn-panel-done").click();
   await expect(page.getByTestId("route")).toContainText("Toastie press");
+
+  // Type is a dropdown; "Fixed" is a checkbox. Tried on the fridge so the
+  // renamed station stays in the route.
+  const d2 = await mainDebug(page);
+  const fridge = d2.screen[BOX.fridge]!;
+  await page.mouse.click(fridge.x, fridge.y);
+  await expect(page.getByTestId("item-panel")).toBeVisible();
+  await page.getByTestId("item-type").selectOption("fixture");
+  await page.getByTestId("item-fixed").check();
+  await expect(page.getByTestId("item-fixed")).toBeChecked();
+  await page.getByTestId("item-fixed").uncheck();
+  await expect(page.getByTestId("item-fixed")).not.toBeChecked();
 });

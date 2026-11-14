@@ -1,5 +1,5 @@
 /**
- * Running the kitchen: the original run and the run after the change (step 3),
+ * Running the kitchen: the original run and the run after the change (step 4),
  * recorded or live. A live run has the recording standing by and switches an
  * input to it when the live one fails, without a restart.
  */

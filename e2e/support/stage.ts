@@ -5,7 +5,7 @@ import { expect, type Page } from "@playwright/test";
 import type { SceneDebug } from "../../src/stage/scene/api";
 import { REPLAY_PORT, origin } from "./ports";
 
-export const VIEW_IDS = ["scan", "play", "compare", "run", "test"] as const;
+export const VIEW_IDS = ["scan", "play", "orders", "compare", "run", "test"] as const;
 export type View = (typeof VIEW_IDS)[number];
 
 /** Box ids in the fixture scan (fixtures/counter-a/setup.json). */
@@ -45,13 +45,13 @@ export async function currentStep(page: Page): Promise<string> {
 }
 
 export async function expectStep(page: Page, view: View): Promise<void> {
-  const step = view === "scan" ? "build" : view === "play" ? "edit" : "results";
+  const step = view === "scan" ? "build" : view === "play" ? "edit" : view === "orders" ? "orders" : "results";
   await expect(page.getByTestId(`step-${step}`)).toHaveAttribute("aria-current", "step");
   if (step === "results") await expect(page.getByTestId(`view-${view}`)).toHaveAttribute("aria-current", "page");
 }
 
 export async function goView(page: Page, view: View): Promise<void> {
-  await page.keyboard.press(view === "scan" ? "1" : view === "play" ? "2" : "3");
+  await page.keyboard.press(view === "scan" ? "1" : view === "play" ? "2" : view === "orders" ? "3" : "4");
   if (view === "run" || view === "test") await page.getByTestId(`view-${view}`).click();
   await expectStep(page, view);
 }

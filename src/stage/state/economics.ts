@@ -33,6 +33,7 @@ function save(e: Partial<Economics> | null): void {
 /** What the owner has typed in. Null until they change anything: the example numbers are used. */
 export const storedEconomics = signal<Partial<Economics> | null>(load());
 export const costsOpen = signal(false);
+export const workersOpen = signal(false);
 
 const num = (v: unknown, fallback: number) => (typeof v === "number" && Number.isFinite(v) ? v : fallback);
 
@@ -53,6 +54,7 @@ export const economics = computed<Economics | null>(() => {
     currency: typeof s.currency === "string" && s.currency.length <= 4 ? s.currency : ex.currency,
     menu,
     wagePerHour: num(s.wagePerHour, ex.wagePerHour),
+    workerWages: Object.fromEntries(Object.entries(s.workerWages ?? {}).filter(([, v]) => typeof v === "number" && Number.isFinite(v) && v >= 0)),
     electricityPerHour: num(s.electricityPerHour, ex.electricityPerHour),
     otherPerHour: num(s.otherPerHour, ex.otherPerHour),
     demandPerHour: num(s.demandPerHour, ex.demandPerHour),
@@ -95,3 +97,10 @@ export const baselineProfit = computed(() => profitFor(originalLayout.value));
 
 /** Profit per hour of the judge's layout, recomputed on every drag move. */
 export const playProfit = computed(() => profitFor(playLayout.value ?? originalLayout.value));
+
+/** Update one worker without changing anyone else's pay. */
+export function setWorkerSalary(workerId: string, salary: number): void {
+  const cur = economics.value;
+  if (!cur || !Number.isFinite(salary) || salary < 0) return;
+  setEconomics({ workerWages: { ...cur.workerWages, [workerId]: salary } });
+}

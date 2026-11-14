@@ -3,6 +3,26 @@
  * resizable side panel beside it, and the kitchen filling the rest. Cards in
  * the panel are flat; the step's own controls keep the sticker look.
  */
+.st-recipes { display: grid; gap: 12px; }
+.st-recipe { border: 2px solid var(--dr-ink); border-radius: 12px; overflow: hidden; }
+.st-recipe summary { cursor: pointer; padding: 14px; font-weight: 800; }
+.st-recipe summary small { display: block; margin: 5px 0 0 18px; font-weight: 500; opacity: .7; }
+.st-recipe[open] summary { border-bottom: 1px solid var(--dr-ink); }
+.st-recipe-body { padding: 14px; display: grid; gap: 16px; }
+.st-recipe-body input:not([type="checkbox"]), .st-recipe-body select { box-sizing: border-box; min-width: 0; width: 100%; border: 1px solid var(--dr-ink); border-radius: 7px; padding: 8px; font: inherit; color: var(--dr-ink); background: var(--dr-paper); }
+.st-recipe-body button { border: 1px solid var(--dr-ink); border-radius: 6px; padding: 5px 9px; font: inherit; color: var(--dr-ink); background: var(--dr-paper); cursor: pointer; }
+.st-recipe-body button:disabled { opacity: .4; cursor: default; }
+.st-recipe-steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; }
+.st-recipe-steps li { display: grid; gap: 9px; }
+.st-recipe-line { display: flex; align-items: center; gap: 8px; }
+.st-recipe-line strong { flex: 1; overflow-wrap: anywhere; font-size: .9em; }
+.st-recipe-line label { display: flex; align-items: center; gap: 4px; flex: 0 0 86px; }
+.st-recipe-number { font-weight: 800; opacity: .6; }
+.st-recipe-fetch { display: grid; gap: 6px; font-size: .85em; }
+.st-recipe-fetch label { display: flex; align-items: center; gap: 7px; }
+.st-add-recipe { display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; margin: 16px 0; padding: 12px; border: 2px dashed var(--dr-ink); border-radius: 12px; background: transparent; color: var(--dr-ink); font: inherit; font-weight: 800; cursor: pointer; }
+.st-add-recipe span { font-size: 1.6em; }
+.st-add-recipe:disabled { opacity: .4; cursor: default; }
 .st-root {
   position: fixed;
   inset: 0;
@@ -511,6 +531,19 @@
   font-weight: 800;
   font-size: var(--dr-size-small);
   color: var(--dr-ink-soft);
+}
+.st-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: var(--dr-size-small);
+  color: var(--dr-ink);
+}
+.st-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--dr-ink);
 }
 .st-input {
   font: inherit;
@@ -1072,3 +1105,9 @@
   color: var(--dr-ink-soft);
   white-space: nowrap;
 }
+
+.st-workers { display: grid; gap: 12px; }
+.st-worker-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(130px, 1fr); gap: 14px; align-items: center; }
+.st-worker-name { display: flex; align-items: center; gap: 10px; font-weight: 800; }
+.st-worker-name small { display: block; font-weight: 600; color: var(--dr-ink-soft); }
+.st-worker-row .st-input { width: 100%; }

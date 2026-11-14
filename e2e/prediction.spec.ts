@@ -81,7 +81,7 @@ test("Compare shows the layout in Edit now, not an earlier test's", async ({ pag
   const walkW = await text(page, "walking-per-order");
   const timeW = await text(page, "time-per-order");
   expect(walkW).not.toBe(walkM);
-  await page.keyboard.press("3");
+  await page.keyboard.press("4");
   await expectStep(page, "compare");
   await expect(page.getByTestId("compare-after-walking")).toHaveText(walkW);
   await expect(page.getByTestId("compare-after-time")).toHaveText(timeW);
@@ -96,12 +96,12 @@ test("order count changes simulated Edit and compare numbers, not the real test 
   await expect(page.getByTestId("time-per-order")).not.toHaveText(originalTime);
   const simulated = await text(page, "time-per-order");
   await expect(page.getByText(`The real run in step 3 keeps its own ${originalCount} orders.`)).toBeVisible();
-  await page.keyboard.press("3");
+  await page.keyboard.press("4");
   await expect(page.getByTestId("compare-before-time")).toHaveText(simulated);
   await expect(page.getByTestId("compare-before-done")).toContainText(`of ${originalCount + 1}`);
   await page.keyboard.press("2");
   await page.keyboard.press("m");
-  await page.keyboard.press("3");
+  await page.keyboard.press("4");
   await page.getByTestId("view-test").click();
   await expect(page.getByTestId("prediction-range")).toHaveText(computeTruth().timeB);
   await expect(page.getByText(`This check uses the run's own ${originalCount} orders, not the ${originalCount + 1} set in Edit.`)).toBeVisible();

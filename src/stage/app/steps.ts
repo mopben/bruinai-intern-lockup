@@ -5,13 +5,14 @@
 export const STEPS = [
   { id: "build", name: "Import", views: ["scan"] },
   { id: "edit", name: "Edit", views: ["play"] },
+  { id: "orders", name: "Orders", views: ["orders"] },
   { id: "results", name: "Run", views: ["compare", "run", "test"] },
 ] as const;
 
 export type StepId = (typeof STEPS)[number]["id"];
 export type ViewId = (typeof STEPS)[number]["views"][number];
 export const STEP_IDS: readonly StepId[] = STEPS.map((s) => s.id);
-export const VIEW_ORDER: readonly ViewId[] = ["scan", "play", "compare", "run", "test"];
+export const VIEW_ORDER: readonly ViewId[] = ["scan", "play", "orders", "compare", "run", "test"];
 
 export function stepOf(view: ViewId): StepId {
   return STEPS.find((s) => (s.views as readonly ViewId[]).includes(view))!.id;

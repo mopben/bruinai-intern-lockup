@@ -126,7 +126,7 @@ export function runReplication(model: SimModel, releases: Releases, seed: number
     const k = job % S;
     const step = (plans[i] as readonly ModelStepLike[])[k] as ModelStepLike;
     const pool = pools[s] as readonly number[];
-    const work = pool[Math.floor((u[job] as number) * pool.length)] as number;
+    const work = step.workSeconds ?? pool[Math.floor((u[job] as number) * pool.length)] as number;
     const t = now + step.fetchSeconds + work;
     start[job] = now;
     tap[job] = t;

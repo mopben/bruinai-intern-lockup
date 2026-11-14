@@ -74,10 +74,9 @@ export function beginFirstRun(): void {
     kitchen: k,
     label: "Live run",
     onEnd: (run: MeasuredRun) => {
-      const now = kitchen.value ?? k;
       batch(() => {
-        firstRun.value = run.origin === "live" ? run : { ...run, kitchen: { ...now, layout: run.kitchen.layout } };
-        storyText.value = runStory(reconstructRun(now.setup, run.taps), nameOf).sentence;
+        firstRun.value = run;
+        storyText.value = runStory(reconstructRun(run.kitchen.setup, run.taps), nameOf).sentence;
       });
     },
     // A second run made later is linked to the saved first run, so it is listed under it.
@@ -212,6 +211,7 @@ export function goTo(next: ViewId): void {
     cancelSuggest();
     freezeNow();
   }
+  if (prev === "orders") freezeNow();
   batch(() => {
     view.value = next;
     selectedId.value = null;

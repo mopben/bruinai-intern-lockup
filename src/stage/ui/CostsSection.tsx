@@ -65,7 +65,7 @@ export function CostsSection() {
       })}
       <h3>Running costs, per hour</h3>
       <div class="st-cost-grid">
-        <Money label="Wage per worker" value={econ.wagePerHour} unit={`${cur}/h`} step={0.5} testId="cost-wage" onChange={(v) => change({ wagePerHour: v })} />
+        <Money label="Default hourly salary" value={econ.wagePerHour} unit={`${cur}/h`} step={0.5} testId="cost-wage" onChange={(v) => change({ wagePerHour: v })} />
         <Money label="Electricity" value={econ.electricityPerHour} unit={`${cur}/h`} testId="cost-electricity" onChange={(v) => change({ electricityPerHour: v })} />
         <Money label="Rent and other" value={econ.otherPerHour} unit={`${cur}/h`} step={0.5} testId="cost-other" onChange={(v) => change({ otherPerHour: v })} />
       </div>

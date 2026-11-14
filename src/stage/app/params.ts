@@ -5,8 +5,8 @@
  *   &mode=replay|live   replay (default): every input from the recording.
  *                       live: scan, taps and positions start on live.
  *   &speed=4            replay speed for every playback (default 1, 0.25 to 64).
- *   &step=1..3          step to open on (default 1).
- *   &view=compare|run|test  view within step 3.
+ *   &step=1..4          step to open on (default 1).
+ *   &view=compare|run|test  view within step 4.
  */
 import { defaultView, stepAt, type ViewId } from "./steps";
 

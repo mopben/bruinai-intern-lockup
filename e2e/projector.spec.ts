@@ -102,7 +102,7 @@ for (const vp of SIZES) {
     await settled(page, "test", size, problems);
     await shot("3-after-change");
 
-    await page.keyboard.press("3");
+    await page.keyboard.press("4");
     await expectStep(page, "compare");
     await expect(page.getByTestId("compare-after-time")).toBeVisible();
     // Let the two scenes draw a few frames before the picture.

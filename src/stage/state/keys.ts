@@ -3,7 +3,7 @@
  * (renaming a box) are left alone.
  */
 import { keyAction, navigate, type KeyAction } from "../app/steps";
-import { costsOpen } from "./economics";
+import { costsOpen, workersOpen } from "./economics";
 import { startSuggest } from "./suggest";
 import { applyRehearsed, goTo, resetPlay, startOrReplay } from "./flow";
 import { reveal } from "./kitchen-actions";
@@ -55,7 +55,7 @@ function play(): void {
       sendCompare("replay");
       return;
     default:
-      keyHint("P plays Original run, After the change, and Before vs after in step 3.");
+      keyHint("P plays Original run, After the change, and Before vs after in step 4.");
       return;
   }
 }
@@ -85,7 +85,8 @@ export function perform(action: KeyAction): void {
       else if (!skipToEnd()) keyHint("No run is playing. Press P to start one.");
       return;
     case "escape":
-      if (costsOpen.value) costsOpen.value = false;
+      if (workersOpen.value) workersOpen.value = false;
+      else if (costsOpen.value) costsOpen.value = false;
       else selectedId.value = null;
       return;
     case "reset":
@@ -93,8 +94,9 @@ export function perform(action: KeyAction): void {
       else keyHint("Backspace undoes the change in Edit (step 2).");
       return;
     case "rehearsed":
+      if (action.key === "m") return;
       if (here === "play") applyRehearsed(action.key);
-      else keyHint("M and W make the rehearsed change in Edit (step 2).");
+      else keyHint("W adds the rehearsed worker in Edit (step 2).");
       return;
     case "suggest":
       if (here === "play") startSuggest();

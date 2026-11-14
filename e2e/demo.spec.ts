@@ -84,7 +84,7 @@ test("definition of done: full demo, replay, keyboard only (acceptance steps 1-3
   }
 
   // Before vs after: two kitchens, both with numbers, the clock advancing.
-  await kb.press("3");
+  await kb.press("4");
   await expectStep(page, "compare");
   for (const side of ["before", "after"]) {
     await expect(page.getByTestId(`compare-${side}`)).toBeVisible();

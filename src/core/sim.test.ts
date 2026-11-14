@@ -27,6 +27,18 @@ const run = (spec: KitSpec, cal: Calibration, releases: ReturnType<typeof evenOr
 describe("simulation, deterministic work and no walking", () => {
   const one = tandem([worker("a", "A"), worker("b", "B")]);
 
+  it("uses each recipe's explicit time at shared stations without measured samples", () => {
+    const spec: KitSpec = { ...one, menu: [
+      { id: "espresso", name: "Espresso", steps: [{ stationId: "A", workSeconds: 10 }] },
+      { id: "latte", name: "Latte", steps: [{ stationId: "A", workSeconds: 20 }] },
+    ] };
+    const releases = [
+      { orderId: "one", itemId: "espresso", t: 0 },
+      { orderId: "two", itemId: "latte", t: 100 },
+    ];
+    expect(run(spec, fixedCalibration({}), releases).orderTimes).toEqual([10, 20]);
+  });
+
   it("matches hand-computed tandem-queue completion times", () => {
     // A takes 2 s, B 5 s. Releases 0,1,2,3. A done 2,4,6,8; B done 7,12,17,22.
     const r = run(one, fixedCalibration({ A: [2], B: [5] }), evenOrders(4, 1));

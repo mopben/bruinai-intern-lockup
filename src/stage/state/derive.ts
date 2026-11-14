@@ -22,8 +22,8 @@ export const usableFirstRun = computed(() => {
 /** Why there is no usable first run, in words. */
 export const firstRunProblem = computed<string | null>(() => {
   if (!kitchen.value) return "There is no kitchen yet. Scan one, or switch the scan to recorded in Inputs in Import (step 1).";
-  if (!firstRun.value) return "This kitchen has not been run yet. Go to step 3, Original run, and start a run.";
-  if (!usableFirstRun.value) return "The run on file was made in a different kitchen. Go to step 3, Original run, and run this one.";
+  if (!firstRun.value) return "This kitchen has not been run yet. Go to step 4, Original run, and start a run.";
+  if (!usableFirstRun.value) return "The run on file was made in a different kitchen. Go to step 4, Original run, and run this one.";
   return null;
 });
 
@@ -34,7 +34,7 @@ const firstWorld = computed(() => {
   const run = usableFirstRun.value;
   const k = kitchen.value;
   if (!run || !k) return null;
-  return tryWorld(k.scan, k.setup, run.kitchen.layout);
+  return tryWorld(k.scan, run.kitchen.setup, run.kitchen.layout);
 });
 
 /** Learned from the whole first run (Play and the frozen prediction use this). */
@@ -44,7 +44,7 @@ export const calibration = computed<Computed<Calibration> | null>(() => {
   if (!run || !w) return null;
   if (!w.ok) return w;
   try {
-    return { ok: true, value: calibrate(w.value, reconstructRun(w.value.setup, run.taps), run.positions) };
+    return { ok: true, value: calibrate(w.value, reconstructRun(run.kitchen.setup, run.taps), run.positions) };
   } catch (error) {
     return fail(explainError(error));
   }
@@ -55,7 +55,7 @@ export const firstMeasuredS = computed<number | null>(() => {
   const run = usableFirstRun.value;
   const k = kitchen.value;
   if (!run || !k) return null;
-  return summariseRun(reconstructRun(k.setup, run.taps)).meanOrderTimeS;
+  return summariseRun(reconstructRun(run.kitchen.setup, run.taps)).meanOrderTimeS;
 });
 
 const cal = () => {
