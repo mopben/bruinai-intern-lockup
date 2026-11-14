@@ -182,19 +182,19 @@ A scanned box with no entry in `items` is treated as a fixture.
 { "id": "latte", "name": "Latte",
   "steps": [
     { "stationId": "61A93A22-761D-47DF-BC5F-5EB3A7D8334A" },
-    { "stationId": "98EA7E27-B557-42A2-9AE3-1C7A609FDAC0" },
-    { "stationId": "9886D544-4186-4B47-978D-7D032CCECDEA",
-      "fetchFrom": ["65E69210-5EED-4D93-9F34-955C39B9EDBF"] }
+    { "stationId": "98EA7E27-B557-42A2-9AE3-1C7A609FDAC0",
+      "fetchFrom": ["65E69210-5EED-4D93-9F34-955C39B9EDBF"] },
+    { "stationId": "9886D544-4186-4B47-978D-7D032CCECDEA" }
   ],
   "tasks": [
-    { "id": "shot", "stationId": "61A93A22-761D-47DF-BC5F-5EB3A7D8334A" },
-    { "id": "milk", "stationId": "98EA7E27-B557-42A2-9AE3-1C7A609FDAC0" },
-    { "id": "pour", "stationId": "9886D544-4186-4B47-978D-7D032CCECDEA",
-      "fetchFrom": ["65E69210-5EED-4D93-9F34-955C39B9EDBF"], "after": ["shot", "milk"] }
+    { "id": "take", "stationId": "61A93A22-761D-47DF-BC5F-5EB3A7D8334A" },
+    { "id": "brew", "stationId": "98EA7E27-B557-42A2-9AE3-1C7A609FDAC0",
+      "fetchFrom": ["65E69210-5EED-4D93-9F34-955C39B9EDBF"] },
+    { "id": "finish", "stationId": "9886D544-4186-4B47-978D-7D032CCECDEA", "after": ["take", "brew"] }
   ] }
 ```
 
-Here the shot and the milk start when the order appears, and the pour waits for both.
+These are the boxes of the latte example above: the till, the espresso machine (with milk from the fridge) and the finish counter. Here taking the order and brewing both start when the order appears, and finishing waits for both. Taps for `take` and `brew` may come in either order; a tap for `finish` must come after both.
 
 | Field | Meaning |
 | --- | --- |
@@ -233,7 +233,7 @@ Where every box stands and who works where. A changed run (a box dragged, a work
 | `workers[].stationId` | The station this person works at. Two people may share a station. |
 | `workers[].covers` | Optional. The stations this person may work at, at least one id. `stationId` is always one of them: it is the home station, where the person waits with nothing to do. Default: only `stationId`. |
 
-Every station used by the menu needs at least one worker.
+Every station used by the menu needs at least one worker whose `stationId` or `covers` names it.
 
 **`covers`**: a person who takes orders and also pulls shots when the till is quiet:
 
@@ -261,7 +261,7 @@ Line 1 is the header. Then one line per event, in time order. The last line is `
 | `done` | A worker tapped "done" for step `step` (from 0) of order `orderId`. `stationId` is the station of that step. `workerId` is optional. |
 | `end` | The run ended at `t`. At most one, and nothing may come after it. If it is missing, the run ends at the last tap. |
 
-Each order's steps are tapped in order: step 0, then 1, then 2. Each step is tapped once.
+Each order's steps are tapped in order: step 0, then 1, then 2. For an item with `tasks`, a step is tapped after the steps in its `after` list, and steps that do not wait for each other may come in any order. Each step is tapped once.
 
 ## positions.jsonl
 

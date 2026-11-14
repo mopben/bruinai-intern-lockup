@@ -133,10 +133,10 @@ function checkLayout(scan: Scan, setup: Setup | undefined, layout: Layout, s: Si
       if (Math.min(gap, 360 - gap) < 25) s.warn("layout.json", `hat colours of "${o.id}" (${o.color}) and "${w.id}" (${w.color}) are close in hue; the camera may mix them up.`);
     });
   });
-  const staffed = new Set(layout.workers.map((w) => w.stationId));
+  const staffed = new Set(layout.workers.flatMap((w) => [w.stationId, ...(w.covers ?? [])]));
   const used = new Set((setup?.menu ?? []).flatMap((m) => m.steps.map((st) => st.stationId)));
   for (const id of used) {
-    if (inScan.has(id) && !staffed.has(id)) s.error("layout.json", `nobody works at ${boxLabel(id, setup)}, which a menu step needs. Add a worker with "stationId": "${id}".`);
+    if (inScan.has(id) && !staffed.has(id)) s.error("layout.json", `nobody works at ${boxLabel(id, setup)}, which a menu step needs. Add a worker with "stationId": "${id}", or add it to a worker's "covers".`);
   }
 }
 

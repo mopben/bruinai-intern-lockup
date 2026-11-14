@@ -1,8 +1,9 @@
 /**
  * taps.jsonl against the protocol: every "done" belongs to a shown order,
- * names the right station, and comes after the step before it.
+ * names the right station, and comes after the step before it (or, for an
+ * item with tasks, after the tasks in its "after" list).
  */
-import type { DoneEvent, Layout, OrderEvent, Setup, TapEvent } from "../../src/core/types";
+import type { DoneEvent, Layout, OrderEvent, Setup, TapEvent, TaskDef } from "../../src/core/types";
 import { boxLabel, type Lined, type Sink } from "./checks";
 
 const F = "taps.jsonl";
@@ -45,6 +46,33 @@ function checkOrders(orders: readonly Lined<OrderEvent>[], setup: Setup | undefi
   }
 }
 
+type Tapped = ReadonlyMap<string, Lined<DoneEvent>>;
+
+/** A chain item: step k comes after step k-1. */
+function checkChainOrder(d: Lined<DoneEvent>, tapped: Tapped, s: Sink): void {
+  const { orderId, step, t } = d.value;
+  if (step === 0) return;
+  const before = tapped.get(`${orderId}#${step - 1}`);
+  if (!before) s.error(F, `order "${orderId}" step ${step} is tapped before step ${step - 1}. Steps are tapped in order; fix the step number or add the missing tap.`, d.line);
+  else if (before.value.t > t) s.error(F, `order "${orderId}" step ${step} (t=${t}) is earlier than step ${step - 1} (t=${before.value.t}, line ${before.line}).`, d.line);
+}
+
+/** An item with tasks: a task comes after the tasks in its `after` list, nothing else. Unknown ids are reported for setup.json. */
+function checkTaskOrder(d: Lined<DoneEvent>, tasks: readonly TaskDef[], tapped: Tapped, s: Sink): void {
+  const { orderId, step, t } = d.value;
+  const task = tasks[step];
+  if (!task) return;
+  for (const id of new Set(task.after ?? [])) {
+    const k = tasks.findIndex((x) => x.id === id);
+    if (k < 0 || k === step) continue;
+    const name = `task "${task.id}" (step ${step})`;
+    const dep = `task "${id}" (step ${k})`;
+    const before = tapped.get(`${orderId}#${k}`);
+    if (!before) s.error(F, `order "${orderId}" ${name} is tapped before ${dep}, which it waits for. Fix the step number or add the missing tap.`, d.line);
+    else if (before.value.t > t) s.error(F, `order "${orderId}" ${name} (t=${t}) is earlier than ${dep} (t=${before.value.t}, line ${before.line}), which it waits for.`, d.line);
+  }
+}
+
 function checkDones(
   dones: readonly Lined<DoneEvent>[],
   orders: ReadonlyMap<string, Lined<OrderEvent>>,
@@ -79,11 +107,8 @@ function checkDones(
     if (def.stationId !== stationId) {
       s.error(F, `step ${step} of "${item.id}" happens at ${boxLabel(def.stationId, setup)}, but this tap names ${boxLabel(stationId, setup)}.`, d.line);
     }
-    if (step > 0) {
-      const before = tapped.get(`${orderId}#${step - 1}`);
-      if (!before) s.error(F, `order "${orderId}" step ${step} is tapped before step ${step - 1}. Steps are tapped in order; fix the step number or add the missing tap.`, d.line);
-      else if (before.value.t > t) s.error(F, `order "${orderId}" step ${step} (t=${t}) is earlier than step ${step - 1} (t=${before.value.t}, line ${before.line}).`, d.line);
-    }
+    if (item.tasks) checkTaskOrder(d, item.tasks, tapped, s);
+    else checkChainOrder(d, tapped, s);
   }
   if (!setup) return;
   for (const [orderId, o] of orders) {

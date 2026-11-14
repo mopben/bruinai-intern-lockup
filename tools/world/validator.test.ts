@@ -137,6 +137,53 @@ describe("validator", () => {
     expect(errors.some((e) => e.startsWith(`layout.json workers[0] ("${who}") covers "`) && e.includes("which is not a station"))).toBe(true);
   });
 
+  describe("join items and covered stations", () => {
+    type Step = { stationId: string; fetchFrom?: string[] };
+    const setup = JSON.parse(good["setup.json"]) as { menu: { id: string; steps: Step[] }[] };
+    // p and q start on release; r waits for both.
+    const joinSetup = JSON.stringify({
+      ...setup,
+      menu: setup.menu.map((m) => ({
+        ...m,
+        tasks: m.steps.map((s, k) => ({ id: ["p", "q", "r"][k] ?? `t${k}`, ...s, ...(k === 2 ? { after: ["p", "q"] } : {}) })),
+      })),
+    });
+    type Tap = { type: string; t: number; orderId?: string; step?: number };
+    /** Swaps the times of two done taps of order o4, keeping the file's line order. */
+    const swapTimes = (a: number, b: number) => (ls: string[]) => {
+      const parsed = ls.map((l) => (l.trim() ? (JSON.parse(l) as Tap) : undefined));
+      const find = (step: number) => parsed.findIndex((p) => p?.type === "done" && p.orderId === "o4" && p.step === step);
+      const [ia, ib] = [find(a), find(b)];
+      const [ta, tb] = [parsed[ia]?.t, parsed[ib]?.t];
+      return ls.map((l, i) => (i === ia ? JSON.stringify({ ...parsed[i], t: tb }) : i === ib ? JSON.stringify({ ...parsed[i], t: ta }) : l));
+    };
+    const tapErrors = (files: Partial<Record<RunFileName, string>>) => messages(files).errors.filter((e) => e.startsWith("taps.jsonl"));
+
+    it("accepts join taps in an order the graph allows but a chain does not (q before p)", () => {
+      const taps = edit("taps.jsonl", swapTimes(0, 1))["taps.jsonl"];
+      expect(tapErrors({ ...good, "taps.jsonl": taps })).not.toEqual([]); // a chain still rejects it
+      expect(tapErrors({ ...good, "setup.json": joinSetup, "taps.jsonl": taps })).toEqual([]);
+    });
+
+    it("still flags a join task tapped before a task it waits for (r before p)", () => {
+      const taps = edit("taps.jsonl", swapTimes(0, 2))["taps.jsonl"];
+      const errors = tapErrors({ ...good, "setup.json": joinSetup, "taps.jsonl": taps });
+      expect(errors.some((e) => e.includes('order "o4" task "r" (step 2) is tapped before task "p" (step 0), which it waits for.'))).toBe(true);
+    });
+
+    it("counts a station as staffed when a worker covers it", () => {
+      const layout = JSON.parse(good["layout.json"]) as { workers: { id: string; stationId: string; covers?: string[] }[] };
+      const moved = (covers: boolean) =>
+        JSON.stringify({
+          ...layout,
+          workers: layout.workers.map((w) => (w.stationId === MAKE ? { ...w, stationId: ORDER, ...(covers ? { covers: [MAKE] } : {}) } : w)),
+        });
+      const nobody = (text: string) => messages(withFile("layout.json", text)).errors.filter((e) => e.includes("nobody works at"));
+      expect(nobody(moved(true))).toEqual([]);
+      expect(nobody(moved(false)).some((e) => e.includes('nobody works at "Espresso machine"'))).toBe(true);
+    });
+  });
+
   it("still passes the three fixture folders", () => {
     for (const name of ["counter-a", "counter-b-fridge-closer", "counter-c-fourth-worker"]) {
       const path = join("fixtures", name);
