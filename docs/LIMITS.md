@@ -33,17 +33,21 @@ Everything below needs a real device, a real room or real people. None of it has
 - **A saved second run is not linked to a saved live first run.** Its `baseRunId` says `live run`, so it does not appear under "Second run (Test)" for that first run. Edit its `run.json` by hand (see the README).
 - **Taped floor marks are invisible to RoomPlan.** The queue mark must be added in the Scan step.
 - **Two workers at one station are assumed not to get in each other's way.** Collisions between people are not simulated.
+- **The tablet page expects a chain of steps.** A kitchen whose menu items have parallel tasks can be loaded and simulated, but not run live through the tablet.
+- **Station capacity is modelled but not shown.** It is unit-tested. There is no control for it on screen, and it was not checked against generated rooms.
+- **Workers who cover several stations are modelled but not shown.** They are unit-tested. There is no control for them in Play, and they were not checked against generated rooms yet. The stage's playback draws such a worker at the home station.
+- **There is no demand setting yet.** A busier or longer rush cannot be tried.
 - **All walking paths in the bundled recordings are straight lines.** Routing round obstacles is covered only by unit tests.
 - **Grown obstacles have square corners**, which overstates a detour round a corner by up to about 0.1 m.
 - **The first `npm start` needs internet** to install packages. Later starts do not.
 - **The camera page must stay visible on the laptop.** A hidden browser tab slows the tracker down.
-- **Compare plays one simulated run per side.** It is one draw, not the range; quote the range.
+- **Test plays one simulated run per side.** It is one draw, not the range; quote the range.
 
 ## What we would do next
 
 1. **Take the first real scan** of the staged counter with the LiDAR iPhone, load it, and check sizes, categories and which side is the front. This is the first true test of level 2.
 2. **Run the first real staged run**: tablet, filming phone, three people in hats. Record it, validate the folder, and play it back. This is the first true test of level 3.
-3. **Rehearse the prediction and count.** Run the change for real five to ten times and record how often the measured mean lands inside the range. Keep step 5 in the demo only if it holds most of the time.
+3. **Rehearse the prediction and count.** Run the change for real five to ten times and record how often the measured mean lands inside the range. Keep the real-run check in the demo only if it holds most of the time.
 4. **Measure the camera on the day's light**: average and worst dot error against tape marks, and how often each hat is lost.
 5. **Time the full live demo** on the real network and the real projector, with someone at the back of the room reading the numbers.
 6. **Practise every fallback** in the runbook at least once with the real devices.

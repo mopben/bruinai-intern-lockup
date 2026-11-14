@@ -5,7 +5,7 @@ One page. Keys work on the stage page (the laptop browser). Press **I** at any t
 ## Before the day (once)
 
 1. Clone the repository. Run `npm start` **with internet**: it installs and builds (a few minutes). Later starts need no internet.
-2. The stage opens at http://localhost:5179/ in replay. Press → five times and check all six steps work.
+2. The stage opens at http://localhost:5179/ in replay. Press → four times and check all five steps work. In Test, press **C** for the real-run check and **C** again to come back.
 3. Build the scan app and install it on the LiDAR iPhone: see `ios/README.md`.
 4. Rehearse the whole demo at least three times, live and from recordings. Count how often the prediction holds (see the last section).
 
@@ -31,8 +31,9 @@ Live path first; **from recordings** in brackets. Numbers shown are the recordin
 | 0:30 | 2 Run | Start the room. (Recordings: it plays on arrival.) | → then **P** "Start run". (Recordings: F) | Dots move, tickets pile at the espresso machine. Ends by itself, or **E** |
 | 1:30 | 3 Trust | "On orders it never saw, the model is off by this much." | → | Model error (about **8%** on the recording), five order pairs |
 | 1:45 | 4 Play | Hand the mouse to a judge: drag the fridge, or **+ worker** | → | Walking **6.2 m**, time **19–23 s**; both change during the drag |
-| 2:15 | 5 Test | Make the same change in the room, then run again. (Recordings: the matching run plays.) | → then **P** (live). (Recordings: F, or E) | Predicted range, measured mean, and a plain verdict |
-| 2:45 | 6 Compare | "Same orders, same luck, before and after." | → (P plays again) | Two kitchens side by side |
+| 2:15 | 5 Test | "Simulated. Same orders, same luck, before and after." | → (P plays again, F faster) | Two simulated kitchens side by side. Under each: time per order, slow orders, walking per order, where orders wait most, the busiest worker |
+| 2:35 | 5 Test: real-run check | Make the same change in the room, then run again. (Recordings: the matching run plays.) | **C**, then **P** (live). (Recordings: F, or E) | Predicted range, measured mean, and a plain verdict |
+| 3:05 | 5 Test | Back to the two kitchens to close. | **C** | The simulation again |
 
 ## When something fails
 
@@ -46,10 +47,10 @@ Live path first; **from recordings** in brackets. Numbers shown are the recordin
 | Judge freezes at the drag | **M** (fridge next to the espresso machine) or **W** (fourth worker). **Backspace** resets | Numbers jump to the rehearsed change |
 | Prediction misses | Nothing. Say: "Outside the range. Ten orders is a short run, and this is why we test it." | "Outside the range: … slower than predicted." |
 | Save failed | **S** | "Saved on this laptop in recordings/…" |
-| Laptop or browser dies | Reload, or `npm start` again: it reopens on the same step (the address keeps it), in replay. Use **M** or **W** again | The recorded demo |
+| Laptop or browser dies | Reload, or `npm start` again: it reopens on the same step (the address keeps it), in replay. In Test it opens on the simulation; press **C** for the check. Go to Play (**4**) and use **M** or **W** again | The recorded demo |
 
 With a fresh phone scan, the recordings come from another kitchen, so none stands by: a failed live input shows its trouble and nothing is filled in (the stage says so). Then the only fallback is all three on **Recorded**.
 
 ## Honest state of the prediction
 
-Rehearse the **fridge move** (key M): on 40 generated rooms its range held 39 times. The **fourth worker** (key W) held only 24 times and runs about 1 s slow, so avoid it on stage. Keep step 5 only if rehearsal with real people shows the prediction holds. To skip it: in Play press **6** (straight to Compare).
+Rehearse the **fridge move** (key M): on 40 generated rooms its range held 39 times. The **fourth worker** (key W) held only 24 times and runs about 1 s slow, so avoid it on stage. Keep the real-run check only if rehearsal with real people shows the prediction holds. To skip it: in Test do not press **C**; the simulation is the end of the demo.
