@@ -1,0 +1,68 @@
+/*
+ * Dry Run stage theme. Mirrors src/stage/theme/tokens.ts; see the comment
+ * there for how colour and type are meant to be used.
+ */
+:root {
+  --dr-table: #cad7d0;
+  --dr-table-deep: #a9bdb3;
+  --dr-paper: #fffaf0;
+  --dr-floor: #f4e7cb;
+  --dr-board-edge: #d6b583;
+  --dr-ink: #3b2f28;
+  --dr-ink-soft: #6f5e52;
+  --dr-alert: #e2543a;
+  --dr-scan: #5b8fa8;
+  --dr-path: #c9762e;
+  --dr-select: #f2a93b;
+
+  --dr-role-station: #2f9c8a;
+  --dr-role-storage: #8e7cc3;
+  --dr-role-pickup: #df6f97;
+  --dr-role-queue: #f0b44c;
+  --dr-role-fixture: #b9ada0;
+
+  --dr-font-display: 'Baloo 2 Variable', 'Baloo 2', 'Nunito Variable', system-ui, sans-serif;
+  --dr-font-body: 'Nunito Variable', 'Nunito', system-ui, sans-serif;
+
+  /* Projector type scale: px values at 1920x1080, scaled with the viewport. */
+  --dr-size-numeral: clamp(64px, 6.25vw, 120px);
+  --dr-size-display: clamp(40px, 3.35vw, 64px);
+  --dr-size-title: clamp(28px, 2.1vw, 40px);
+  --dr-size-label: clamp(20px, 1.46vw, 28px);
+  --dr-size-body: clamp(18px, 1.15vw, 22px);
+  --dr-size-small: clamp(15px, 0.94vw, 18px);
+
+  --dr-radius-sm: 8px;
+  --dr-radius-md: 14px;
+  --dr-radius-lg: 22px;
+  --dr-radius-pill: 999px;
+
+  --dr-shadow-rest: 0 3px 0 rgba(59, 47, 40, 0.18), 0 8px 18px rgba(59, 47, 40, 0.12);
+  --dr-shadow-lifted: 0 6px 0 rgba(59, 47, 40, 0.16), 0 18px 32px rgba(59, 47, 40, 0.18);
+
+  --dr-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dr-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--dr-table);
+  color: var(--dr-ink);
+  font-family: var(--dr-font-body);
+  font-size: var(--dr-size-body);
+  font-weight: 650;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 4px solid var(--dr-select);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dr-ease: linear;
+    --dr-pop: linear;
+  }
+}
