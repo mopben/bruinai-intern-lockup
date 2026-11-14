@@ -132,7 +132,7 @@ export function keyHints(view: ViewId, live: boolean): readonly { readonly keys:
         { keys: "⌫", does: "reset" },
       ];
     case "compare":
-      return [...nav, { keys: "P", does: "replay Before vs after" }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }];
+      return [...nav, { keys: "P", does: "replay scenarios" }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }];
     default:
       return nav;
   }

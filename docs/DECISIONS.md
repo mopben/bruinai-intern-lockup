@@ -11,7 +11,7 @@ Short entries: what we chose and why. Append under your own heading.
 ## Merge of the simulator revamp with the three-step stage
 
 - **Stage and acceptance tests from main; core, formats, validators and vision from the revamp.** The revamp's five-step flow and its real-run check inside Test are dropped: main's Run step already opens on the simulated Before vs after, with the two real runs as its other views.
-- **Before vs after shows the engine's new numbers.** Slow orders, the station where orders wait most, and the busiest worker are added under each kitchen. Walking is the average over runs when workers cover more than one station.
+- **Compare scenarios shows the engine's new numbers.** Slow orders, the station where orders wait most, and the busiest worker are added to the stats line under each kitchen. They show a dash when the shift has no orders.
 - **A typed step time is a fixed work time.** A step with `workSeconds` gets a pool of that one value in the engine's compiled model; the event loop is unchanged, so runs without typed times give the same results as before. A typed time has no spread, so the prediction's assumption text says how many steps use one.
 - **Profit runs on the engine.** `profit.ts` measures capacity with `compileEngineModel` and `runEngine`, so covering workers and station capacity count.
 

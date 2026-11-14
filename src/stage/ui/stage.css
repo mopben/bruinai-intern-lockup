@@ -794,55 +794,26 @@
 .st-half.after .label {
   background: var(--dr-select);
 }
-/*
- * Under each kitchen: one row per number (what, value, how). Each value's line
- * box holds the display font's whole text box, so a row's text never reaches
- * into the row above or below it.
- */
 .st-half .under {
-  display: grid;
-  grid-template-columns: max-content max-content minmax(0, 1fr);
-  column-gap: clamp(10px, 1.2vw, 20px);
-  row-gap: clamp(2px, 0.5vh, 6px);
-  align-items: baseline;
-  padding: 8px 6px 0;
+  display: flex;
+  gap: 28px;
+  align-items: flex-end;
+  padding: 12px 6px 0;
 }
-.st-sim-row {
-  display: contents;
+.st-compare-rail .st-num .value {
+  font-size: var(--dr-size-display);
 }
-.st-sim-row .what,
-.st-sim-row .how {
-  font-size: var(--dr-size-small);
-  line-height: 1.5;
-  color: var(--dr-ink-soft);
-  white-space: nowrap;
-}
-.st-sim-row .how {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.st-sim-row .value {
-  font-family: var(--dr-font-display);
-  font-weight: 800;
-  font-size: clamp(18px, min(1.8vw, 3.2vh), 34px);
-  line-height: 1.6;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-/* Too narrow for the "how" notes (the side panel is open): hide them rather than cut them to a letter. */
-.st-half .under {
-  container-type: inline-size;
-}
-@container (max-width: 560px) {
-  .st-sim-row .how {
-    visibility: hidden;
-  }
-}
-.st-sim-row .cannot {
-  grid-column: span 2;
-  font-size: var(--dr-size-small);
-  color: var(--dr-alert);
-}
+
+.st-library { display: grid; gap: 14px; }
+.st-library select, .st-library input { width: 100%; min-width: 0; }
+.st-scenario { display: grid; gap: 14px; min-width: 0; border: var(--st-line); border-radius: 12px; padding: 16px; }
+.st-scenario legend { padding: 0 6px; font-weight: 800; }
+.st-half .under { flex-wrap: wrap; }
+.st-scenario-stats { display: flex; flex-wrap: wrap; gap: 8px 18px; flex-basis: 100%; font-size: var(--dr-size-small); }
+.st-scenario-stats strong { display: block; font-variant-numeric: tabular-nums; }
+.st-scenario-problem { flex-basis: 100%; }
+.st-half .label { max-width: calc(100% - 16px); overflow-wrap: anywhere; font-size: clamp(18px, 1.6vw, 30px); }
+.st-compare-bar { flex-wrap: wrap; }
 
 @media (prefers-reduced-motion: reduce) {
   .st-pulse {
@@ -900,6 +871,20 @@
 }
 .st-runline .st-say {
   padding-bottom: 0.2em;
+}
+/* Compare: three numbers per side on one line each. */
+.st-half .under {
+  gap: clamp(14px, 1.6vw, 28px);
+}
+.st-compare-rail .st-num .what,
+.st-compare-rail .st-num .how {
+  white-space: nowrap;
+}
+.st-compare-rail .st-num .what {
+  font-size: var(--dr-size-small);
+}
+.st-compare-rail .st-num .value {
+  font-size: clamp(30px, 3.1vw, 64px);
 }
 
 @media (max-height: 860px), (max-width: 1100px) {
