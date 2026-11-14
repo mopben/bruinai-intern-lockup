@@ -84,7 +84,8 @@ You can also press Play and watch it track, with Record, to check a part.
 
 ## When it fails
 
-- **The stage falls back by itself.** If no position arrives for 4 seconds, or the laptop link drops, the stage switches the dots to the recorded positions of the matching run, mid-run, without a restart. Say "we're showing the recorded run for the dots" and carry on.
+- **The stage falls back by itself.** If no position arrives for 4 seconds, or the laptop link drops, the stage switches the dots to the recorded positions of the matching run, mid-run, without a restart. Say "we're showing the recorded run for the dots" and carry on. The recorded dots only line up with the recorded kitchen: after a fresh phone scan they belong to another floor frame, and the stage warns "The recording standing by is from another kitchen".
+- **A new scan needs a new calibration.** The calibration is saved per scan. After a fresh phone scan the page has none for it; calibrate again before the run.
 - **One worker keeps getting lost:** sample their hat again. Check their mask for other blobs. Check nothing hides their hat at that spot (a lamp, a shelf).
 - **Dots are offset or mirrored:** calibration. Press Calibrate and look at the box outlines; redo the red points. If the camera was bumped, start over.
 - **Dots are right at the counter but wrong near the camera (or the other way round):** hat height. Measure it again.

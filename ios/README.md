@@ -46,7 +46,7 @@ xcodebuild build -project DryRunScan.xcodeproj -scheme DryRunScan \
 
 ## Sending
 
-1. On the laptop, start the product (`npm start`). The stage screen shows the laptop's address.
+1. On the laptop, start the product (`npm start`). It prints the laptop's address. The stage shows it too: in the inputs drawer (key **I**, "Scan upload"), and on the Scan step while it waits for the phone.
 2. Phone and laptop on the **same Wi-Fi** (a phone hotspot works; venue guest Wi-Fi often blocks device-to-device traffic).
 3. Type the address in the app, e.g. `192.168.1.20`. Port 5179 is used unless you type one (`192.168.1.20:5179`). The app remembers it.
 4. Press **Send to laptop**. The app POSTs the JSON to `http://<address>:5179/api/scan` and says plainly what happened:
@@ -59,7 +59,7 @@ xcodebuild build -project DryRunScan.xcodeproj -scheme DryRunScan \
 
 Press **Share scan.json (AirDrop / Files)**. AirDrop it to the laptop (or save to Files and move it by cable), then drag `scan.json` onto the stage screen.
 
-If the phone itself fails, the stage app has the recorded scan. The app also has **Send sample scan** (a hand-written scan of the staged counter, marked SAMPLE) to test the send path without LiDAR.
+If the phone itself fails, the stage app has the recorded scan. The app also has **Send sample scan** (marked SAMPLE) to test the send path without LiDAR. The sample is a copy of `fixtures/counter-a/scan.json`: the same kitchen as the bundled runs, 8 boxes (including the 2 cm queue floor mark, category `unknown`) and 2 walls, with `source: "synthetic"`. Because it has the same box ids, the recorded runs still play in that kitchen after it is sent. The stage gives a phone scan its own starter names (Order, Make, Finish, Pickup, Fridge), so the numbers differ a little from the recorded kitchen: on Nov 14, model error 6% instead of 8%, time per order 18–23 s instead of 19–23 s.
 
 ## What the app produces
 
@@ -84,7 +84,7 @@ All numbers are rounded to 3 decimals (millimetres; yaw to 0.001 rad). Doors, wi
 - `DryRunScan/Sources/Capture/` – the only RoomPlan code: `RoomPlanAdapter` (CapturedRoom -> plain structs, no maths) and `RoomCaptureController` (RoomCaptureView, Done, result).
 - `DryRunScan/Sources/Send/` – address parsing, the POST, device name.
 - `DryRunScan/Sources/Views/`, `App/` – three screens: Home, Capture, Review.
-- `DryRunScan/Resources/sample-scan.json` – the bundled sample.
+- `DryRunScan/Resources/sample-scan.json` – the bundled sample, a copy of `fixtures/counter-a/scan.json`.
 - `DryRunScanTests/` – 27 unit tests.
 
 ## Verified / not verified
@@ -93,7 +93,8 @@ Verified by the builder on a Mac (Xcode 27.2, iPhone 18 Pro simulator, iOS 27.2)
 
 - Unit tests pass (27): yaw sign and size for 0, 90, -45 and 180 deg with rotations built by `simd_quatf` (independent of the code under test), centre from translation, millimetre rounding (no `-0`), floor normalisation, wall thickness, ids and header fields, JSON keys exactly as in types.ts, optional fields omitted rather than `null`, encode/decode round trip, the bundled sample decodes, address parsing, server reply handling, summary extent.
 - The app compiles for a real device (`generic/platform=iOS`, unsigned), so the RoomPlan code type-checks against the device SDK.
-- In the simulator: the "cannot scan" message shows, **Send sample scan** shows the summary (7 objects, 2 walls, 4.6 m x 3.6 m), **Send to laptop** POSTed to a throwaway local listener, which received `POST /api/scan` with `Content-Type: application/json` and a body with exactly the Scan keys; the app showed the green success line. With the listener stopped, the app showed "refused the connection" and a Retry button. Screenshots: `ios/docs/`.
+- After the sample was replaced by a copy of `fixtures/counter-a/scan.json` (Nov 14): 26 of 27 tests pass. `testBundledSampleDecodesAndIsTheStagedCounter` decodes the new sample but expects the old sample's set of categories, which has no `unknown`; the expected set needs updating. The same JSON, POSTed with `curl` to the real Dry Run server, was accepted and shown on the stage (not sent from the app).
+- In the simulator, with the old hand-written sample: the "cannot scan" message shows, **Send sample scan** shows the summary (7 objects, 2 walls, 4.6 m x 3.6 m), **Send to laptop** POSTed to a throwaway local listener, which received `POST /api/scan` with `Content-Type: application/json` and a body with exactly the Scan keys; the app showed the green success line. With the listener stopped, the app showed "refused the connection" and a Retry button. Screenshots: `ios/docs/`.
 
 Not verified:
 

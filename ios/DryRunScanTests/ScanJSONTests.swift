@@ -62,7 +62,7 @@ final class ScanJSONTests: XCTestCase {
         let url = try XCTUnwrap(Bundle.main.url(forResource: AppModel.sampleResource, withExtension: "json"))
         let scan = try ScanJSON.decode(Data(contentsOf: url))
         XCTAssertEqual(scan.walls.count, 2)
-        XCTAssertEqual(Set(scan.boxes.map(\.category)), ["table", "storage", "refrigerator", "sink", "chair"])
+        XCTAssertEqual(Set(scan.boxes.map(\.category)), ["table", "storage", "refrigerator", "sink", "chair", "unknown"])
         let summary = ScanSummary(scan: scan)
         XCTAssertEqual(summary.extentX, 4.5, accuracy: 0.3)
         XCTAssertEqual(summary.extentZ, 3.5, accuracy: 0.3)

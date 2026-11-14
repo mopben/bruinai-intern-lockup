@@ -65,7 +65,7 @@ Common yaws: `0` front faces +z, `1.5708` faces +x, `3.1416` faces -z, `-1.5708`
   "version": 1,
   "id": "counter-b-fridge-closer",
   "title": "Fridge next to the espresso machine",
-  "change": "The milk fridge moved from the left wall into the counter gap next to the espresso machine.",
+  "change": "The milk fridge moved from the left wall to just behind the espresso machine worker.",
   "baseRunId": "counter-a",
   "recordedAt": "2026-11-12T15:17:40.000Z",
   "source": "synthetic"
@@ -116,7 +116,7 @@ The room as boxes. The iPhone scan app writes this file. You can also write it b
 | `source` | `"roomplan"` from the scan app, `"manual"` if you wrote it by hand, `"synthetic"` if generated. |
 | `device` | Optional. The device that scanned, e.g. `"iPhone 15 Pro"`. |
 | `walls` | Walls. `size.w` is the length, `size.h` the height, `size.d` the thickness (more than 0). |
-| `boxes[].id` | Any unique text. The scan app uses RoomPlan's UUIDs. Other files refer to boxes by this id. |
+| `boxes[].id` | Any unique text. The scan app writes `box-1`, `box-2`, ... and walls `wall-1`, ...; the bundled runs use UUIDs. Other files refer to boxes by this id. |
 | `boxes[].category` | What the scanner called it: `table`, `storage`, `refrigerator`, `sink`, `chair`, `unknown` and so on. The scanner knows no café equipment, so an espresso machine on a counter may come out as `storage`. You fix that in `setup.json`, not here. |
 | `boxes[].confidence` | Optional. `"low"`, `"medium"` or `"high"`. |
 

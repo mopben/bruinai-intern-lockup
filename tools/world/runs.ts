@@ -44,7 +44,7 @@ export const RUNS: readonly RunConfig[] = [
   {
     id: "counter-b-fridge-closer",
     title: "Fridge next to the espresso machine",
-    change: "The milk fridge moved from the left wall into the counter gap next to the espresso machine.",
+    change: "The milk fridge moved from the left wall to just behind the espresso machine worker.",
     baseRunId: "counter-a",
     seed: 2202,
     startedAt: "2026-11-12T15:17:40.000Z",
