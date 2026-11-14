@@ -1,18 +1,25 @@
 /**
- * The six demo steps and the operator's keyboard map. Pure: no DOM.
+ * The three demo steps, their views and the operator's keyboard map. Pure: no DOM.
  */
 
 export const STEPS = [
-  { id: "scan", name: "Scan" },
-  { id: "run", name: "Run" },
-  { id: "trust", name: "Trust" },
-  { id: "play", name: "Play" },
-  { id: "test", name: "Test" },
-  { id: "compare", name: "Compare" },
+  { id: "build", name: "Build", views: ["scan"] },
+  { id: "edit", name: "Edit", views: ["play"] },
+  { id: "results", name: "Run & results", views: ["compare", "run", "test"] },
 ] as const;
 
 export type StepId = (typeof STEPS)[number]["id"];
+export type ViewId = (typeof STEPS)[number]["views"][number];
 export const STEP_IDS: readonly StepId[] = STEPS.map((s) => s.id);
+export const VIEW_ORDER: readonly ViewId[] = ["scan", "play", "compare", "run", "test"];
+
+export function stepOf(view: ViewId): StepId {
+  return STEPS.find((s) => (s.views as readonly ViewId[]).includes(view))!.id;
+}
+
+export function defaultView(step: StepId): ViewId {
+  return STEPS.find((s) => s.id === step)!.views[0];
+}
 
 export function stepIndex(id: StepId): number {
   return STEP_IDS.indexOf(id);
@@ -21,6 +28,11 @@ export function stepIndex(id: StepId): number {
 export function stepAt(index: number): StepId {
   const i = Math.min(STEP_IDS.length - 1, Math.max(0, Math.floor(index)));
   return STEP_IDS[i] as StepId;
+}
+
+export function viewAt(index: number): ViewId {
+  const i = Math.min(VIEW_ORDER.length - 1, Math.max(0, Math.floor(index)));
+  return VIEW_ORDER[i] as ViewId;
 }
 
 /** What a key press means. Step-specific actions are interpreted by the step itself. */
@@ -80,36 +92,34 @@ export function keyAction(key: string): KeyAction | null {
   }
 }
 
-/** The step after a navigation action, or the same step for anything else. */
-export function navigate(current: StepId, action: KeyAction): StepId {
-  const i = stepIndex(current);
-  if (action.type === "next") return stepAt(i + 1);
-  if (action.type === "back") return stepAt(i - 1);
-  if (action.type === "jump") return action.step;
+/** The view after a navigation action, or the same view for anything else. */
+export function navigate(current: ViewId, action: KeyAction): ViewId {
+  const i = VIEW_ORDER.indexOf(current);
+  if (action.type === "next") return viewAt(i + 1);
+  if (action.type === "back") return viewAt(i - 1);
+  if (action.type === "jump") return defaultView(action.step);
   return current;
 }
 
 /** The quiet key hint for each step: only the keys that do something there. */
-export function keyHints(step: StepId, live: boolean): readonly { readonly keys: string; readonly does: string }[] {
+export function keyHints(view: ViewId, live: boolean): readonly { readonly keys: string; readonly does: string }[] {
   const nav = [
     { keys: "→", does: "next" },
     { keys: "←", does: "back" },
   ];
   const common = [{ keys: "I", does: "inputs" }];
-  switch (step) {
+  switch (view) {
     case "scan":
       return [...nav, { keys: "P", does: "replay the scan" }, ...common, { keys: "⇧F", does: "full screen" }];
     case "run":
     case "test":
       return live
-        ? [...nav, { keys: "P", does: "start" }, { keys: "E", does: "end run" }, ...common]
-        : [...nav, { keys: "P", does: "play again" }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }, ...common];
-    case "trust":
-      return [...nav, ...common];
+        ? [...nav, { keys: "P", does: `start ${view === "run" ? "Original run" : "After the change"}` }, { keys: "E", does: "end run" }, ...common]
+        : [...nav, { keys: "P", does: `replay ${view === "run" ? "Original run" : "After the change"}` }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }, ...common];
     case "play":
       return [...nav, { keys: "M", does: "rehearsed move" }, { keys: "W", does: "rehearsed worker" }, { keys: "⌫", does: "reset" }, ...common];
     case "compare":
-      return [{ keys: "←", does: "back" }, { keys: "P", does: "play again" }, { keys: "F", does: "faster" }, ...common];
+      return [...nav, { keys: "P", does: "replay Before vs after" }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }, ...common];
     default:
       return nav;
   }

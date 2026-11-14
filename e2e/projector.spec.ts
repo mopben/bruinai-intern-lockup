@@ -22,17 +22,16 @@ const SIZES = [
 const ESSENTIAL: Record<string, readonly string[]> = {
   scan: [],
   run: ["run-clock", "orders-done", "btn-play", "btn-faster", "btn-skip", "run-story"],
-  trust: ["trust-error", "trust-words"],
   play: ["walking-per-order", "time-per-order", "prediction-range", "btn-rehearsed-m", "btn-rehearsed-w", "btn-reset", `btn-add-worker-${BOX.make}`],
   test: ["prediction-range", "run-clock", "btn-play", "measured-result", "verdict"],
   compare: ["compare-before-walking", "compare-before-time", "compare-after-walking", "compare-after-time", "compare-clock", "btn-play", "btn-faster"],
 };
 /** Numbers that must sit on one line. */
-const ONE_LINE = ["walking-per-order", "time-per-order", "trust-error", "run-clock", "compare-before-time", "compare-after-time", "compare-before-walking", "compare-after-walking"];
+const ONE_LINE = ["walking-per-order", "time-per-order", "run-clock", "compare-before-time", "compare-after-time", "compare-before-walking", "compare-after-walking"];
 
 async function checkStep(page: Page, step: string, size: string): Promise<string[]> {
   const problems: string[] = [];
-  const ids = ["step-strip", ...STEP_BUTTONS, ...(ESSENTIAL[step] ?? [])];
+  const ids = ["step-strip", ...STEP_BUTTONS, ...(["run", "test", "compare"].includes(step) ? ["view-compare", "view-run", "view-test"] : []), ...(ESSENTIAL[step] ?? [])];
   for (const id of ids) {
     const v = await checkVisible(page, `[data-testid="${id}"]`, id);
     if (!v.ok) problems.push(`${size} ${step}: ${id} ${v.why}`);
@@ -63,7 +62,7 @@ async function settled(page: Page, step: string, size: string, problems: string[
   problems.push(...last);
 }
 
-const STEP_BUTTONS = ["step-scan", "step-run", "step-trust", "step-play", "step-test", "step-compare"];
+const STEP_BUTTONS = ["step-build", "step-edit", "step-results"];
 
 for (const vp of SIZES) {
   const size = `${vp.width}x${vp.height}`;
@@ -76,35 +75,34 @@ for (const vp of SIZES) {
 
     await expect(page.locator(".dr-tag:not(.mode-scan)").filter({ hasText: "Espresso machine" })).toBeVisible();
     await settled(page, "scan", size, problems);
-    await shot("1-scan");
+    await shot("1-build");
 
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowRight");
     await page.keyboard.press("ArrowRight");
     await expectStep(page, "run");
     await waitForSession(page, "first", "ended");
     await expect(page.getByTestId("run-story")).toBeVisible();
     await settled(page, "run", size, problems);
-    await shot("2-run");
+    await shot("3-original-run");
 
-    await page.keyboard.press("ArrowRight");
-    await expectStep(page, "trust");
-    await settled(page, "trust", size, problems);
-    await shot("3-trust");
-
-    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("2");
     await expectStep(page, "play");
     await page.keyboard.press("m");
     await expect(page.getByTestId("walking-per-order-before")).toBeVisible();
     await settled(page, "play", size, problems);
-    await shot("4-play");
+    await shot("2-edit");
 
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowRight");
     await page.keyboard.press("ArrowRight");
     await expectStep(page, "test");
     await waitForSession(page, "second", "ended");
     await expect(page.getByTestId("verdict")).toBeVisible();
     await settled(page, "test", size, problems);
-    await shot("5-test");
+    await shot("3-after-change");
 
-    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("3");
     await expectStep(page, "compare");
     await expect(page.getByTestId("compare-after-time")).toBeVisible();
     // Let the two scenes draw a few frames before the picture.
@@ -113,7 +111,7 @@ for (const vp of SIZES) {
       return (h.scene("compare-before")?.renders ?? 0) > 3 && (h.scene("compare-after")?.renders ?? 0) > 3;
     });
     await settled(page, "compare", size, problems);
-    await shot("6-compare");
+    await shot("3-before-after");
 
     expect(problems).toEqual([]);
   });

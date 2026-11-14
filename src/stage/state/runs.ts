@@ -1,5 +1,5 @@
 /**
- * Running the kitchen: the first run (step 2) and the second run (step 5),
+ * Running the kitchen: the original run and the run after the change (step 3),
  * recorded or live. A live run has the recording standing by and switches an
  * input to it when the live one fails, without a restart.
  */
@@ -19,7 +19,7 @@ import type { Kitchen } from "../app/kitchen-edit";
 import { standbyFits } from "../app/standby";
 import { createPlayer, type Player } from "./player";
 import { stageLink } from "./link";
-import { addNotice, dropNotice, health, params, presence, session, sources, step, type MeasuredRun, type SaveState, type Session } from "./store";
+import { addNotice, dropNotice, health, params, presence, session, sources, view, type MeasuredRun, type SaveState, type Session } from "./store";
 
 const SAVE_DELAYS_MS: readonly number[] = [0, 1000, 3000];
 const FAST_SPEED = 4;
@@ -119,7 +119,7 @@ function playRecording(plan: RunPlan): void {
     setup: plan.recording.setup,
     workers: plan.recording.layout.workers,
     purpose: plan.purpose,
-    visible: () => step.value === (plan.purpose === "first" ? "run" : "test"),
+    visible: () => view.value === (plan.purpose === "first" ? "run" : "test"),
     onSession: publish,
     onEnd: () =>
       plan.onEnd({
@@ -185,7 +185,7 @@ function prepareLive(plan: RunPlan): void {
     setup,
     workers: workersOf(plan.kitchen.layout.workers, plan.recording.layout.workers),
     purpose: plan.purpose,
-    visible: () => step.value === (plan.purpose === "first" ? "run" : "test"),
+    visible: () => view.value === (plan.purpose === "first" ? "run" : "test"),
     onSession: publish,
     onEnd: (delivered) => {
       live.dispose();

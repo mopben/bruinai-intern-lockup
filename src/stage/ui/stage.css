@@ -87,6 +87,20 @@
   background: var(--dr-select);
   color: var(--dr-ink);
 }
+.st-results-switch {
+  display: flex;
+  gap: 5px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.st-results-switch .st-step {
+  padding: 7px 10px;
+  font-size: clamp(14px, 1.15vw, 19px);
+  white-space: nowrap;
+}
+.st-strip .st-step {
+  white-space: nowrap;
+}
 
 /* --- the kitchen --------------------------------------------------------- */
 .st-stage {

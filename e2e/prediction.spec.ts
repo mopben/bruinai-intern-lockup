@@ -1,12 +1,13 @@
 /**
- * Rule 3 (trust comes before play) and rule 5 (the prediction can be
- * checked): the prediction is frozen on leaving Play and is the one Test
+ * Rule 5 (the prediction can be checked): the prediction is frozen from the
+ * original run and is the one After the change
  * compares; it does not move when the second run loads and plays; a change
  * with no matching recording is said plainly and never compared with a run of
  * another layout; Compare always shows the layout in Play now.
  */
 import { formatRange } from "../src/core";
 import { BOX, expectStep, hook, openStage, text, waitForSession, type RangeV } from "./support/stage";
+import { computeTruth } from "./support/truth";
 import { expect, test } from "./support/fixtures";
 
 interface Frozen {
@@ -20,23 +21,12 @@ interface Plan {
   readonly judgeWorkers: number;
 }
 
-test("rule 3: trust is shown, from a run, before anything can be changed", async ({ page }) => {
-  await openStage(page, { speed: 32 });
-  await page.keyboard.press("ArrowRight");
-  await waitForSession(page, "first", "ended");
-  await page.keyboard.press("ArrowRight");
-  await expectStep(page, "trust");
-  await expect(page.getByTestId("trust-error")).toHaveText(/^\d+%$/);
-  await expect(page.getByTestId("numbers-basis")).toContainText("Numbers from the recorded run: Original counter");
-  // Trust shows the run as it was: no drag handles in Trust.
-  const d = await page.evaluate(() => document.querySelectorAll(".dr-tag.movable").length);
-  expect(d).toBe(0);
-});
-
 test("rule 5: the prediction frozen on leaving Play is the one tested, and it never moves", async ({ page }) => {
-  await openStage(page, { speed: 16, step: 4 });
+  await openStage(page, { speed: 16, step: 2 });
   await page.keyboard.press("m");
   const shown = await text(page, "prediction-range");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
   await expectStep(page, "test");
   const frozenAtLeave = await hook<Frozen>(page, "frozen");
@@ -57,8 +47,10 @@ test("rule 5: the prediction frozen on leaving Play is the one tested, and it ne
 });
 
 test("rule 5: a change with no recording says so and compares like with like", async ({ page }) => {
-  await openStage(page, { speed: 32, step: 4 });
+  await openStage(page, { speed: 32, step: 2 });
   await page.getByTestId(`btn-add-worker-${BOX.order}`).click();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
   await expectStep(page, "test");
   await expect(page.getByTestId("match-note")).toContainText("No recorded run matches this exact change");
@@ -75,21 +67,43 @@ test("rule 5: a change with no recording says so and compares like with like", a
   expect(outcome.predicted).toEqual(forCandidate);
 });
 
-test("Compare shows the layout in Play now, not an earlier Test's (4 → 6 after a new change)", async ({ page }) => {
-  await openStage(page, { speed: 32, step: 4 });
+test("Compare shows the layout in Edit now, not an earlier test's", async ({ page }) => {
+  await openStage(page, { speed: 32, step: 2 });
   await page.keyboard.press("m");
   const walkM = await text(page, "walking-per-order");
   await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
   await waitForSession(page, "second", "ended");
-  await page.keyboard.press("ArrowLeft");
+  await page.keyboard.press("2");
   await expectStep(page, "play");
   await page.keyboard.press("Backspace");
   await page.keyboard.press("w");
   const walkW = await text(page, "walking-per-order");
   const timeW = await text(page, "time-per-order");
   expect(walkW).not.toBe(walkM);
-  await page.keyboard.press("6");
+  await page.keyboard.press("3");
   await expectStep(page, "compare");
   await expect(page.getByTestId("compare-after-walking")).toHaveText(walkW);
   await expect(page.getByTestId("compare-after-time")).toHaveText(timeW);
+});
+
+test("order count changes simulated Edit and compare numbers, not the real test prediction", async ({ page }) => {
+  await openStage(page, { speed: 32, step: 2 });
+  const originalCount = Number(await text(page, "orders-count"));
+  const originalTime = await text(page, "time-per-order");
+  await page.getByTestId("btn-orders-more").click();
+  await expect(page.getByTestId("orders-count")).toHaveText(String(originalCount + 1));
+  await expect(page.getByTestId("time-per-order")).not.toHaveText(originalTime);
+  const simulated = await text(page, "time-per-order");
+  await expect(page.getByText(`The real run in step 3 keeps its own ${originalCount} orders.`)).toBeVisible();
+  await page.keyboard.press("3");
+  await expect(page.getByTestId("compare-before-time")).toHaveText(simulated);
+  await expect(page.getByTestId("compare-before-done")).toContainText(`of ${originalCount + 1}`);
+  await page.keyboard.press("2");
+  await page.keyboard.press("m");
+  await page.keyboard.press("3");
+  await page.getByTestId("view-test").click();
+  await expect(page.getByTestId("prediction-range")).toHaveText(computeTruth().timeB);
+  await expect(page.getByText(`This check uses the run's own ${originalCount} orders, not the ${originalCount + 1} set in Edit.`)).toBeVisible();
 });

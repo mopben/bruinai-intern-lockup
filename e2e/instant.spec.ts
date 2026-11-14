@@ -11,7 +11,7 @@ import { expect, test } from "./support/fixtures";
 const MAX_LATENCY_MS = 100;
 
 test("rule 4: dragging the fridge answers during the drag, within a frame or two", async ({ page }) => {
-  await openStage(page, { step: 4 });
+  await openStage(page, { step: 2 });
   await expectStep(page, "play");
   const walk0 = await text(page, "walking-per-order");
   const time0 = await text(page, "time-per-order");

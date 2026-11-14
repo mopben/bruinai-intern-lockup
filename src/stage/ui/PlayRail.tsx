@@ -1,13 +1,14 @@
 /**
- * Step 4. The judge changes one thing; the two numbers answer during the drag.
+ * Step 2, Edit. The judge changes one thing; the two numbers answer during the drag.
  */
 import { formatMetres, formatRange } from "../../core";
 import { addWorker, removeWorker, workersAt } from "../app/kitchen-edit";
 import { changeKind } from "../app/layout-match";
+import { clampOrders, MAX_ORDERS, MIN_ORDERS } from "../app/orders";
 import { changeDirection } from "../app/words";
 import { baselineNumbers, firstRunProblem, originalLayout, playNumbers } from "../state/derive";
 import { applyRehearsed, resetPlay } from "../state/flow";
-import { candidates, kitchen, playLayout } from "../state/store";
+import { candidates, kitchen, orderCount, playLayout } from "../state/store";
 import { BigNum, Btn } from "./bits";
 import { ExtrapolationNote, NumbersBasis } from "./Basis";
 
@@ -48,9 +49,28 @@ function Rehearsed() {
   if (!move && !staff) return null;
   return (
     <div class="st-row">
-      {move ? <Btn small label={move.c.meta.title} k="M" onClick={() => applyRehearsed("m")} testId="btn-rehearsed-m" /> : null}
-      {staff ? <Btn small label={staff.c.meta.title} k="W" onClick={() => applyRehearsed("w")} testId="btn-rehearsed-w" /> : null}
+      {move ? <Btn small label="Move fridge" title={move.c.meta.title} k="M" onClick={() => applyRehearsed("m")} testId="btn-rehearsed-m" /> : null}
+      {staff ? <Btn small label="Add worker" title={staff.c.meta.title} k="W" onClick={() => applyRehearsed("w")} testId="btn-rehearsed-w" /> : null}
       <Btn small label="Reset" k="⌫" onClick={resetPlay} testId="btn-reset" />
+    </div>
+  );
+}
+
+function Orders() {
+  const schedule = kitchen.value?.setup.schedule.orders;
+  if (!schedule) return null;
+  const count = orderCount.value ?? schedule.length;
+  const setCount = (n: number) => {
+    const next = clampOrders(n);
+    orderCount.value = next === schedule.length ? null : next;
+  };
+  return (
+    <div class="st-row" aria-label="Orders in the rush">
+      <span>Orders in the rush</span>
+      <Btn small label="−" onClick={() => setCount(count - 1)} disabled={count <= MIN_ORDERS} testId="btn-orders-less" />
+      <span data-testid="orders-count">{count}</span>
+      <Btn small label="+" onClick={() => setCount(count + 1)} disabled={count >= MAX_ORDERS} testId="btn-orders-more" />
+      {count !== schedule.length ? <Btn small label="Reset" onClick={() => (orderCount.value = null)} testId="btn-orders-reset" /> : null}
     </div>
   );
 }
@@ -63,6 +83,9 @@ export function PlayRail() {
   const walk = n.walking.ok ? n.walking.value.perOrderM : null;
   const walkBefore = before?.walking.ok ? before.walking.value.perOrderM : null;
   const time = n.time.ok ? n.time.value : null;
+  const originalCount = kitchen.value?.setup.schedule.orders.length ?? 0;
+  const count = orderCount.value ?? originalCount;
+  const countChanged = count !== originalCount;
   const timeBefore = before?.time.ok ? before.time.value : null;
   const walkChanged = walk !== null && walkBefore !== null && formatMetres(walk) !== formatMetres(walkBefore);
   const timeChanged = time && timeBefore && formatRange(time.meanOrderTime) !== formatRange(timeBefore.meanOrderTime);
@@ -94,10 +117,12 @@ export function PlayRail() {
       {problem ? <p class="st-note">{problem}</p> : null}
       {time ? (
         <p class="st-say st-predict">
-          Next run with this kitchen: orders should take <span data-testid="prediction-range">{formatRange(time.meanOrderTime)}</span> on average.
+          {countChanged ? `With ${count} orders, orders should take ` : "Next run with this kitchen: orders should take "}<span data-testid="prediction-range">{formatRange(time.meanOrderTime)}</span> on average.
         </p>
       ) : null}
+      {countChanged ? <p class="st-small">The real run in step 3 keeps its own {originalCount} orders.</p> : null}
       <Staffing />
+      <Orders />
       <Rehearsed />
       <ExtrapolationNote prediction={time} />
       {time ? (

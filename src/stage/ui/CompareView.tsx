@@ -1,5 +1,5 @@
 /**
- * Step 6. The original and the changed kitchen side by side, running the same
+ * Step 3, Before vs after. The original and changed kitchens run the same
  * orders with the same luck (same seed and replication), clocks in sync.
  */
 import { effect } from "@preact/signals";
@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { DEFAULT_SEED, formatMetres, formatRange, simulateRun, type Layout, type RunTrace, type World } from "../../core";
 import { explainError, layoutNumbers, tryWorld, type LayoutNumbers } from "../app/numbers";
 import { indexMovements, ordersDoneBy, simulatedWorkers, ticketsAtTime } from "../app/playback";
-import { calibration, firstRunProblem, originalLayout, usableFirstRun } from "../state/derive";
+import { calibration, firstRunProblem, originalLayout, simReleases, usableFirstRun } from "../state/derive";
 import { registerScene } from "../state/scene-ref";
 import { compareCommand, kitchen, params, playLayout, testPlan } from "../state/store";
 import { createKitchenScene, type KitchenSceneHandle } from "../scene";
@@ -31,12 +31,13 @@ function buildSide(label: Side["label"], layout: Layout): Side | null {
   const k = kitchen.value;
   const cal = calibration.value;
   if (!k) return null;
-  const numbers = layoutNumbers(k.scan, k.setup, layout, cal && cal.ok ? cal.value : null);
+  const releases = simReleases.value;
+  const numbers = layoutNumbers(k.scan, k.setup, layout, cal && cal.ok ? cal.value : null, releases);
   const w = tryWorld(k.scan, k.setup, layout);
   if (!w.ok) return { label, layout, world: null, trace: null, numbers, problem: w.message };
   if (!cal || !cal.ok) return { label, layout, world: w.value, trace: null, numbers, problem: cal?.ok === false ? cal.message : firstRunProblem.value };
   try {
-    const trace = simulateRun(w.value, cal.value, { seed: DEFAULT_SEED, rep: 0 });
+    const trace = simulateRun(w.value, cal.value, { seed: DEFAULT_SEED, rep: 0, releases });
     return { label, layout, world: w.value, trace, numbers, problem: null };
   } catch (error) {
     return { label, layout, world: w.value, trace: null, numbers, problem: explainError(error) };
@@ -52,7 +53,7 @@ function sidesKey(before: Layout | null, after: Layout | null): string {
   const run = usableFirstRun.value;
   const k = kitchen.value;
   const cal = calibration.value;
-  return JSON.stringify([before, after, k?.scan.capturedAt, k?.setup, run?.label, run?.origin, run?.taps.length, run?.positions.length, cal?.ok]);
+  return JSON.stringify([before, after, k?.scan.capturedAt, k?.setup, simReleases.value, run?.label, run?.origin, run?.taps.length, run?.positions.length, cal?.ok]);
 }
 
 export function currentAfterLayout(): Layout | null {
@@ -177,7 +178,7 @@ export function CompareView() {
       <div class="st-center">
         <div class="st-center-card">
           <h2>Before and after</h2>
-          <p>{firstRunProblem.value ?? "Make a change in Play first."}</p>
+          <p>{firstRunProblem.value ?? "Make a change in Edit (step 2) first."}</p>
         </div>
       </div>
     );

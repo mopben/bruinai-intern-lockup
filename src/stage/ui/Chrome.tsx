@@ -1,14 +1,14 @@
 /**
  * The frame around the kitchen: step strip, notices, key hint, inputs chip.
  */
-import { STEPS, keyHints, stepIndex } from "../app/steps";
+import { STEPS, defaultView, keyHints, stepIndex } from "../app/steps";
 import { goTo } from "../state/flow";
 import { nextRunIsLive } from "../state/runs";
-import { drawerOpen, health, notices, presence, session, sources, step } from "../state/store";
+import { currentStep, drawerOpen, health, notices, presence, session, sources, view } from "../state/store";
 import { Key } from "./bits";
 
 export function StepStrip() {
-  const here = stepIndex(step.value);
+  const here = stepIndex(currentStep.value);
   return (
     <nav aria-label="Demo steps">
       <ol class="st-strip" data-testid="step-strip">
@@ -19,7 +19,7 @@ export function StepStrip() {
               class={`st-step${i === here ? " here" : i < here ? " done" : ""}`}
               aria-current={i === here ? "step" : undefined}
               data-testid={`step-${s.id}`}
-              onClick={() => goTo(s.id)}
+              onClick={() => goTo(defaultView(s.id))}
             >
               <span class="n">{i + 1}</span>
               {s.name}
@@ -27,6 +27,24 @@ export function StepStrip() {
           </li>
         ))}
       </ol>
+    </nav>
+  );
+}
+
+export function ResultsSwitch() {
+  if (currentStep.value !== "results") return null;
+  const choices = [
+    { id: "compare", label: "Before vs after" },
+    { id: "run", label: "Original run" },
+    { id: "test", label: "After the change" },
+  ] as const;
+  return (
+    <nav class="st-results-switch" aria-label="Results views">
+      {choices.map((choice) => (
+        <button type="button" class={`st-step${view.value === choice.id ? " here" : ""}`} aria-current={view.value === choice.id ? "page" : undefined} data-testid={`view-${choice.id}`} onClick={() => goTo(choice.id)} key={choice.id}>
+          {choice.label}
+        </button>
+      ))}
     </nav>
   );
 }
@@ -48,7 +66,7 @@ export function Notices() {
 
 export function KeyHints() {
   const s = session.value;
-  const here = step.value;
+  const here = view.value;
   const mine = s && ((here === "run" && s.purpose === "first") || (here === "test" && s.purpose === "second")) ? s : null;
   const hints = keyHints(here, mine ? !mine.replay : nextRunIsLive());
   return (

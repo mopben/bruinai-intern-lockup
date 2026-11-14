@@ -5,8 +5,8 @@ import { expect, type Page } from "@playwright/test";
 import type { SceneDebug } from "../../src/stage/scene/api";
 import { REPLAY_PORT, origin } from "./ports";
 
-export const STEP_IDS = ["scan", "run", "trust", "play", "test", "compare"] as const;
-export type Step = (typeof STEP_IDS)[number];
+export const VIEW_IDS = ["scan", "play", "compare", "run", "test"] as const;
+export type View = (typeof VIEW_IDS)[number];
 
 /** Box ids in the fixture scan (fixtures/counter-a/setup.json). */
 export const BOX = {
@@ -22,6 +22,7 @@ export interface OpenOptions {
   readonly port?: number;
   readonly speed?: number;
   readonly step?: number;
+  readonly view?: "compare" | "run" | "test";
   readonly mode?: "replay" | "live";
   readonly run?: string;
 }
@@ -32,6 +33,7 @@ export async function openStage(page: Page, o: OpenOptions = {}): Promise<void> 
   if (o.mode) q.set("mode", o.mode);
   if (o.speed) q.set("speed", String(o.speed));
   if (o.step) q.set("step", String(o.step));
+  if (o.view) q.set("view", o.view);
   await page.goto(`${origin(o.port ?? REPLAY_PORT)}/?${q.toString()}`);
   await page.waitForFunction(() => "__dryrun" in globalThis);
   await expect(page.getByTestId("step-strip")).toBeVisible();
@@ -42,8 +44,16 @@ export async function currentStep(page: Page): Promise<string> {
   return page.evaluate(() => (globalThis as unknown as { __dryrun: { step(): string } }).__dryrun.step());
 }
 
-export async function expectStep(page: Page, step: Step): Promise<void> {
+export async function expectStep(page: Page, view: View): Promise<void> {
+  const step = view === "scan" ? "build" : view === "play" ? "edit" : "results";
   await expect(page.getByTestId(`step-${step}`)).toHaveAttribute("aria-current", "step");
+  if (step === "results") await expect(page.getByTestId(`view-${view}`)).toHaveAttribute("aria-current", "page");
+}
+
+export async function goView(page: Page, view: View): Promise<void> {
+  await page.keyboard.press(view === "scan" ? "1" : view === "play" ? "2" : "3");
+  if (view === "run" || view === "test") await page.getByTestId(`view-${view}`).click();
+  await expectStep(page, view);
 }
 
 export async function mainDebug(page: Page): Promise<SceneDebug> {
