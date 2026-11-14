@@ -5,15 +5,15 @@
 import { useEffect } from "preact/hooks";
 import { acceptDroppedScan } from "../state/input-actions";
 import { installKeys } from "../state/keys";
-import { addNotice, bootError, loading, step } from "../state/store";
+import { addNotice, bootError, checkOpen, loading, step } from "../state/store";
 import { InputsChip, KeyHints, Notices, StepStrip } from "./Chrome";
-import { CompareView } from "./CompareView";
 import { InputsDrawer } from "./InputsDrawer";
 import { PlayRail } from "./PlayRail";
 import { RunRail } from "./RunRail";
 import { ScanRail } from "./ScanRail";
 import { SceneHost } from "./SceneHost";
 import { TestRail } from "./TestRail";
+import { TestView } from "./TestView";
 import { TrustRail } from "./TrustRail";
 
 function Rail() {
@@ -27,7 +27,7 @@ function Rail() {
     case "play":
       return <PlayRail />;
     case "test":
-      return <TestRail />;
+      return checkOpen.value ? <TestRail /> : null;
     default:
       return null;
   }
@@ -57,7 +57,8 @@ function useDropScan(): void {
 export function App() {
   useEffect(() => installKeys(), []);
   useDropScan();
-  const comparing = step.value === "compare";
+  // Test shows the simulated before and after, unless the real-run check is open.
+  const comparing = step.value === "test" && !checkOpen.value;
   return (
     <div class={`st-root${comparing ? " compare" : ""}`}>
       <header class="st-top">
@@ -69,7 +70,7 @@ export function App() {
       </header>
       <main class="st-stage">
         <SceneHost hidden={comparing} />
-        {comparing ? <CompareView /> : null}
+        {comparing ? <TestView /> : null}
         <Notices />
         {bootError.value ? (
           <div class="st-center">

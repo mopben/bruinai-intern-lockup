@@ -35,7 +35,7 @@ export function liveScanFeed(): ScanFeed | null {
 export function currentKitchenMessage(): KitchenMessage | null {
   const k = kitchen.value;
   if (!k) return null;
-  const judging = step.value === "play" || step.value === "test" || step.value === "compare";
+  const judging = step.value === "play" || step.value === "test";
   const layout = judging && playLayout.value ? playLayout.value : k.layout;
   return { type: "kitchen", scan: k.scan, setup: k.setup, layout };
 }

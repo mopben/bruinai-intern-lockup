@@ -1,5 +1,5 @@
 /**
- * The six demo steps and the operator's keyboard map. Pure: no DOM.
+ * The five demo steps and the operator's keyboard map. Pure: no DOM.
  */
 
 export const STEPS = [
@@ -8,7 +8,6 @@ export const STEPS = [
   { id: "trust", name: "Trust" },
   { id: "play", name: "Play" },
   { id: "test", name: "Test" },
-  { id: "compare", name: "Compare" },
 ] as const;
 
 export type StepId = (typeof STEPS)[number]["id"];
@@ -32,6 +31,8 @@ export type KeyAction =
   | { readonly type: "faster" }
   | { readonly type: "skip" }
   | { readonly type: "inputs" }
+  /** Test: open the real-run check, or go back to the simulation. */
+  | { readonly type: "check" }
   | { readonly type: "escape" }
   | { readonly type: "reset" }
   | { readonly type: "rehearsed"; readonly key: "m" | "w" }
@@ -72,6 +73,9 @@ export function keyAction(key: string): KeyAction | null {
     case "s":
     case "S":
       return { type: "retry-save" };
+    case "c":
+    case "C":
+      return { type: "check" };
     default: {
       const n = Number(key);
       if (key.length === 1 && Number.isInteger(n) && n >= 1 && n <= STEP_IDS.length) return { type: "jump", step: stepAt(n - 1) };
@@ -89,27 +93,32 @@ export function navigate(current: StepId, action: KeyAction): StepId {
   return current;
 }
 
-/** The quiet key hint for each step: only the keys that do something there. */
-export function keyHints(step: StepId, live: boolean): readonly { readonly keys: string; readonly does: string }[] {
+/**
+ * The quiet key hint for each step: only the keys that do something there.
+ * `check`: Test is showing the real-run check, not the simulation.
+ */
+export function keyHints(step: StepId, live: boolean, check = false): readonly { readonly keys: string; readonly does: string }[] {
   const nav = [
     { keys: "→", does: "next" },
     { keys: "←", does: "back" },
   ];
   const common = [{ keys: "I", does: "inputs" }];
+  const run = live
+    ? [...nav, { keys: "P", does: "start" }, { keys: "E", does: "end run" }]
+    : [...nav, { keys: "P", does: "play again" }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }];
   switch (step) {
     case "scan":
       return [...nav, { keys: "P", does: "replay the scan" }, ...common, { keys: "⇧F", does: "full screen" }];
     case "run":
+      return [...run, ...common];
     case "test":
-      return live
-        ? [...nav, { keys: "P", does: "start" }, { keys: "E", does: "end run" }, ...common]
-        : [...nav, { keys: "P", does: "play again" }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }, ...common];
+      return check
+        ? [...run, { keys: "C", does: "back to the simulation" }, ...common]
+        : [{ keys: "←", does: "back" }, { keys: "P", does: "play again" }, { keys: "F", does: "faster" }, { keys: "C", does: "check with a real run" }, ...common];
     case "trust":
       return [...nav, ...common];
     case "play":
       return [...nav, { keys: "M", does: "rehearsed move" }, { keys: "W", does: "rehearsed worker" }, { keys: "⌫", does: "reset" }, ...common];
-    case "compare":
-      return [{ keys: "←", does: "back" }, { keys: "P", does: "play again" }, { keys: "F", does: "faster" }, ...common];
     default:
       return nav;
   }

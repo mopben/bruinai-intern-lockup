@@ -1,6 +1,10 @@
 /**
- * Moving through the six steps, and what each step does on arrival and on
+ * Moving through the five steps, and what each step does on arrival and on
  * leaving. The prediction is frozen on leaving Play, from the first run only.
+ *
+ * Test opens on the simulated before and after. The real second run is the
+ * check inside Test (checkOpen): opening it plans and plays the second run,
+ * against the prediction frozen on leaving Play.
  */
 import { batch } from "@preact/signals";
 import { reconstructRun, type RunBundle } from "../../core";
@@ -17,6 +21,7 @@ import { beginRun, currentPlayer, nextRunIsLive, startLive } from "./runs";
 import {
   base,
   candidates,
+  checkOpen,
   firstRun,
   frozen,
   kitchen,
@@ -161,7 +166,8 @@ export async function beginTest(): Promise<void> {
   // Only a recording of the very layout being tested may stand in for the live inputs.
   const standbyAllowed = bundle !== null && (pick?.matched ?? false);
   bundle ??= live ? base.value : null;
-  if (!bundle || step.value !== "test") return;
+  // The check was closed (or Test left) while the run loaded: nothing is started then.
+  if (!bundle || step.value !== "test" || !checkOpen.value) return;
   const plan = testPlan.value;
   if (!plan) return;
   testPlan.value = { ...plan, bundle };
@@ -200,6 +206,25 @@ export function resetPlay(): void {
   if (original) playLayout.value = original;
 }
 
+/**
+ * "Check this with a real run": the second run against the frozen prediction.
+ * A second run still going (left to finish when the check was closed) is shown
+ * again, not restarted; otherwise the second run is planned and played afresh.
+ */
+export function openCheck(): void {
+  if (step.value !== "test") return;
+  checkOpen.value = true;
+  const s = session.value;
+  const plan = testPlan.value;
+  if (s && s.purpose === "second" && s.status === "running" && plan && plan.judgeLayout === playLayout.value) return;
+  void beginTest();
+}
+
+/** "Back to the simulation". A second run that is going is left to finish; reopening the check shows it. */
+export function closeCheck(): void {
+  checkOpen.value = false;
+}
+
 /** Everything that happens when the step changes. */
 export function goTo(next: StepId): void {
   const prev = step.value;
@@ -209,6 +234,7 @@ export function goTo(next: StepId): void {
   batch(() => {
     step.value = next;
     selectedId.value = null;
+    if (prev === "test") checkOpen.value = false;
   });
   rememberStep(next);
   enterStep(next);
@@ -232,12 +258,11 @@ export function enterStep(next: StepId): void {
     if (!s || s.purpose !== "first") beginFirstRun();
     else currentPlayer()?.redraw();
   }
-  if (next === "test") void beginTest();
   if (next === "play" && !playLayout.value) playLayout.value = originalLayout.value;
 }
 
 /**
- * P in Run or Test, and the Start / Play again buttons. Follows the inputs as
+ * P in Run or in the real-run check, and the Start / Play again buttons. Follows the inputs as
  * they are now: a prepared live run starts only if the inputs are still live;
  * otherwise the run is prepared (or played) again from the current sources.
  */
@@ -256,5 +281,5 @@ export function reprepareIdleRun(): void {
   const s = session.value;
   if (!s || s.status !== "idle") return;
   if (s.purpose === "first" && step.value === "run") beginFirstRun();
-  if (s.purpose === "second" && step.value === "test") void beginTest();
+  if (s.purpose === "second" && step.value === "test" && checkOpen.value) void beginTest();
 }

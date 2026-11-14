@@ -22,8 +22,7 @@ function shownLayout(): Layout | null {
   switch (step.value) {
     case "play":
       return playLayout.value ?? k.layout;
-    case "test":
-    case "compare": {
+    case "test": {
       const plan = testPlan.value;
       return plan && plan.judgeLayout === playLayout.value ? plan.layout : playLayout.value ?? k.layout;
     }

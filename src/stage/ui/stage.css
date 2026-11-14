@@ -664,7 +664,7 @@
   color: var(--dr-ink);
 }
 
-/* --- compare: two kitchens ----------------------------------------------- */
+/* --- test: two simulated kitchens ---------------------------------------- */
 .st-compare {
   position: absolute;
   inset: 0;
@@ -701,14 +701,40 @@
 .st-half.after .label {
   background: var(--dr-select);
 }
+/* Under each kitchen: one row per number (what, value, how). */
 .st-half .under {
-  display: flex;
-  gap: 28px;
-  align-items: flex-end;
-  padding: 12px 6px 0;
+  display: grid;
+  grid-template-columns: max-content max-content minmax(0, 1fr);
+  column-gap: clamp(10px, 1.2vw, 20px);
+  row-gap: 2px;
+  align-items: baseline;
+  padding: 10px 6px 0;
 }
-.st-compare-rail .st-num .value {
-  font-size: var(--dr-size-display);
+.st-row {
+  display: contents;
+}
+.st-row .what,
+.st-row .how {
+  font-size: var(--dr-size-small);
+  color: var(--dr-ink-soft);
+  white-space: nowrap;
+}
+.st-row .how {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.st-row .value {
+  font-family: var(--dr-font-display);
+  font-weight: 800;
+  font-size: clamp(20px, 1.9vw, 36px);
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.st-row .cannot {
+  grid-column: span 2;
+  font-size: var(--dr-size-small);
+  color: var(--dr-alert);
 }
 .st-root.compare {
   grid-template-columns: minmax(0, 1fr) 0;
@@ -733,9 +759,16 @@
 .st-compare-bar {
   grid-column: 1 / -1;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 18px;
+  gap: 8px 18px;
   padding: 6px 0 0;
+}
+.st-compare-bar .st-sim {
+  font-family: var(--dr-font-display);
+  font-weight: 800;
+  font-size: var(--dr-size-label);
+  white-space: nowrap;
 }
 .st-compare-bar .st-say {
   font-size: var(--dr-size-title);
@@ -791,20 +824,6 @@
 }
 .st-src {
   white-space: nowrap;
-}
-/* Compare: three numbers per side on one line each. */
-.st-half .under {
-  gap: clamp(14px, 1.6vw, 28px);
-}
-.st-compare-rail .st-num .what,
-.st-compare-rail .st-num .how {
-  white-space: nowrap;
-}
-.st-compare-rail .st-num .what {
-  font-size: var(--dr-size-small);
-}
-.st-compare-rail .st-num .value {
-  font-size: clamp(30px, 3.1vw, 64px);
 }
 
 @media (max-height: 860px), (max-width: 1100px) {

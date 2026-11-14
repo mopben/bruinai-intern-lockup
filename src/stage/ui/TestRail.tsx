@@ -1,20 +1,32 @@
 /**
- * Step 5. The second run against the prediction frozen when the judge left
- * Play. A miss is said plainly.
+ * Step 5, the real-run check. The second run against the prediction frozen
+ * when the judge left Play. A miss is said plainly.
  */
 import { formatRange } from "../../core";
 import { firstRunProblem } from "../state/derive";
+import { closeCheck } from "../state/flow";
 import { frozen, outcome, outcomeProblem, session, testPlan } from "../state/store";
 import { RunControls } from "./RunRail";
-import { Reveal } from "./bits";
+import { Btn, Reveal } from "./bits";
 import { ExtrapolationNote, NumbersBasis } from "./Basis";
+
+function BackToSim() {
+  return <Btn small label="Back to the simulation" k="C" onClick={closeCheck} testId="btn-back-to-sim" />;
+}
 
 export function TestRail() {
   const f = frozen.value;
   const plan = testPlan.value;
   const result = outcome.value;
   const problem = outcomeProblem.value;
-  if (!f) return <div class="st-card"><h1>Test the prediction</h1><p class="st-note">{firstRunProblem.value ?? "Make a change in Play first."}</p></div>;
+  if (!f)
+    return (
+      <div class="st-card">
+        <h1>Test the prediction</h1>
+        <p class="st-note">{firstRunProblem.value ?? "Make a change in Play first."}</p>
+        <BackToSim />
+      </div>
+    );
   const entry = plan && !plan.matched && plan.candidate ? f.candidates[plan.candidate.id] : f.judge;
   const predicted = entry?.prediction?.meanOrderTime ?? null;
   const ended = session.value?.purpose === "second" && session.value.status === "ended";
@@ -76,6 +88,7 @@ export function TestRail() {
       {ended && problem ? <p class="st-warn">{problem}</p> : null}
       {!plan && problem ? <p class="st-note">{problem}</p> : null}
       <NumbersBasis />
+      <BackToSim />
     </div>
   );
 }

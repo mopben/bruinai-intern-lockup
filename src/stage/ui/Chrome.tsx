@@ -4,7 +4,7 @@
 import { STEPS, keyHints, stepIndex } from "../app/steps";
 import { goTo } from "../state/flow";
 import { nextRunIsLive } from "../state/runs";
-import { drawerOpen, health, notices, presence, session, sources, step } from "../state/store";
+import { checkOpen, drawerOpen, health, notices, presence, session, sources, step } from "../state/store";
 import { Key } from "./bits";
 
 export function StepStrip() {
@@ -49,8 +49,9 @@ export function Notices() {
 export function KeyHints() {
   const s = session.value;
   const here = step.value;
-  const mine = s && ((here === "run" && s.purpose === "first") || (here === "test" && s.purpose === "second")) ? s : null;
-  const hints = keyHints(here, mine ? !mine.replay : nextRunIsLive());
+  const check = here === "test" && checkOpen.value;
+  const mine = s && ((here === "run" && s.purpose === "first") || (check && s.purpose === "second")) ? s : null;
+  const hints = keyHints(here, mine ? !mine.replay : nextRunIsLive(), check);
   return (
     <div class="st-hints" aria-label="Keys">
       {hints.map((h) => (

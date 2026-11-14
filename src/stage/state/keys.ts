@@ -3,10 +3,10 @@
  * (renaming a box) are left alone.
  */
 import { keyAction, navigate, type KeyAction } from "../app/steps";
-import { applyRehearsed, goTo, resetPlay, startOrReplay } from "./flow";
+import { applyRehearsed, closeCheck, goTo, openCheck, resetPlay, startOrReplay } from "./flow";
 import { reveal } from "./kitchen-actions";
 import { retrySave, skipToEnd, toggleFaster } from "./runs";
-import { addNotice, drawerOpen, dropNotice, selectedId, sendCompare, session, step } from "./store";
+import { addNotice, checkOpen, drawerOpen, dropNotice, selectedId, sendCompare, session, step } from "./store";
 
 const HINT_MS = 3500;
 let hintTimer: ReturnType<typeof setTimeout> | undefined;
@@ -31,10 +31,24 @@ function isTyping(target: EventTarget | null): boolean {
   return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable;
 }
 
+/** True in Test while it shows the simulation, not the real-run check. */
+function simulatedTest(): boolean {
+  return step.value === "test" && !checkOpen.value;
+}
+
+/** True where a real run is on screen: Run, or the real-run check in Test. */
+function realRun(): boolean {
+  return step.value === "run" || (step.value === "test" && checkOpen.value);
+}
+
 function play(): void {
   const s = session.value;
+  if (simulatedTest()) {
+    sendCompare("replay");
+    return;
+  }
   // Never restart a live run by accident: P does nothing while one is running.
-  if (s && s.status === "running" && !s.replay && (step.value === "run" || step.value === "test")) {
+  if (s && s.status === "running" && !s.replay && realRun()) {
     keyHint("A live run is going. Press E to end it first.");
     return;
   }
@@ -48,11 +62,8 @@ function play(): void {
     case "test":
       startOrReplay("second");
       return;
-    case "compare":
-      sendCompare("replay");
-      return;
     default:
-      keyHint("P plays a run in Run, Test and Compare.");
+      keyHint("P plays a run in Run and Test.");
       return;
   }
 }
@@ -72,13 +83,18 @@ export function perform(action: KeyAction): void {
       play();
       return;
     case "faster":
-      if (here === "compare") sendCompare("faster");
+      if (simulatedTest()) sendCompare("faster");
       else if (!toggleFaster()) keyHint(fasterWhyNot(here));
       return;
     case "skip":
-      if (here === "compare") sendCompare("skip");
-      else if (here !== "run" && here !== "test") keyHint("E skips to the end of a run in Run and Test.");
+      if (simulatedTest()) sendCompare("skip");
+      else if (!realRun()) keyHint("E skips to the end of a run in Run and Test.");
       else if (!skipToEnd()) keyHint("No run is playing. Press P to start one.");
+      return;
+    case "check":
+      if (here !== "test") keyHint("C checks the prediction with a real run, in Test (step 5).");
+      else if (checkOpen.value) closeCheck();
+      else openCheck();
       return;
     case "inputs":
       drawerOpen.value = !drawerOpen.value;
@@ -104,7 +120,7 @@ export function perform(action: KeyAction): void {
 }
 
 function fasterWhyNot(here: string): string {
-  if (here !== "run" && here !== "test") return "F plays a run faster in Run, Test and Compare.";
+  if (here !== "run" && here !== "test") return "F plays a run faster in Run and Test.";
   const s = session.value;
   if (s && !s.replay) return "A live run plays at real speed.";
   if (s?.status === "ended") return "The run is over. Press P to play it again.";

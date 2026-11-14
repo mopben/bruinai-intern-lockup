@@ -111,6 +111,8 @@ export const storyText = signal<string | null>(null);
 
 export const playLayout = signal<Layout | null>(null);
 export const frozen = signal<FrozenPrediction | null>(null);
+/** In Test: false shows the simulated before and after; true shows the real-run check (a second run). */
+export const checkOpen = signal(false);
 export const testPlan = signal<TestPlan | null>(null);
 export const secondRun = signal<MeasuredRun | null>(null);
 export const outcome = signal<TestOutcome | null>(null);
@@ -125,7 +127,7 @@ export function dropNotice(id: string): void {
   if (notices.value.some((n) => n.id === id)) notices.value = notices.value.filter((n) => n.id !== id);
 }
 
-/** Commands for the Compare step's own clock (it plays simulated runs, not a feed). */
+/** Commands for the simulated Test's own clock (it plays simulated runs, not a feed). */
 export const compareCommand = signal<{ readonly kind: "replay" | "faster" | "skip"; readonly n: number } | null>(null);
 export function sendCompare(kind: "replay" | "faster" | "skip"): void {
   compareCommand.value = { kind, n: (compareCommand.value?.n ?? 0) + 1 };
