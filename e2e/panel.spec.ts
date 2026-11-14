@@ -81,7 +81,11 @@ test("Edit panel: clicking a station opens its panel; renaming it updates the ro
   await expect(page.getByTestId("item-panel")).toBeVisible();
   await page.getByTestId("item-name").fill("Toastie press");
   await page.getByTestId("btn-panel-done").click();
-  await expect(page.getByTestId("route")).toContainText("Toastie press");
+  await goView(page, "orders");
+  const recipe = page.locator(".st-recipe").first();
+  await recipe.locator("summary").click();
+  await expect(recipe).toContainText("Toastie press");
+  await goView(page, "play");
 
   // Type is a dropdown; "Fixed" is a checkbox. Tried on the fridge so the
   // renamed station stays in the route.
