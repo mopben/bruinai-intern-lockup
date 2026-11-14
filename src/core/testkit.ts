@@ -133,8 +133,11 @@ export function cafeKit(fridge: { x: number; z: number } = { x: -1.8, z: 1.2 }, 
   };
 }
 
-/** Tap log a recorded run would have, from a (simulated) trace. */
-export function traceToTaps(trace: RunTrace): readonly TapEvent[] {
+/**
+ * Tap log a recorded run would have, from a (simulated) trace: order events, done events
+ * (with `workerId` when the trace knows it) and one end event, in time order.
+ */
+export function tapsFromTrace(trace: RunTrace): TapEvent[] {
   const events: TapEvent[] = [];
   for (const o of trace.orders) {
     events.push({ type: "order", t: o.releasedAt, orderId: o.orderId, itemId: o.itemId });
@@ -147,6 +150,9 @@ export function traceToTaps(trace: RunTrace): readonly TapEvent[] {
   events.push({ type: "end", t: trace.endT });
   return [...events].sort((a, b) => a.t - b.t);
 }
+
+/** The same tap log, read-only (older name). */
+export const traceToTaps = (trace: RunTrace): readonly TapEvent[] => tapsFromTrace(trace);
 
 function pointAlong(path: readonly Vec2[], f: number): Vec2 {
   const total = polylineLength(path);

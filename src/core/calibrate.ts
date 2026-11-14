@@ -9,7 +9,8 @@ import type { OrderTrace, StepTrace } from "./trace";
 import { planItems, type ItemPlan, type StepPlan } from "./plan";
 import { estimatePace, walkSeconds, type Pace, type PaceMethod } from "./pace";
 import type { Trip } from "./trips";
-import { itemTasks } from "./tasks";
+import { isChainKitchen, itemTasks, workerCovers } from "./tasks";
+import { replayTaskWork } from "./task-work";
 
 export { DEFAULT_WALK_SPEED_MPS, estimateWalkSpeed, MOVING_THRESHOLD_MPS, SPEED_WINDOW_S, type SpeedEstimate } from "./speed";
 
@@ -73,17 +74,19 @@ function arrivalTime(order: OrderTrace, k: number, plan: ItemPlan, pace: Pace): 
 
 const fetchSeconds = (pace: Pace, sp: StepPlan): number => sp.fetchLegs.reduce((s, l) => s + 2 * walkSeconds(pace, l.oneWayM), 0);
 
-/** Calibrate from a reconstructed run in the world it was recorded in. */
-export function calibrate(
-  world: World,
-  run: RunReconstruction,
-  positions: readonly PositionSample[],
-  options: CalibrationOptions = {},
-): Calibration {
-  const est = estimatePace(world, positions);
-  const pace = est.pace;
+/** Work samples and what came with them; local accumulators of one calibration. */
+interface WorkResult {
+  readonly samples: Record<string, number[]>;
+  readonly byTask: Record<string, number[]>;
+  readonly clamped: number;
+  readonly used: ReadonlySet<string>;
+  readonly warnings: readonly string[];
+}
+
+/** Chain kitchens with fixed workers: per station, workers free one carry back after each tap. */
+function chainWork(world: World, run: RunReconstruction, pace: Pace, options: CalibrationOptions): WorkResult {
   const plans = planItems(world);
-  const warnings: string[] = [...est.warnings];
+  const warnings: string[] = [];
   const samples: Record<string, number[]> = {};
   const byTask: Record<string, number[]> = {};
   const taskIds = new Map(world.menu.map((m) => [m.id, itemTasks(m).map((t) => t.id)] as const));
@@ -121,6 +124,43 @@ export function calibrate(
     if (workers.length === 0) warnings.push(`No worker was at "${stationId}" in this layout.`);
     if ((samples[stationId] as number[]).length === 0) warnings.push(`No usable work times at "${stationId}".`);
   }
+  return { samples, byTask, clamped, used, warnings };
+}
+
+/** Other kitchens: the engine's rules replayed over each worker's taps (task-work.ts). */
+function taskWork(world: World, run: RunReconstruction, pace: Pace, options: CalibrationOptions): WorkResult {
+  const replay = replayTaskWork(world, run, pace, options);
+  const stations = [...new Set(world.menu.flatMap((m) => m.steps.map((s) => s.stationId)))];
+  const samples: Record<string, number[]> = Object.fromEntries(stations.map((id) => [id, []]));
+  const byTask: Record<string, number[]> = {};
+  const used = new Set<string>();
+  let clamped = 0;
+  for (const r of replay.work) {
+    if (r.work < MIN_WORK_S) clamped += 1;
+    const value = Math.max(r.work, MIN_WORK_S);
+    (samples[r.stationId] ??= []).push(value);
+    (byTask[taskKey(r.itemId, r.taskId)] ??= []).push(value);
+    used.add(r.orderId);
+  }
+  const stationWarnings = stations.flatMap((id) => [
+    ...(world.workers.some((w) => workerCovers(w).includes(id)) ? [] : [`No worker was at "${id}" in this layout.`]),
+    ...((samples[id] ?? []).length === 0 ? [`No usable work times at "${id}".`] : []),
+  ]);
+  return { samples, byTask, clamped, used, warnings: [...replay.warnings, ...stationWarnings] };
+}
+
+/** Calibrate from a reconstructed run in the world it was recorded in. */
+export function calibrate(
+  world: World,
+  run: RunReconstruction,
+  positions: readonly PositionSample[],
+  options: CalibrationOptions = {},
+): Calibration {
+  const est = estimatePace(world, positions);
+  const pace = est.pace;
+  const learn = isChainKitchen(world.menu, world.workers) ? chainWork : taskWork;
+  const { samples, byTask, clamped, used, warnings: workWarnings } = learn(world, run, pace, options);
+  const warnings = [...est.warnings, ...workWarnings];
   const sampleCount = Object.values(samples).reduce((n, s) => n + s.length, 0);
   return {
     walkSpeedMps: pace.speedMps,

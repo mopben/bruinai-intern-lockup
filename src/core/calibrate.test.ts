@@ -5,7 +5,10 @@ import type { Layout, PositionSample, Scan, Setup, TapEvent } from "./types";
 import { resolveWorld } from "./world";
 import { reconstructRun } from "./reconstruct";
 import { calibrate, DEFAULT_WALK_SPEED_MPS, estimateWalkSpeed, MIN_TASK_SAMPLES, MIN_WORK_S, taskKey } from "./calibrate";
-import { kitLayout, kitScan, kitSetup, worker, type KitSpec } from "./testkit";
+import { fixedCalibration, kitLayout, kitScan, kitSetup, tapsFromTrace, worker, type KitSpec } from "./testkit";
+import { isChainKitchen } from "./tasks";
+import { compileEngineModel, runEngine } from "./engine";
+import { buildKitchen, coveringKitchen, joinKitchen } from "./engine/test-kitchens";
 
 /** A(0) -> B(3, fetch from F at 6) -> pickup P(10.5). Stand points on z = 0.85, straight paths. */
 const spec: KitSpec = {
@@ -239,5 +242,58 @@ describe("task samples", () => {
     expect(c.workSamples[make]!.length).toBeGreaterThan(0);
     expect(c.taskSamples[taskKey(item.id, "s1")]).toEqual(c.workSamples[make]);
     expect(MIN_TASK_SAMPLES).toBe(3);
+  });
+});
+
+describe("calibration beyond chains (replayed over the taps)", () => {
+  const releases = [0, 1, 2, 30, 31, 32].map((t, i) => ({ orderId: `o${i + 1}`, itemId: "x", t }));
+  const truth = fixedCalibration({ a: [2], b: [2], c: [2] }, DEFAULT_WALK_SPEED_MPS);
+  const roundTrip = (spec: KitSpec) => {
+    const w = buildKitchen({ ...spec, orders: releases });
+    const trace = runEngine(compileEngineModel(w, truth), releases, 1, 0, { bootstrap: false, trace: true }).trace!;
+    return { w, taps: tapsFromTrace(trace) };
+  };
+  const allTwo = (c: ReturnType<typeof calibrate>) => {
+    const values = Object.values(c.taskSamples).flat();
+    expect(values.length).toBeGreaterThan(0);
+    for (const v of values) expect(Math.abs(v - 2)).toBeLessThan(1e-6);
+  };
+
+  it("recovers every work time of the covering-worker kitchen", () => {
+    const { w, taps } = roundTrip(coveringKitchen());
+    expect(isChainKitchen(w.menu, w.workers)).toBe(false);
+    const c = calibrate(w, reconstructRun(w.setup, taps), []);
+    expect(c.paceMethod).toBe("assumed");
+    allTwo(c);
+    expect(Object.values(c.taskSamples).flat()).toHaveLength(2 * releases.length);
+    expect(c.clampedCount).toBe(0);
+    expect(c.warnings.join("\n")).not.toMatch(/do not say who/);
+  });
+
+  it("recovers every work time of a join kitchen with fixed workers", () => {
+    const { w, taps } = roundTrip(joinKitchen());
+    const c = calibrate(w, reconstructRun(w.setup, taps), []);
+    allTwo(c);
+    expect(Object.values(c.taskSamples).flat()).toHaveLength(3 * releases.length);
+  });
+
+  it("recovers every work time of a join kitchen whose worker also covers the joining station", () => {
+    const { w, taps } = roundTrip(joinKitchen([worker("wa", "a", ["c"]), worker("wb", "b")]));
+    const c = calibrate(w, reconstructRun(w.setup, taps), []);
+    allTwo(c);
+    expect(Object.values(c.taskSamples).flat()).toHaveLength(3 * releases.length);
+  });
+
+  it("skips taps that do not say who did the step, with one warning", () => {
+    const { w, taps } = roundTrip(coveringKitchen());
+    const anonymous: TapEvent[] = taps.map((e) => {
+      if (e.type !== "done") return e;
+      const { workerId: _drop, ...rest } = e;
+      return rest;
+    });
+    const c = calibrate(w, reconstructRun(w.setup, anonymous), []);
+    expect(Object.values(c.taskSamples).flat()).toEqual([]);
+    expect(Object.values(c.workSamples).flat()).toEqual([]);
+    expect(c.warnings.filter((s) => s === "Some taps do not say who did the step, so their work times could not be learned.")).toHaveLength(1);
   });
 });
