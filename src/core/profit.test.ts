@@ -15,6 +15,7 @@ import {
   resolveWorld,
   rushReleases,
   scheduleRatePerHour,
+  wageOf,
 } from "./index";
 
 const dir = join(__dirname, "..", "..", "fixtures");
@@ -42,6 +43,16 @@ describe("profit", () => {
     expect(p.wagesPerHour).toBe(3 * 20);
     expect(p.profitPerHour.p50).toBeCloseTo(120 * 4 - 60 - 10);
     expect(p.limitedBy).toBe("capacity");
+  });
+
+  it("pays each worker their own wage where one is set", () => {
+    const cap = { p10: 100, p50: 120, p90: 140 };
+    const [a, b] = world.workers;
+    const e = { ...econ, wagePerHour: 20, wageByWorker: { [a!.id]: 30, [b!.id]: 15, nobody: 999 } };
+    const p = profitFromCapacity(world, e, cap);
+    expect(p.wagesPerHour).toBe(30 + 15 + 20);
+    expect(wageOf(e, a!.id)).toBe(30);
+    expect(wageOf(e, "someone-new")).toBe(20);
   });
 
   it("sells no more than comes in", () => {

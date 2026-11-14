@@ -10,7 +10,7 @@
  * the sales, and wages are paid for every worker whether busy or not.
  *
  *   profit per hour = sales x (price - ingredients)  (by the menu mix)
- *                   - workers x wage - electricity - other costs
+ *                   - each worker's wage - electricity - other costs
  *
  * Every number is a p10/p50/p90 range over simulated runs, like the rest of the
  * model. Pure: no DOM, no I/O.
@@ -38,8 +38,10 @@ export interface Economics {
   readonly currency: string;
   /** Keyed by menu item id. A missing item counts as price 0, cost 0. */
   readonly menu: Readonly<Record<string, MenuPrice>>;
-  /** Pay per worker per hour, all-in. */
+  /** Pay per worker per hour, all-in: the usual wage, for any worker without their own. */
   readonly wagePerHour: number;
+  /** Pay per hour for particular workers, keyed by worker id. Overrides `wagePerHour`. */
+  readonly wageByWorker?: Readonly<Record<string, number>>;
   /** Electricity for the whole kitchen per hour. */
   readonly electricityPerHour: number;
   /** Rent and everything else per hour. */
@@ -74,6 +76,12 @@ export function exampleEconomics(setup: Setup): Economics {
   const menu: Record<string, MenuPrice> = {};
   for (const m of setup.menu) menu[m.id] = { price: 4.5, ingredients: 1.2 };
   return { currency: "$", menu, wagePerHour: 18, electricityPerHour: 1.5, otherPerHour: 12, demandPerHour: scheduleRatePerHour(setup) };
+}
+
+/** What one worker is paid per hour: their own wage if set, the usual one otherwise. */
+export function wageOf(econ: Economics, workerId: string): number {
+  const own = econ.wageByWorker?.[workerId];
+  return typeof own === "number" && Number.isFinite(own) ? own : econ.wagePerHour;
 }
 
 /** Orders per hour in the setup's schedule (first to last release), or 60 when it cannot tell. */
@@ -132,7 +140,7 @@ export function capacityPerHour(world: World, calibration: Calibration, opts: Ca
 export function profitFromCapacity(world: World, econ: Economics, capacity: Range): ProfitEstimate {
   const margin = marginPerOrder(world.setup, econ);
   const workers = world.workers.length;
-  const wages = workers * econ.wagePerHour;
+  const wages = world.workers.reduce((sum, w) => sum + wageOf(econ, w.id), 0);
   const fixed = econ.electricityPerHour + econ.otherPerHour;
   const demand = Math.max(0, econ.demandPerHour);
   const sell = (c: number) => Math.min(demand, c);

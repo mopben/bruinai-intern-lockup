@@ -117,6 +117,7 @@ export {
   marginPerOrder,
   profitFromCapacity,
   profitOf,
+  wageOf,
   rushReleases,
   scheduleRatePerHour,
   CAPACITY_ORDERS,
