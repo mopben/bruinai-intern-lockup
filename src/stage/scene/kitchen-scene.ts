@@ -152,6 +152,7 @@ export function createKitchenScene(container: HTMLElement, options: KitchenScene
       room = r;
       vp.contentPoints = tops;
       vp.setRoom(r);
+      options.onCameraChange?.(cameraMoved());
     }
     area = dragArea(base);
     board.update(r, resolveWalls(next.scan));
