@@ -19,6 +19,8 @@ interface Pawn {
   readonly hatMat: THREE.MeshStandardMaterial;
   readonly discMat: THREE.MeshBasicMaterial;
   readonly rimMat: THREE.MeshBasicMaterial;
+  /** Drawn only where something is in front of the pawn: the hat shows through a tall counter. */
+  readonly xrayMat: THREE.MeshBasicMaterial;
   color: string;
   state: PawnState;
   tx: number;
@@ -32,6 +34,16 @@ function disposePawn(p: Pawn): void {
   p.hatMat.dispose();
   p.discMat.dispose();
   p.rimMat.dispose();
+  p.xrayMat.dispose();
+}
+
+/**
+ * See-through hat: the same cap and pom again, flat hat colour, drawn after
+ * everything opaque with depthFunc "greater", so it appears only where a
+ * counter (or anything) hides the real hat. A visible pawn looks unchanged.
+ */
+function xrayMaterial(color: string): THREE.MeshBasicMaterial {
+  return new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8, depthWrite: false, depthFunc: THREE.GreaterDepth });
 }
 
 export class Pawns {
@@ -76,7 +88,14 @@ export class Pawns {
     cup.position.set(0, 0.34, 0.2);
     cup.visible = false;
     for (const m of [body, head, cap, visor, cup]) m.castShadow = true;
-    figure.add(body, bodyHull, head, headHull, cap, visor, pom, cup);
+    const xrayMat = xrayMaterial(w.color);
+    const xrayCap = new THREE.Mesh(cap.geometry, xrayMat);
+    xrayCap.position.copy(cap.position);
+    xrayCap.scale.setScalar(1.08);
+    const xrayPom = new THREE.Mesh(pom.geometry, xrayMat);
+    xrayPom.position.copy(pom.position);
+    for (const m of [xrayCap, xrayPom]) m.renderOrder = 20;
+    figure.add(body, bodyHull, head, headHull, cap, visor, pom, cup, xrayCap, xrayPom);
     figure.scale.setScalar(0.001);
     group.add(disc, discRim, figure);
     group.scale.setScalar(PAWN_SCALE);
@@ -89,6 +108,7 @@ export class Pawns {
       hatMat,
       discMat,
       rimMat,
+      xrayMat,
       color: w.color,
       state: { x: w.x, z: w.z, yaw: 0, speed: 0, phase: 0 },
       tx: w.x,
@@ -115,6 +135,7 @@ export class Pawns {
         p.color = w.color;
         p.hatMat.color.set(w.color);
         p.discMat.color.set(w.color);
+        p.xrayMat.color.set(w.color);
       }
       p.tx = w.x;
       p.tz = w.z;

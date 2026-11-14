@@ -8,6 +8,7 @@ import { palette, roleColors } from "../theme/tokens";
 import type { SceneItem } from "./model";
 import { GeometryCache, disposeMaterials, mixInto, outlineMaterial, paint } from "./kit";
 import { makeTopper } from "./toppers";
+import { makeGlow } from "./glow";
 import { easeOutBack, followAlpha } from "./smoothing";
 
 const HIT_PAD_M = 0.16;
@@ -99,6 +100,7 @@ export class ItemView {
 
   private rebuild(): void {
     const it = this.item;
+    this.halo?.geometry.dispose();
     disposeMaterials(this.lift);
     this.lift.clear();
     const { w, h, d } = it.size;
@@ -130,10 +132,11 @@ export class ItemView {
     }
     this.plinth = it.locked && !isMark ? this.makePlinth(w, d) : null;
     if (this.plinth) this.lift.add(this.plinth);
-    // Bottleneck halo: a tomato rim on the floor around the base, shown while the pile is large.
-    this.haloMat = new THREE.MeshBasicMaterial({ color: palette.alert, transparent: true, opacity: 0, depthWrite: false });
-    this.halo = new THREE.Mesh(this.geo.roundedBox(w + 0.34, 0.012, d + 0.34, 0.006), this.haloMat);
-    this.halo.position.y = 0.007;
+    // Bottleneck glow: soft tomato light on the floor around the base, shown while the pile is large.
+    const glow = makeGlow(w, d);
+    this.haloMat = glow.material;
+    this.halo = glow.mesh;
+    this.halo.position.y = 0.009;
     this.halo.visible = false;
     this.lift.add(this.halo);
     this.topper = makeTopper(it, this.geo);
@@ -214,7 +217,8 @@ export class ItemView {
     if (this.lidMat) mixInto(this.lidMat.color, "#eef3f4", role.top, t);
     if (this.halo && this.haloMat) {
       this.halo.visible = this.pulse > 0;
-      this.haloMat.opacity = 0.45 + 0.5 * this.pulse;
+      this.haloMat.opacity = 0.55 + 0.45 * this.pulse;
+      this.halo.scale.setScalar(1 + 0.05 * this.pulse);
     }
     if (this.selected) mixInto(this.outlineMat.color, palette.select, palette.select, 1);
     else if (this.pulse > 0) this.outlineMat.color.set(palette.alert);
@@ -263,6 +267,7 @@ export class ItemView {
   }
 
   dispose(): void {
+    this.halo?.geometry.dispose();
     disposeMaterials(this.lift);
     (this.hit.material as THREE.Material).dispose();
     this.hit.geometry.dispose();

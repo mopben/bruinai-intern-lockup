@@ -48,6 +48,12 @@ export interface KitchenSceneOptions {
   readonly pileAlertAt?: number;
   /** Override the "Fixed: power" hint for a locked item. */
   readonly lockHint?: (item: { readonly id: string; readonly name: string; readonly category: string }) => string;
+  /**
+   * Camera angles (radians). Default: azimuth 0.42, elevation 0.86. A more
+   * frontal, higher view (smaller azimuth, larger elevation) is less wide and
+   * fills a tall half-screen better in side-by-side.
+   */
+  readonly view?: { readonly azimuth: number; readonly elevation: number };
   /** Allow rotating the held or selected item by 90 degrees (R key, double-click). Default true. */
   readonly allowRotate?: boolean;
 }

@@ -10,7 +10,7 @@ import { easeOutCubic } from "./smoothing";
 
 /** Tickets drawn per pile; the badge shows the real count beyond this. */
 export const MAX_VISIBLE_TICKETS = 14;
-const TICKET_H = 0.07;
+const TICKET_H = 0.085;
 const DROP_S = 0.38;
 const LEAVE_S = 0.35;
 
@@ -50,7 +50,7 @@ export class TicketPile {
     const live = this.tickets.filter((t) => t.leavingAt < 0);
     for (let i = live.length; i < visible; i++) {
       const w = wobble(i);
-      const mesh = new THREE.Mesh(this.geo.roundedBox(0.3, TICKET_H - 0.01, 0.24, 0.018), this.paperMat);
+      const mesh = new THREE.Mesh(this.geo.roundedBox(0.36, TICKET_H - 0.012, 0.28, 0.02), this.paperMat);
       mesh.castShadow = true;
       mesh.position.set(w.dx, i * TICKET_H + TICKET_H / 2, w.dz);
       mesh.rotation.y = w.rot;

@@ -39,6 +39,8 @@ export function createKitchenScene(container: HTMLElement, options: KitchenScene
   const tmats = ticketMaterials();
   const tweens = new Tweens();
   vp.scene.add(board.group, ghosts.group, paths.group, world, pawns.group);
+  const homeView = options.view ?? vp.view;
+  vp.view = homeView;
 
   const views = new Map<string, ItemView>();
   const tags = new Map<string, TagView>();
@@ -356,7 +358,7 @@ export function createKitchenScene(container: HTMLElement, options: KitchenScene
     setPaths: (ps: readonly PathInput[]) => { paths.set(ps); markDirty(); },
     setGhost: (l) => { ghostLayout = l; refreshGhost(); },
     projectToScreen: (x, y, z) => { const p = vp.project(v3.set(x, y, z)); return Number.isFinite(p.x) ? { x: p.x, y: p.y } : null; },
-    reframe: () => { vp.view = { ...vp.view, azimuth: 0.42, elevation: 0.86 }; vp.zoom = 1; vp.applyFrame(); markDirty(); },
+    reframe: () => { vp.view = homeView; vp.zoom = 1; vp.applyFrame(); markDirty(); },
     dispose: () => {
       if (disposed) return;
       disposed = true;

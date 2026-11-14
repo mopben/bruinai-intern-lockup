@@ -44,7 +44,7 @@ function injectStyle(): void {
 @keyframes dr-bump{0%{scale:1}40%{scale:1.3}100%{scale:1}}
 .dr-path-tag{position:absolute;left:0;top:0;will-change:transform;padding:.05em .5em 0;border-radius:999px;background:${palette.path};color:${palette.paper};font-weight:800;white-space:nowrap;
   box-shadow:0 .12em 0 rgba(59,47,40,.25);}
-.dr-hint{position:absolute;left:0;top:0;will-change:transform;display:flex;align-items:center;gap:.4em;padding:.25em .7em .2em;border-radius:14px;background:${palette.ink};color:${palette.paper};
+.dr-hint{position:absolute;left:0;top:0;z-index:5;will-change:transform;display:flex;align-items:center;gap:.4em;padding:.25em .7em .2em;border-radius:14px;background:${palette.ink};color:${palette.paper};
   font-family:${fonts.body};font-weight:800;white-space:nowrap;opacity:0;transition:opacity .2s ease;}
 .dr-hint.show{opacity:1}
 @media (prefers-reduced-motion: reduce){.dr-badge.bump{animation:none}}
