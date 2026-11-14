@@ -142,7 +142,7 @@ export async function beginTest(): Promise<void> {
   const pick = pickCandidate();
   if (!pick && !live) {
     testPlan.value = null;
-    outcomeProblem.value = "No recorded second run exists for this kitchen. Switch taps and positions to live in Inputs in Build (step 1) to run the change for real.";
+    outcomeProblem.value = "No recorded second run exists for this kitchen. Switch taps and positions to live in Inputs in Import (step 1) to run the change for real.";
     return;
   }
   const layout = live || !pick || pick.matched ? f.judge.layout : pick.candidate.layout;

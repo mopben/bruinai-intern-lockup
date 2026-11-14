@@ -1,6 +1,6 @@
 # Dry Run: stage runbook
 
-One page. Keys work on the stage page (the laptop browser). Open Build (**1**) at any time to see the inputs and the network addresses in the panel's Inputs section.
+One page. Keys work on the stage page (the laptop browser). Open Import (**1**) at any time to see the inputs and the network addresses in the panel's Inputs section.
 
 ## Before the day (once)
 
@@ -12,7 +12,7 @@ One page. Keys work on the stage page (the laptop browser). Open Build (**1**) a
 ## Set up on stage (about 30 minutes)
 
 - [ ] **Network.** Laptop, tablet and both phones on **one Wi-Fi you control** (a travel router or a phone hotspot). No internet is needed. Venue guest Wi-Fi often blocks devices from reaching each other.
-- [ ] **Laptop.** `npm start`. Stage on the projector; press **Shift+F** for full screen (or the browser's own). Open Build (**1**): the Inputs section lists the Tablet, Camera and Scan upload addresses.
+- [ ] **Laptop.** `npm start`. Stage on the projector; press **Shift+F** for full screen (or the browser's own). Open Import (**1**): the Inputs section lists the Tablet, Camera and Scan upload addresses.
 - [ ] **Tablet.** Open the Tablet address. It must say **Connected**. The stage footer then counts "1 tablet".
 - [ ] **Scan phone.** Type the laptop address in the app (port 5179 is added).
 - [ ] **Scan first, then the camera.** Do the real scan now and send it. The camera calibration belongs to one scan: a new sweep needs a new calibration (about a minute). On stage, send this same scan again (Review screen, **Send again**) and say it was taken before.
@@ -27,7 +27,7 @@ Live path first; **from recordings** in brackets. Numbers shown are the recordin
 
 | Time | Step | Say / do | Key | The room sees |
 | --- | --- | --- | --- | --- |
-| 0:00 | 1 Build | Sweep the phone, press Send. (Recordings: the scan replays by itself.) | **P** replays the scan | Plain boxes rise, then get names |
+| 0:00 | 1 Import | Sweep the phone, press Send. (Recordings: the scan replays by itself.) | **P** replays the scan | Plain boxes rise, then get names |
 | 0:30 | 3 Original run | Start the room. (Recordings: it plays on arrival.) | **3**, then select Original run and **P** (live); **F** (recordings) | Dots move and tickets pile up. Ends by itself, or **E** |
 | 1:45 | 2 Edit | Hand the mouse to a judge: drag the fridge, add a worker, or change the simulated order count. **A** suggests changes; **C** opens the prices and costs section | **2**, **A**, **C** | Walking, simulated time and profit per hour update during the edit |
 | 2:15 | 3 After the change | Make the same change in the room, then run again. (Recordings: the matching run plays.) | **3**, select After the change, then **P** (live); **F** or **E** (recordings) | Predicted range, measured mean, and a plain verdict; the real run keeps its own orders |
@@ -37,7 +37,7 @@ Live path first; **from recordings** in brackets. Numbers shown are the recordin
 
 | Symptom | Press | The room sees |
 | --- | --- | --- |
-| Scan does not arrive ("Waiting for the phone") | Check the address in Inputs under Build (**1**). Or AirDrop `scan.json` and drag it onto the stage. Or **1**, Scan: **Recorded** | The kitchen appears |
+| Scan does not arrive ("Waiting for the phone") | Check the address in Inputs under Import (**1**). Or AirDrop `scan.json` and drag it onto the stage. Or **1**, Scan: **Recorded** | The kitchen appears |
 | Tablet disconnected | Nothing. It retries and resends taps. After 5 s with no tablet, the stage uses recorded taps | "Showing the recorded taps (no tablet connected for 5 s)" |
 | Camera lost | Nothing. After 4 s the stage uses recorded positions | "Showing the recorded run (positions: …)" |
 | Dots wrong | **1**, Positions: **Recorded** | Recorded dots, run continues |
