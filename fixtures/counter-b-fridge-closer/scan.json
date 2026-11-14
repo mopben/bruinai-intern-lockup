@@ -1,0 +1,167 @@
+{
+  "format": "dryrun.scan",
+  "version": 1,
+  "units": "m",
+  "capturedAt": "2026-11-12T15:02:41Z",
+  "source": "synthetic",
+  "walls": [
+    {
+      "id": "0ECE41AB-1A9F-4ED5-B64B-40AB0E3FFBD4",
+      "center": {
+        "x": 2.2572,
+        "y": 1.2348,
+        "z": -0.0457
+      },
+      "size": {
+        "w": 4.5274,
+        "h": 2.4388,
+        "d": 0.093
+      },
+      "yaw": 0.004
+    },
+    {
+      "id": "3386F747-CB85-45D8-A9DF-9941E0C7BCC6",
+      "center": {
+        "x": -0.0561,
+        "y": 1.2283,
+        "z": 1.7489
+      },
+      "size": {
+        "w": 3.4704,
+        "h": 2.4406,
+        "d": 0.0958
+      },
+      "yaw": 1.5692
+    }
+  ],
+  "boxes": [
+    {
+      "id": "93141A88-524E-461D-9331-FF0DC977BB94",
+      "category": "unknown",
+      "center": {
+        "x": 2.3492,
+        "y": 0.0155,
+        "z": 3.0573
+      },
+      "size": {
+        "w": 1.3157,
+        "h": 0.0199,
+        "d": 0.5391
+      },
+      "yaw": -0.0044,
+      "confidence": "medium"
+    },
+    {
+      "id": "9886D544-4186-4B47-978D-7D032CCECDEA",
+      "category": "table",
+      "center": {
+        "x": 2.9721,
+        "y": 0.4496,
+        "z": 0.3212
+      },
+      "size": {
+        "w": 0.8176,
+        "h": 0.8848,
+        "d": 0.606
+      },
+      "yaw": 0.0243,
+      "confidence": "high"
+    },
+    {
+      "id": "61A93A22-761D-47DF-BC5F-5EB3A7D8334A",
+      "category": "table",
+      "center": {
+        "x": 1.1606,
+        "y": 0.4422,
+        "z": 0.3437
+      },
+      "size": {
+        "w": 0.7443,
+        "h": 0.8962,
+        "d": 0.6032
+      },
+      "yaw": -0.0042,
+      "confidence": "high"
+    },
+    {
+      "id": "CDE6CBCE-51B0-43F3-8352-3709255BFE67",
+      "category": "sink",
+      "center": {
+        "x": 3.9604,
+        "y": 0.4655,
+        "z": 0.2863
+      },
+      "size": {
+        "w": 0.6127,
+        "h": 0.9236,
+        "d": 0.5507
+      },
+      "yaw": 0.0011,
+      "confidence": "high"
+    },
+    {
+      "id": "98EA7E27-B557-42A2-9AE3-1C7A609FDAC0",
+      "category": "storage",
+      "center": {
+        "x": 2.0565,
+        "y": 0.4679,
+        "z": 0.3188
+      },
+      "size": {
+        "w": 0.7135,
+        "h": 0.9273,
+        "d": 0.614
+      },
+      "yaw": 0.0104,
+      "confidence": "high"
+    },
+    {
+      "id": "81C9EBC2-31C1-4C98-879A-0EAB5851BF60",
+      "category": "table",
+      "center": {
+        "x": 4.2173,
+        "y": 0.3877,
+        "z": 1.8736
+      },
+      "size": {
+        "w": 0.9935,
+        "h": 0.7666,
+        "d": 0.5055
+      },
+      "yaw": -1.5753,
+      "confidence": "high"
+    },
+    {
+      "id": "65E69210-5EED-4D93-9F34-955C39B9EDBF",
+      "category": "refrigerator",
+      "center": {
+        "x": 0.3544,
+        "y": 0.4338,
+        "z": 2.667
+      },
+      "size": {
+        "w": 0.5992,
+        "h": 0.8596,
+        "d": 0.6106
+      },
+      "yaw": 1.5626,
+      "confidence": "high"
+    },
+    {
+      "id": "429D9670-6776-4ABA-8B0D-85FD53F980D1",
+      "category": "chair",
+      "center": {
+        "x": 4.1291,
+        "y": 0.3417,
+        "z": 3.1871
+      },
+      "size": {
+        "w": 0.4179,
+        "h": 0.673,
+        "d": 0.399
+      },
+      "yaw": 0.2725,
+      "confidence": "low"
+    }
+  ]
+}

@@ -1,0 +1,137 @@
+{
+  "format": "dryrun.setup",
+  "version": 1,
+  "items": [
+    {
+      "boxId": "61A93A22-761D-47DF-BC5F-5EB3A7D8334A",
+      "name": "Order (till)",
+      "role": "station",
+      "locked": false,
+      "standSide": "front"
+    },
+    {
+      "boxId": "98EA7E27-B557-42A2-9AE3-1C7A609FDAC0",
+      "name": "Espresso machine",
+      "role": "station",
+      "locked": true,
+      "standSide": "front"
+    },
+    {
+      "boxId": "9886D544-4186-4B47-978D-7D032CCECDEA",
+      "name": "Finish",
+      "role": "station",
+      "locked": false,
+      "standSide": "front"
+    },
+    {
+      "boxId": "65E69210-5EED-4D93-9F34-955C39B9EDBF",
+      "name": "Milk fridge",
+      "role": "storage",
+      "locked": false,
+      "standSide": "front"
+    },
+    {
+      "boxId": "81C9EBC2-31C1-4C98-879A-0EAB5851BF60",
+      "name": "Pickup",
+      "role": "pickup",
+      "locked": false,
+      "standSide": "front"
+    },
+    {
+      "boxId": "CDE6CBCE-51B0-43F3-8352-3709255BFE67",
+      "name": "Sink",
+      "role": "fixture",
+      "locked": true,
+      "standSide": "front"
+    },
+    {
+      "boxId": "429D9670-6776-4ABA-8B0D-85FD53F980D1",
+      "name": "Stool (scan noise)",
+      "role": "ignore",
+      "locked": false,
+      "standSide": "front"
+    },
+    {
+      "boxId": "93141A88-524E-461D-9331-FF0DC977BB94",
+      "name": "Queue",
+      "role": "queue",
+      "locked": false,
+      "standSide": "front"
+    }
+  ],
+  "menu": [
+    {
+      "id": "latte",
+      "name": "Latte",
+      "steps": [
+        {
+          "stationId": "61A93A22-761D-47DF-BC5F-5EB3A7D8334A"
+        },
+        {
+          "stationId": "98EA7E27-B557-42A2-9AE3-1C7A609FDAC0",
+          "fetchFrom": [
+            "65E69210-5EED-4D93-9F34-955C39B9EDBF"
+          ]
+        },
+        {
+          "stationId": "9886D544-4186-4B47-978D-7D032CCECDEA"
+        }
+      ]
+    }
+  ],
+  "pickupId": "81C9EBC2-31C1-4C98-879A-0EAB5851BF60",
+  "schedule": {
+    "orders": [
+      {
+        "orderId": "o1",
+        "itemId": "latte",
+        "t": 1.37
+      },
+      {
+        "orderId": "o2",
+        "itemId": "latte",
+        "t": 6.78
+      },
+      {
+        "orderId": "o3",
+        "itemId": "latte",
+        "t": 12.67
+      },
+      {
+        "orderId": "o4",
+        "itemId": "latte",
+        "t": 18.59
+      },
+      {
+        "orderId": "o5",
+        "itemId": "latte",
+        "t": 25.48
+      },
+      {
+        "orderId": "o6",
+        "itemId": "latte",
+        "t": 30.73
+      },
+      {
+        "orderId": "o7",
+        "itemId": "latte",
+        "t": 37.37
+      },
+      {
+        "orderId": "o8",
+        "itemId": "latte",
+        "t": 42.69
+      },
+      {
+        "orderId": "o9",
+        "itemId": "latte",
+        "t": 49.45
+      },
+      {
+        "orderId": "o10",
+        "itemId": "latte",
+        "t": 55.11
+      }
+    ]
+  }
+}

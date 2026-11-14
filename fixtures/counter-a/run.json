@@ -1,0 +1,8 @@
+{
+  "format": "dryrun.run",
+  "version": 1,
+  "id": "counter-a",
+  "title": "Original counter",
+  "recordedAt": "2026-11-12T15:10:05.000Z",
+  "source": "synthetic"
+}
