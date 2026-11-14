@@ -24,8 +24,8 @@ describe("steps and views", () => {
     expect(keyAction("3")).toEqual({ type: "jump", step: "results" });
     expect(keyAction("4")).toBeNull();
     expect(keyAction("0")).toBeNull();
-    expect(keyAction("a")).toEqual({ type: "suggest" });
-    expect(keyAction("A")).toEqual({ type: "suggest" });
+    expect(keyAction("a")).toEqual({ type: "optimize" });
+    expect(keyAction("A")).toEqual({ type: "optimize" });
     expect(keyAction("c")).toEqual({ type: "costs" });
     expect(navigate("test", { type: "jump", step: "results" })).toBe("compare");
     expect(navigate("scan", { type: "jump", step: "build" })).toBe("play");

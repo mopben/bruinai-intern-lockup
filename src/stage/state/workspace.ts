@@ -9,7 +9,7 @@ import { withDemoRecipes } from "../app/recipes";
 import { calibration } from "./derive";
 import { storedEconomics, workersOpen, costsOpen } from "./economics";
 import { stopAllPlayback } from "./runs";
-import { cancelSuggest } from "./suggest";
+import { cancelOptimize } from "./optimize";
 import { enterStep } from "./flow";
 import {
   activeSetupId, activeShiftId, addNotice, base, candidates, firstRun, frozen,
@@ -60,7 +60,7 @@ const workspaceSchema = z.object({
 
 export function resetScenarioState(): void {
   stopAllPlayback();
-  cancelSuggest();
+  cancelOptimize();
   batch(() => {
     frozen.value = null; testPlan.value = null; secondRun.value = null;
     outcome.value = null; outcomeProblem.value = null; selectedId.value = null;

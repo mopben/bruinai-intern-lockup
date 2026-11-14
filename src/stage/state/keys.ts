@@ -5,7 +5,7 @@
 import { keyAction, navigate, type KeyAction } from "../app/steps";
 import { deleteComponent } from "../app/components";
 import { costsOpen, workersOpen } from "./economics";
-import { cancelSuggest, startSuggest } from "./suggest";
+import { cancelOptimize, startOptimize } from "./optimize";
 import { goTo, resetPlay, startOrReplay } from "./flow";
 import { editKitchen, reveal } from "./kitchen-actions";
 import { retrySave, skipToEnd, toggleFaster } from "./runs";
@@ -68,7 +68,7 @@ export function perform(action: KeyAction): void {
     case "delete": {
       const id = selectedId.value;
       if (here !== "play" || !id) return;
-      cancelSuggest();
+      cancelOptimize();
       editKitchen((k) => deleteComponent(k, id));
       selectedId.value = null;
       return;
@@ -108,9 +108,9 @@ export function perform(action: KeyAction): void {
       if (here === "play") workersOpen.value = true;
       else keyHint("W opens Workers in Setup (step 1).");
       return;
-    case "suggest":
-      if (here === "play") startSuggest();
-      else keyHint("A suggests changes in Setup (step 1).");
+    case "optimize":
+      if (here === "play") startOptimize();
+      else keyHint("A optimizes the kitchen in Setup (step 1).");
       return;
     case "costs":
       if (here !== "play") {

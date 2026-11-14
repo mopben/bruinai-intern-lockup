@@ -47,7 +47,7 @@ export type KeyAction =
   | { readonly type: "escape" }
   | { readonly type: "reset" }
   | { readonly type: "rehearsed"; readonly key: "m" | "w" }
-  | { readonly type: "suggest" }
+  | { readonly type: "optimize" }
   | { readonly type: "costs" }
   | { readonly type: "retry-save" };
 
@@ -87,7 +87,7 @@ export function keyAction(key: string): KeyAction | null {
       return { type: "retry-save" };
     case "a":
     case "A":
-      return { type: "suggest" };
+      return { type: "optimize" };
     case "c":
     case "C":
       return { type: "costs" };
@@ -127,7 +127,7 @@ export function keyHints(view: ViewId, live: boolean): readonly { readonly keys:
         ...nav,
         { keys: "Del", does: "delete selected component" },
         { keys: "W", does: "workers" },
-        { keys: "A", does: "suggest" },
+        { keys: "A", does: "optimize" },
         { keys: "C", does: "costs" },
         { keys: "⌫", does: "reset" },
       ];

@@ -64,7 +64,7 @@ export const economics = computed<Economics | null>(() => {
 /** True while every number is still an example. */
 export const economicsAreExamples = computed(() => storedEconomics.value === null);
 
-/** Changes some of the numbers. Anything that depends on them (suggestions) is told by the caller. */
+/** Changes some of the numbers. Anything that depends on them (the optimizer's answer) is told by the caller. */
 export function setEconomics(change: Partial<Economics>): void {
   const cur = economics.value;
   if (!cur) return;
