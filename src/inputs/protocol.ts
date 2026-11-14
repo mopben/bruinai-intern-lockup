@@ -26,11 +26,16 @@
  *                     Sent at run start, at run end and in reply to sync-request.
  *                     `events` is every taps event delivered so far, so a tablet
  *                     that joins or reconnects mid-run rebuilds its view.
+ *   stage -> all      { type: "kitchen", scan, setup, layout }
+ *                     The kitchen now on the stage. Sent whenever it changes (not
+ *                     on every drag frame) and in reply to sync-request. The camera
+ *                     page uses it to calibrate pixels to the floor and to know
+ *                     the hat colours.
  *   any -> stage      { type: "sync-request", role }
  */
 import { z } from "zod";
-import type { DoneEvent, PositionSample, Scan, Setup, TapEvent, WorkerDef } from "../core/types";
-import { doneEventSchema, scanSchema, setupSchema, tapEventSchema, workerDefSchema } from "./schemas";
+import type { DoneEvent, Layout, PositionSample, Scan, Setup, TapEvent, WorkerDef } from "../core/types";
+import { doneEventSchema, layoutSchema, scanSchema, setupSchema, tapEventSchema, workerDefSchema } from "./schemas";
 
 export const CHANNELS = ["scan", "taps", "positions", "control"] as const;
 export type Channel = (typeof CHANNELS)[number];
@@ -136,7 +141,14 @@ export interface SyncRequest {
   readonly role: string;
 }
 
-export type ControlMessage = PresenceMessage | RunStateMessage | SyncRequest;
+export interface KitchenMessage {
+  readonly type: "kitchen";
+  readonly scan: Scan;
+  readonly setup: Setup;
+  readonly layout: Layout;
+}
+
+export type ControlMessage = PresenceMessage | RunStateMessage | SyncRequest | KitchenMessage;
 
 const count = z.number().int().min(0);
 export const presenceSchema = z.object({
@@ -153,7 +165,18 @@ export const runStateSchema = z.object({
   events: z.array(tapEventSchema),
 });
 export const syncRequestSchema = z.object({ type: z.literal("sync-request"), role: z.string() });
-export const controlMessageSchema = z.discriminatedUnion("type", [presenceSchema, runStateSchema, syncRequestSchema]);
+export const kitchenMessageSchema = z.object({
+  type: z.literal("kitchen"),
+  scan: scanSchema,
+  setup: setupSchema,
+  layout: layoutSchema,
+});
+export const controlMessageSchema = z.discriminatedUnion("type", [
+  presenceSchema,
+  runStateSchema,
+  syncRequestSchema,
+  kitchenMessageSchema,
+]);
 
 /** Decodes a raw WebSocket frame into an envelope, or undefined if it is not one. */
 export function decodeEnvelope(raw: string): Envelope | undefined {
