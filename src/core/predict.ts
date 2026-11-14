@@ -47,13 +47,35 @@ export interface Prediction {
   readonly assumption: string;
 }
 
-export function assumptionText(cal: Calibration, reps: number): string {
-  const speed = cal.walkSpeedAssumed
-    ? `walking speed was not measured, so we assume ${cal.walkSpeedMps.toFixed(1)} m/s`
-    : `walking speed ${cal.walkSpeedMps.toFixed(1)} m/s as measured`;
+function paceWords(cal: Calibration): string {
+  const v = cal.walkSpeedMps.toFixed(1);
+  switch (cal.paceMethod) {
+    case "trip-fit":
+      return `walking ${v} m/s plus ${cal.walkOverheadS.toFixed(1)} s per trip, from ${cal.walkSpeedSamples} measured trips`;
+    case "trip-speed":
+      return `walking ${v} m/s on average, from ${cal.walkSpeedSamples} measured trips`;
+    case "windows":
+      return `walking ${v} m/s, from moment-to-moment movement`;
+    default:
+      return `walking speed was not measured, so we assume ${v} m/s`;
+  }
+}
+
+/** True when some station in the layout has more than one worker. */
+export function hasSharedStation(world: World): boolean {
+  const counts = new Map<string, number>();
+  for (const w of world.workers) counts.set(w.stationId, (counts.get(w.stationId) ?? 0) + 1);
+  return [...counts.values()].some((n) => n > 1);
+}
+
+/** The prediction's assumptions in plain words. */
+export function assumptionText(cal: Calibration, reps: number, world?: World): string {
+  const shared = world !== undefined && hasSharedStation(world)
+    ? " Two people at one station work side by side without getting in each other's way, and a new person works at the pace of the person already there."
+    : "";
   return (
-    `People work and walk at the pace we measured (${cal.sampleCount} timed steps; ${speed}). ` +
-    `Only distances and staffing change. The range is the middle 80% of ${reps} simulated runs.`
+    `People work and walk at the pace we measured (${cal.sampleCount} timed steps; ${paceWords(cal)}). ` +
+    `Only distances and staffing change.${shared} The range is the middle 80% of ${reps} simulated runs.`
   );
 }
 
@@ -92,7 +114,7 @@ export function predict(world: World, calibration: Calibration, opts: PredictOpt
     orderCount: releases.length,
     reps,
     seed,
-    assumption: assumptionText(calibration, reps),
+    assumption: assumptionText(calibration, reps, world),
   };
 }
 

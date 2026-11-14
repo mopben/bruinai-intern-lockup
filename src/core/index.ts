@@ -66,13 +66,17 @@ export {
   SPEED_WINDOW_S,
 } from "./calibrate";
 export type { Calibration, CalibrationOptions, SpeedEstimate } from "./calibrate";
+export { estimatePace, walkSeconds, bootstrapPace, MIN_TRIPS, FIT_MIN_SPREAD_M } from "./pace";
+export type { Pace, PaceMethod, PaceEstimate } from "./pace";
+export { detectTrips, TRIP_EXCURSION_M, TRIP_HOME_M, TRIP_MATCH_M } from "./trips";
+export type { Trip } from "./trips";
 
 // Simulation and prediction
 export { compileModel, SimError } from "./model";
 export type { SimModel } from "./model";
 export { runReplication } from "./sim";
 export type { Releases, Replication, ReplicationOptions } from "./sim";
-export { predict, simulateRun, assumptionText, DEFAULT_REPS, DEFAULT_SEED } from "./predict";
+export { predict, simulateRun, assumptionText, hasSharedStation, DEFAULT_REPS, DEFAULT_SEED } from "./predict";
 export type { Prediction, PredictOptions, SimulateRunOptions } from "./predict";
 
 // Trust and checking a prediction

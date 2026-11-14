@@ -9,7 +9,8 @@
  * the carry ends.
  *
  * Randomness uses common random numbers: for replication r, the work time of
- * order i, step k always comes from the same uniform draw, whatever the layout
+ * order i, step k always comes from the same uniform draw, and the walking pace
+ * (bootstrapped from the measured trips) from the same stream, whatever the layout
  * or staffing, so two layouts are compared on the same luck and a drag does not
  * make numbers flicker. Mutable arrays are used inside the event loop for speed;
  * nothing passed in is changed and results are fresh objects.
@@ -19,6 +20,7 @@ import type { MovementSegment, OrderTrace, RunTrace, StepTrace } from "./trace";
 import { streamFor } from "./rng";
 import { buildQueueTimeline } from "./timeline";
 import { SimError, type ModelStep, type SimModel } from "./model";
+import { bootstrapPace, walkSeconds, type Pace } from "./pace";
 
 export type Releases = OrderSchedule["orders"];
 
@@ -94,8 +96,9 @@ export function runReplication(model: SimModel, releases: Releases, seed: number
   const workRng = streamFor(seed, rep, 2);
   const u = new Float64Array(n * S);
   for (let i = 0; i < u.length; i += 1) u[i] = workRng();
+  const timed = timedItems(model, (opts.bootstrap ?? true) ? bootstrapPace(model.paceTrips, model.paceMethod, model.pace, streamFor(seed, rep, 3)) : model.pace);
   const plans = releases.map((r) => {
-    const p = model.items.get(r.itemId);
+    const p = timed.get(r.itemId);
     if (!p) throw new SimError(`Order "${r.orderId}" is for "${r.itemId}", which is not on the menu.`);
     return p;
   });
@@ -121,7 +124,7 @@ export function runReplication(model: SimModel, releases: Releases, seed: number
     start[job] = now;
     tap[job] = t;
     who[job] = w;
-    const c = step.carry.seconds;
+    const c = step.carrySeconds;
     const isLast = k === (plans[i] as readonly ModelStepLike[]).length - 1;
     if (isLast) finished[i] = t;
     else heapPush(heap, { t: t + c, seq: seq++, kind: 0, a: job + 1, b: 0 });
@@ -158,20 +161,41 @@ export function runReplication(model: SimModel, releases: Releases, seed: number
   return { orderTimes, finishedAt, lastFinish, trace };
 }
 
-type ModelStepLike = ModelStep;
+/** A model step with walking turned into seconds for one replication's pace. */
+interface TimedStep extends ModelStep {
+  readonly fetchLegSeconds: readonly number[];
+  readonly fetchSeconds: number;
+  readonly carrySeconds: number;
+}
+type ModelStepLike = TimedStep;
+
+function timedItems(model: SimModel, pace: Pace): ReadonlyMap<string, readonly TimedStep[]> {
+  const out = new Map<string, readonly TimedStep[]>();
+  for (const [id, steps] of model.items) {
+    out.set(
+      id,
+      steps.map((st) => {
+        const fetchLegSeconds = st.fetch.map((l) => walkSeconds(pace, l.oneWayM));
+        return { ...st, fetchLegSeconds, fetchSeconds: 2 * fetchLegSeconds.reduce((a, b) => a + b, 0), carrySeconds: walkSeconds(pace, st.carry.oneWayM) };
+      }),
+    );
+  }
+  return out;
+}
 
 function recordMoves(out: MovementSegment[], model: SimModel, orderId: string, k: number, s: number, w: number, step: ModelStepLike, now: number, tapT: number): void {
   const workerId = (model.stationWorkers[s]?.[w]?.id ?? "") as string;
   let t = now;
-  for (const leg of step.fetch) {
-    out.push({ workerId, orderId, step: k, kind: "fetch-out", t0: t, t1: t + leg.seconds, path: leg.path });
-    t += leg.seconds;
-    out.push({ workerId, orderId, step: k, kind: "fetch-back", t0: t, t1: t + leg.seconds, path: [...leg.path].reverse() });
-    t += leg.seconds;
-  }
+  step.fetch.forEach((leg, j) => {
+    const sec = step.fetchLegSeconds[j] as number;
+    out.push({ workerId, orderId, step: k, kind: "fetch-out", t0: t, t1: t + sec, path: leg.path });
+    t += sec;
+    out.push({ workerId, orderId, step: k, kind: "fetch-back", t0: t, t1: t + sec, path: [...leg.path].reverse() });
+    t += sec;
+  });
   const home = model.world.itemsById.get(step.stationId)?.stand;
   out.push({ workerId, orderId, step: k, kind: "work", t0: t, t1: tapT, path: home ? [home] : [] });
-  const c = step.carry.seconds;
+  const c = step.carrySeconds;
   if (c > 0) {
     out.push({ workerId, orderId, step: k, kind: "carry-out", t0: tapT, t1: tapT + c, path: step.carry.path });
     out.push({ workerId, orderId, step: k, kind: "carry-back", t0: tapT + c, t1: tapT + 2 * c, path: [...step.carry.path].reverse() });

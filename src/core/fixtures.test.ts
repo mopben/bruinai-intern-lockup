@@ -61,7 +61,8 @@ describe.skipIf(!have)("fixtures (honest numbers)", () => {
     const cal = calibrate(worldA, runA, a.positions);
     const lines: string[] = [
       `counter-a: ${runA.orders.length} orders, warnings: ${runA.warnings.length}`,
-      `  walking speed ${cal.walkSpeedMps.toFixed(2)} m/s (assumed: ${cal.walkSpeedAssumed}, ${cal.walkSpeedSamples} windows), samples ${cal.sampleCount}, clamped ${cal.clampedCount}`,
+      `  pace: ${cal.paceMethod}, ${cal.walkSpeedMps.toFixed(2)} m/s + ${cal.walkOverheadS.toFixed(2)} s per round trip (${cal.walkSpeedSamples} samples), work samples ${cal.sampleCount}, clamped ${cal.clampedCount}; warnings: ${cal.warnings.join(' | ') || 'none'}`,
+      `  trips: ${[...new Set(cal.paceTrips.map((t) => t.group))].map((g) => { const ts = cal.paceTrips.filter((t) => t.group === g); return `${g.split(':')[0]}->${(a.setup.items.find((i) => i.boxId === g.split(':')[1])?.name ?? '?')} n=${ts.length} d=${(ts.reduce((s, t) => s + t.distanceM, 0) / ts.length).toFixed(2)}m t=${(ts.reduce((s, t) => s + t.durationS, 0) / ts.length).toFixed(2)}s`; }).join('; ')}`,
       `  trust: error ${trust.errorPct?.toFixed(1)}% -> "${describeTrustError(trust.errorPct)}"; measured ${trust.measuredMeanS?.toFixed(1)} s vs model ${trust.modelMeanS?.toFixed(1)} s on ${trust.pairs.length} held-out orders; caveat: ${trust.caveat}`,
       `  pairs: ${trust.pairs.map((p) => `${p.orderId} ${p.measuredS.toFixed(1)}/${p.modelS.toFixed(1)}`).join(", ")}`,
     ];

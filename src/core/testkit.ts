@@ -79,6 +79,9 @@ export function evenOrders(n: number, gap: number, itemId = "latte", start = 0):
 export function fixedCalibration(samples: Record<string, readonly number[]>, speed = 1.2): Calibration {
   return {
     walkSpeedMps: speed,
+    walkOverheadS: 0,
+    paceMethod: "windows",
+    paceTrips: [],
     walkSpeedAssumed: false,
     walkSpeedSamples: 100,
     workSamples: samples,

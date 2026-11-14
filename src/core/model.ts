@@ -8,6 +8,8 @@ import type { Calibration } from "./calibrate";
 import { buildPathTable, type PathTable } from "./walking";
 import { planItems } from "./plan";
 import { menuStations } from "./timeline";
+import type { Pace, PaceMethod } from "./pace";
+import type { Trip } from "./trips";
 
 export class SimError extends Error {
   constructor(message: string) {
@@ -17,7 +19,8 @@ export class SimError extends Error {
 }
 
 export interface ModelLeg {
-  readonly seconds: number;
+  /** One-way walking length; 0 for a hand-off. */
+  readonly oneWayM: number;
   readonly path: readonly Vec2[];
 }
 
@@ -25,8 +28,7 @@ export interface ModelStep {
   readonly stationIndex: number;
   readonly stationId: string;
   readonly fetch: readonly ModelLeg[];
-  readonly fetchSeconds: number;
-  /** One-way carry; seconds 0 for a hand-off. */
+  /** One-way carry; length 0 for a hand-off. */
   readonly carry: ModelLeg;
 }
 
@@ -38,7 +40,10 @@ export interface SimModel {
   readonly stationWorkers: readonly (readonly WorkerDef[])[];
   readonly items: ReadonlyMap<string, readonly ModelStep[]>;
   readonly maxSteps: number;
-  readonly speedMps: number;
+  /** Calibrated pace; each replication may bootstrap its own from `paceTrips`. */
+  readonly pace: Pace;
+  readonly paceMethod: PaceMethod;
+  readonly paceTrips: readonly Trip[];
   /** Calibrated work samples per station index. */
   readonly samples: readonly (readonly number[])[];
   /** Stable integer per station for random streams (hash of its id). */
@@ -58,8 +63,9 @@ export function hashString(s: string): number {
 export function compileModel(world: World, calibration: Calibration, table?: PathTable): SimModel {
   const t = table ?? buildPathTable(world);
   const stationIds = menuStations(world.menu);
-  const speed = calibration.walkSpeedMps;
-  if (!(speed > 0)) throw new SimError(`Walking speed must be positive (got ${speed}).`);
+  const pace: Pace = { speedMps: calibration.walkSpeedMps, overheadS: calibration.walkOverheadS };
+  if (!(pace.speedMps > 0)) throw new SimError(`Walking speed must be positive (got ${pace.speedMps}).`);
+  if (!(pace.overheadS >= 0)) throw new SimError(`Walking overhead must not be negative (got ${pace.overheadS}).`);
   const stationWorkers = stationIds.map((id) => world.workers.filter((w) => w.stationId === id));
   stationWorkers.forEach((ws, i) => {
     const name = world.itemsById.get(stationIds[i] as string)?.name ?? stationIds[i];
@@ -78,12 +84,11 @@ export function compileModel(world: World, calibration: Calibration, table?: Pat
       plan.steps.map((s) => ({
         stationIndex: stationIds.indexOf(s.stationId),
         stationId: s.stationId,
-        fetch: s.fetchLegs.map((l) => ({ seconds: l.oneWayM / speed, path: l.path })),
-        fetchSeconds: s.fetchM / speed,
-        carry: { seconds: s.carry.oneWayM / speed, path: s.carry.path },
+        fetch: s.fetchLegs.map((l) => ({ oneWayM: l.oneWayM, path: l.path })),
+        carry: { oneWayM: s.carry.oneWayM, path: s.carry.path },
       })),
     );
   }
   const maxSteps = Math.max(0, ...[...items.values()].map((s) => s.length));
-  return { world, table: t, stationIds, stationWorkers, items, maxSteps, speedMps: speed, samples, stationKeys: stationIds.map(hashString) };
+  return { world, table: t, stationIds, stationWorkers, items, maxSteps, pace, paceMethod: calibration.paceMethod, paceTrips: calibration.paceTrips, samples, stationKeys: stationIds.map(hashString) };
 }
