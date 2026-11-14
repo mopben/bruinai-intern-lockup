@@ -1,7 +1,7 @@
 /**
  * Rule 9, it survives the stage (replay side): once loaded, the demo needs no
  * server at all; a reload at any step lands somewhere usable; switching an
- * input in the drawer never resets the step; keys that do nothing say so.
+ * input in Inputs never loses the change; keys that do nothing say so.
  */
 import { expectStep, goView, openStage, VIEW_IDS, text, waitForSession } from "./support/stage";
 import { REPLAY_PORT, origin } from "./support/ports";
@@ -68,20 +68,19 @@ for (const step of VIEW_IDS) {
   });
 }
 
-test("rule 9: switching an input in the drawer keeps the step and the change", async ({ page }) => {
+test("rule 9: switching an input in Inputs keeps the change", async ({ page }) => {
   await openStage(page, { speed: 32, step: 2 });
   await page.keyboard.press("m");
   const walk = await text(page, "walking-per-order");
-  await page.keyboard.press("i");
-  await expect(page.getByTestId("inputs-drawer")).toBeVisible();
+  await page.keyboard.press("1");
+  await expect(page.getByTestId("inputs-section")).toBeVisible();
   for (const input of ["positions", "taps"]) {
     await page.getByTestId(`source-${input}-live`).click();
-    await expect(page.getByTestId(`chip-source-${input}`)).toHaveAttribute("data-source", "live");
-    await expectStep(page, "play");
+    await expect(page.getByTestId(`input-${input}`)).toHaveAttribute("data-source", "live");
     await page.getByTestId(`source-${input}-replay`).click();
-    await expect(page.getByTestId(`chip-source-${input}`)).toHaveAttribute("data-source", "replay");
+    await expect(page.getByTestId(`input-${input}`)).toHaveAttribute("data-source", "replay");
   }
-  await page.keyboard.press("Escape");
+  await page.keyboard.press("2");
   await expectStep(page, "play");
   await expect(page.getByTestId("walking-per-order")).toHaveText(walk);
 });

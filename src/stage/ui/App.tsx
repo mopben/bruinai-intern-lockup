@@ -1,15 +1,14 @@
 /**
- * The stage app: the kitchen as the hero, the step strip on top, one paper
- * rail with the step's words and numbers, keys and inputs along the bottom.
+ * The stage app, VS Code style: an activity bar on the far left, a side
+ * panel beside it, and the kitchen filling the rest.
  */
 import { useEffect } from "preact/hooks";
 import { acceptDroppedScan } from "../state/input-actions";
 import { installKeys } from "../state/keys";
-import { addNotice, bootError, loading, view } from "../state/store";
-import { InputsChip, KeyHints, Notices, ResultsSwitch, StepStrip } from "./Chrome";
+import { addNotice, bootError, currentStep, loading, panel, view } from "../state/store";
+import { STEPS, stepIndex } from "../app/steps";
+import { ActivityBar, KeyHints, Notices, ResultsSwitch, Sash } from "./Chrome";
 import { CompareView } from "./CompareView";
-import { CostsDrawer } from "./CostsDrawer";
-import { InputsDrawer } from "./InputsDrawer";
 import { PlayRail } from "./PlayRail";
 import { RunRail } from "./RunRail";
 import { ScanRail } from "./ScanRail";
@@ -26,6 +25,8 @@ function Rail() {
       return <PlayRail />;
     case "test":
       return <TestRail />;
+    case "compare":
+      return <p class="st-small">The two kitchens fill the stage beside this panel; collapse it for the full width.</p>;
     default:
       return null;
   }
@@ -56,16 +57,29 @@ export function App() {
   useEffect(() => installKeys(), []);
   useDropScan();
   const comparing = view.value === "compare";
+  const p = panel.value;
+  const step = STEPS[stepIndex(currentStep.value)]!;
   return (
-    <div class={`st-root${comparing ? " compare" : ""}`}>
-      <header class="st-top">
-        <div class="st-mark">
-          Dry Run
-          <small>scan, change one thing, run again</small>
-        </div>
-        <StepStrip />
-        <ResultsSwitch />
-      </header>
+    <div class={`st-root${comparing ? " compare" : ""}${p.open ? "" : " panel-closed"}`} style={{ "--st-panel": `${p.width}px` } as never}>
+      <ActivityBar />
+      {p.open ? (
+        <aside class="st-panel" data-testid="side-panel">
+          <div class="st-panel-head">
+            <span class="st-mark">Dry Run</span>
+            <span class="st-panel-title">
+              {stepIndex(currentStep.value) + 1}. {step.name}
+            </span>
+          </div>
+          {step.id === "results" ? <ResultsSwitch /> : null}
+          <div class="st-panel-body st-rail">
+            <Rail />
+          </div>
+          <div class="st-panel-foot">
+            <KeyHints />
+          </div>
+          <Sash />
+        </aside>
+      ) : null}
       <main class="st-stage">
         <SceneHost hidden={comparing} />
         {comparing ? <CompareView /> : null}
@@ -84,15 +98,6 @@ export function App() {
           </div>
         ) : null}
       </main>
-      <aside class="st-rail">
-        <Rail />
-      </aside>
-      <footer class="st-bottom">
-        <KeyHints />
-        <InputsChip />
-      </footer>
-      <InputsDrawer />
-      <CostsDrawer />
     </div>
   );
 }

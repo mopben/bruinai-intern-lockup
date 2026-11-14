@@ -1,7 +1,8 @@
 /**
- * Prices and costs (key C): what each menu item sells for and costs to make,
- * wages, electricity, other running costs, and how many orders come in a busy
- * hour. Profit per hour and the suggestions use these.
+ * The Prices and costs section of the Edit panel (key C): what each menu item
+ * sells for and costs to make, wages, electricity, other running costs, and
+ * how many orders come in a busy hour. Profit per hour and the suggestions
+ * use these.
  */
 import { formatMoney, type Economics } from "../../core";
 import { cancelSuggest } from "../state/suggest";
@@ -38,14 +39,14 @@ function Money(props: { readonly label: string; readonly value: number; readonly
   );
 }
 
-export function CostsDrawer() {
+export function CostsSection() {
   if (!costsOpen.value) return null;
   const econ = economics.value;
   const k = kitchen.value;
   if (!econ || !k) return null;
   const cur = econ.currency;
   return (
-    <section class="st-drawer" data-testid="costs-drawer" aria-label="Prices and costs">
+    <section class="st-costs" data-testid="costs-section" aria-label="Prices and costs">
       <div class="st-row" style={{ justifyContent: "space-between" }}>
         <h2>Prices and costs</h2>
         <Btn small label="Close" k="Esc" onClick={() => (costsOpen.value = false)} testId="btn-close-costs" />

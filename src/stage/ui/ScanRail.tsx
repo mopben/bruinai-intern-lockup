@@ -1,10 +1,14 @@
 /**
- * Step 1. The scan appears; the owner names things and says how an order is made.
+ * Step 1. The scan appears; the owner names things and says how an order is
+ * made. The Inputs section sits at the bottom of the panel.
  */
+import { useRef } from "preact/hooks";
 import { addFloorMark, addRouteStation, moveRouteStep, removeRouteStep, toggleFetch } from "../app/kitchen-edit";
+import { acceptDroppedScan } from "../state/input-actions";
 import { editKitchen, reveal } from "../state/kitchen-actions";
-import { base, kitchen, kitchenOrigin, moveInScan, scanNotes, scanState, selectedId, serverInfo, sources } from "../state/store";
+import { addNotice, base, kitchen, kitchenOrigin, moveInScan, scanNotes, scanState, selectedId, serverInfo, sources } from "../state/store";
 import { Btn } from "./bits";
+import { InputsSection } from "./InputsSection";
 import { ItemPanel } from "./ItemPanel";
 
 function RouteEditor() {
@@ -83,12 +87,45 @@ function Waiting() {
         <p class="st-warn">Not connected to the laptop server, so the phone cannot reach this screen.</p>
       )}
       <p class="st-small">Or drop a scan.json file anywhere on this screen.</p>
-      <p class="st-small">To use the recorded scan instead, press I and switch the scan to recorded.</p>
+      <p class="st-small">To use the recorded scan instead, switch the scan to recorded in Inputs below.</p>
     </div>
   );
 }
 
 export function ScanRail() {
+  const file = useRef<HTMLInputElement>(null);
+  const addMark = () => {
+    const current = kitchen.value;
+    if (!current) return;
+    const result = addFloorMark(current);
+    editKitchen(() => result.kitchen);
+    moveInScan.value = true;
+    selectedId.value = result.newId;
+  };
+  const pick = (e: Event) => {
+    const input = e.target as HTMLInputElement;
+    const f = input.files?.[0];
+    input.value = "";
+    if (!f) return;
+    f.text().then(
+      (text) => acceptDroppedScan(text, f.name),
+      () => addNotice({ id: "drop", text: `Could not read ${f.name}.`, tone: "warn" }),
+    );
+  };
+  return (
+    <>
+      <div class="st-row st-panel-actions">
+        <Btn label="Add a scan" onClick={() => file.current?.click()} testId="btn-add-scan" />
+        <Btn label="Add a floor mark" onClick={addMark} disabled={!kitchen.value} title={kitchen.value ? undefined : "Add a scan first"} testId="btn-add-mark" />
+        <input ref={file} type="file" accept=".json,application/json" style={{ display: "none" }} onChange={pick} />
+      </div>
+      <ScanBody />
+      <InputsSection />
+    </>
+  );
+}
+
+function ScanBody() {
   const k = kitchen.value;
   if (!k) return <Waiting />;
   const id = selectedId.value;
@@ -106,14 +143,6 @@ export function ScanRail() {
       </div>
     );
   }
-  const addMark = () => {
-    const current = kitchen.value;
-    if (!current) return;
-    const result = addFloorMark(current);
-    editKitchen(() => result.kitchen);
-    moveInScan.value = true;
-    selectedId.value = result.newId;
-  };
   return (
     <div class="st-card">
       <h1>The kitchen, from a phone scan</h1>
@@ -126,7 +155,6 @@ export function ScanRail() {
       <RouteEditor />
       <div class="st-row">
         <Btn label="Show the scan again" k="P" onClick={reveal} testId="btn-play" />
-        <Btn label="Add a floor mark" onClick={addMark} testId="btn-add-mark" />
       </div>
       <p class="st-small">
         {recorded ? `Recorded scan, from the run “${base.value?.meta.title ?? ""}”.` : sources.value.scan === "live" ? "Live scan from the phone. This is a first guess: check each box." : ""}

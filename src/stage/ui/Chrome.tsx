@@ -1,34 +1,67 @@
 /**
- * The frame around the kitchen: step strip, notices, key hint, inputs chip.
+ * The frame around the kitchen: the activity bar, the panel's resize sash,
+ * notices and the key hint. The results view switch lives in the Run panel.
  */
-import { STEPS, defaultView, keyHints, stepIndex } from "../app/steps";
+import type { TargetedPointerEvent } from "preact";
+import { STEPS, keyHints, stepIndex } from "../app/steps";
 import { goTo } from "../state/flow";
+import { activate, beginDrag, endDrag, resetPanelWidth, setPanelWidth } from "../state/panel-actions";
 import { nextRunIsLive } from "../state/runs";
-import { currentStep, drawerOpen, health, notices, presence, session, sources, view } from "../state/store";
+import { currentStep, notices, session, view } from "../state/store";
 import { Key } from "./bits";
+import { BuildIcon, EditIcon, RunIcon } from "./icons";
 
-export function StepStrip() {
+const ICONS = [BuildIcon, EditIcon, RunIcon] as const;
+
+export function ActivityBar() {
   const here = stepIndex(currentStep.value);
   return (
-    <nav aria-label="Demo steps">
-      <ol class="st-strip" data-testid="step-strip">
-        {STEPS.map((s, i) => (
-          <li key={s.id}>
-            <button
-              type="button"
-              class={`st-step${i === here ? " here" : i < here ? " done" : ""}`}
-              aria-current={i === here ? "step" : undefined}
-              data-testid={`step-${s.id}`}
-              onClick={() => goTo(defaultView(s.id))}
-            >
-              <span class="n">{i + 1}</span>
-              {s.name}
-            </button>
-          </li>
-        ))}
+    <nav class="st-activity" aria-label="Demo steps">
+      <ol data-testid="step-strip">
+        {STEPS.map((s, i) => {
+          const Icon = ICONS[i]!;
+          return (
+            <li key={s.id}>
+              <button
+                type="button"
+                class={`st-act${i === here ? " here" : ""}`}
+                aria-current={i === here ? "step" : undefined}
+                aria-expanded={i === here ? "true" : undefined}
+                aria-label={`${i + 1}: ${s.name}`}
+                title={`${s.name} (${i + 1})`}
+                data-testid={`step-${s.id}`}
+                onClick={() => activate(s.id)}
+              >
+                <span class="n">{i + 1}</span>
+                <Icon />
+              </button>
+            </li>
+          );
+        })}
       </ol>
     </nav>
   );
+}
+
+export function Sash() {
+  const onDown = (e: TargetedPointerEvent<HTMLElement>) => {
+    const el = e.currentTarget;
+    el.setPointerCapture(e.pointerId);
+    const startX = e.clientX;
+    const startW = document.querySelector<HTMLElement>(".st-panel")?.offsetWidth ?? 0;
+    beginDrag();
+    el.closest(".st-root")?.classList.add("resizing");
+    const move = (ev: PointerEvent) => setPanelWidth(startW + ev.clientX - startX);
+    const up = (ev: PointerEvent) => {
+      el.removeEventListener("pointermove", move);
+      el.removeEventListener("pointerup", up);
+      el.closest(".st-root")?.classList.remove("resizing");
+      endDrag(startW + ev.clientX - startX);
+    };
+    el.addEventListener("pointermove", move);
+    el.addEventListener("pointerup", up);
+  };
+  return <div class="st-sash" role="separator" aria-orientation="vertical" aria-label="Resize the panel" onPointerDown={onDown} onDblClick={resetPanelWidth} />;
 }
 
 export function ResultsSwitch() {
@@ -78,35 +111,5 @@ export function KeyHints() {
         </span>
       ))}
     </div>
-  );
-}
-
-const LABEL = { scan: "Scan", taps: "Taps", positions: "Positions" } as const;
-
-export function InputsChip() {
-  const src = sources.value;
-  const bad = new Set(health.value.filter((h) => h.state !== "ok").map((h) => h.input as string));
-  const roles = presence.value;
-  const keys = Object.keys(LABEL) as (keyof typeof LABEL)[];
-  // All three the same: say it once ("Scan · Taps · Positions recorded"), so the chip stays on one line.
-  const same = keys.every((k) => src[k] === src.scan) && bad.size === 0;
-  const word = (k: keyof typeof LABEL) => (src[k] === "live" ? "live" : "recorded");
-  const anyLive = keys.some((k) => src[k] === "live");
-  return (
-    <button type="button" class="st-inputs-chip" data-testid="btn-inputs" onClick={() => (drawerOpen.value = !drawerOpen.value)}>
-      {keys.map((k) => (
-        <span key={k} class={`st-src${src[k] === "live" ? " live" : ""}${bad.has(k) ? " bad" : ""}`} data-testid={`chip-source-${k}`} data-source={src[k]}>
-          <i />
-          {same ? LABEL[k] : `${LABEL[k]} ${word(k)}`}
-        </span>
-      ))}
-      {same ? <span>{word("scan")}</span> : null}
-      {anyLive ? (
-        <span>
-          {roles.tablet} tablet{roles.tablet === 1 ? "" : "s"}, {roles.camera} camera{roles.camera === 1 ? "" : "s"}
-        </span>
-      ) : null}
-      <Key k="I" />
-    </button>
   );
 }

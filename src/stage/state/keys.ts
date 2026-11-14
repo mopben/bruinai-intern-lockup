@@ -8,7 +8,8 @@ import { startSuggest } from "./suggest";
 import { applyRehearsed, goTo, resetPlay, startOrReplay } from "./flow";
 import { reveal } from "./kitchen-actions";
 import { retrySave, skipToEnd, toggleFaster } from "./runs";
-import { addNotice, drawerOpen, dropNotice, selectedId, sendCompare, session, view } from "./store";
+import { addNotice, dropNotice, selectedId, sendCompare, session, view } from "./store";
+import { openPanel } from "./panel-actions";
 
 const HINT_MS = 3500;
 let hintTimer: ReturnType<typeof setTimeout> | undefined;
@@ -68,6 +69,7 @@ export function perform(action: KeyAction): void {
       const next = navigate(here, action);
       if (next === here && action.type !== "jump") keyHint(action.type === "next" ? "This is the last step." : "This is the first step.");
       goTo(next);
+      if (action.type === "jump") openPanel();
       return;
     }
     case "play":
@@ -82,13 +84,8 @@ export function perform(action: KeyAction): void {
       else if (here !== "run" && here !== "test") keyHint("E skips to the end in Original run, After the change, and Before vs after.");
       else if (!skipToEnd()) keyHint("No run is playing. Press P to start one.");
       return;
-    case "inputs":
-      drawerOpen.value = !drawerOpen.value;
-      if (drawerOpen.value) costsOpen.value = false;
-      return;
     case "escape":
       if (costsOpen.value) costsOpen.value = false;
-      else if (drawerOpen.value) drawerOpen.value = false;
       else selectedId.value = null;
       return;
     case "reset":
@@ -104,8 +101,14 @@ export function perform(action: KeyAction): void {
       else keyHint("A suggests changes in Edit (step 2).");
       return;
     case "costs":
-      costsOpen.value = !costsOpen.value;
-      if (costsOpen.value) drawerOpen.value = false;
+      if (here !== "play") {
+        goTo("play");
+        openPanel();
+        costsOpen.value = true;
+      } else {
+        openPanel();
+        costsOpen.value = !costsOpen.value;
+      }
       return;
     case "retry-save":
       if (!retrySave()) keyHint("Nothing is waiting to be saved.");
@@ -127,7 +130,7 @@ export function installKeys(): () => void {
   const onKey = (e: KeyboardEvent) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (isTyping(e.target)) {
-      // Esc still closes a drawer from inside one of its fields; every other key is typing.
+      // Esc still closes the costs section from inside one of its fields; every other key is typing.
       if (e.key !== "Escape") return;
       (e.target as HTMLElement).blur();
     }

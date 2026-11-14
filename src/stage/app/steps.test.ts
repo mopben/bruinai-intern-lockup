@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultView, keyAction, keyHints, navigate, stepIndex, stepOf, viewAt, VIEW_ORDER } from "./steps";
+import { defaultView, keyAction, keyHints, navigate, stepIndex, stepOf, viewAt, STEPS, VIEW_ORDER } from "./steps";
 import { parseParams } from "./params";
 
 describe("steps and views", () => {
@@ -34,6 +34,15 @@ describe("steps and views", () => {
     expect(keyHints("run", true).some((h) => h.does.includes("Original run"))).toBe(true);
     expect(keyHints("test", false).some((h) => h.does.includes("After the change"))).toBe(true);
     expect(keyHints("compare", false).some((h) => h.does.includes("Before vs after"))).toBe(true);
+  });
+  it("has no inputs key: i does nothing, no hint mentions I, step 3 is Run", () => {
+    expect(keyAction("i")).toBeNull();
+    expect(keyAction("I")).toBeNull();
+    for (const view of VIEW_ORDER) {
+      expect(keyHints(view, true).some((h) => h.keys === "I")).toBe(false);
+      expect(keyHints(view, false).some((h) => h.keys === "I")).toBe(false);
+    }
+    expect(STEPS[2].name).toBe("Run");
   });
 });
 

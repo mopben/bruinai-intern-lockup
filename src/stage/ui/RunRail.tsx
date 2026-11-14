@@ -75,7 +75,7 @@ export function RunRail() {
       <p class="st-lede">Each dot is a person, from the camera. Each ticket is an order waiting at a station, from the tablet taps.</p>
       {recordedElsewhere ? (
         <p class="st-note">
-          The recorded run was made in the recorded kitchen, not in this scan. Press I and switch taps and positions to live to run this kitchen, or switch the scan back to recorded.
+          The recorded run was made in the recorded kitchen, not in this scan. Switch taps and positions to live in Inputs in Build (step 1) to run this kitchen, or switch the scan back to recorded.
         </p>
       ) : null}
       {ended && storyText.value ? (

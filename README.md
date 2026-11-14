@@ -24,17 +24,17 @@ Another port: `PORT=5180 npm start`. Do not open a browser: `DRYRUN_NO_OPEN=1 np
 
 ## What you see
 
-The stage has three steps. Move through their views with → and ←, or jump to a step with 1 to 3.
+The stage is laid out like an editor: a dark activity bar on the far left picks one of three steps, a resizable side panel beside it holds the step's controls, and the kitchen fills the rest. Move through the views with → and ←, or jump to a step with 1 to 3; clicking the active step's button (or pressing its number again while on it) toggles the panel.
 
-1. **Build.** The scanned boxes rise into place, then get the owner's names. Click a box to rename it or change its role.
-2. **Edit.** Drag the fridge, a station or the pickup, add a worker, or change the number of orders. Walking per order (exact) and time per order (a simulated range) update as you edit. **Profit per hour** follows too, from the prices and costs (key **C**: menu prices and ingredients, wage per worker, electricity, rent, orders in a busy hour; kept in this browser). **Suggest changes** (key **A**) tries a worker more or less at each station and moving every unlocked box, and lists what pays, best first; **Try** puts one on the board. Lock a box in Build to keep it in place.
-3. **Run & results.** Switch between **Before vs after** (simulated side by side), **Original run**, and **After the change** (the real test against a frozen prediction). A changed order count affects simulation only; the real test keeps its own schedule.
+1. **Build.** The scanned boxes rise into place, then get the owner's names. Click a box to rename it or change its role. The panel also has **Add a scan**, **Add a floor mark**, and the **Inputs** section.
+2. **Edit.** Drag the fridge, a station or the pickup, add a worker, or change the number of orders. Walking per order (exact) and time per order (a simulated range) update as you edit. **Profit per hour** follows too, from the prices and costs (key **C** opens the **Prices and costs** section in the Edit panel: menu prices and ingredients, wage per worker, electricity, rent, orders in a busy hour; kept in this browser). **Suggest changes** (key **A**) tries a worker more or less at each station and moving every unlocked box, and lists what pays, best first; **Try** puts one on the board. Lock a box in Build to keep it in place.
+3. **Run.** Switch between **Before vs after** (simulated side by side), **Original run**, and **After the change** (the real test against a frozen prediction). A changed order count affects simulation only; the real test keeps its own schedule.
 
-All keys are in the runbook. Press **I** for the inputs drawer, **Shift+F** for full screen.
+All keys are in the runbook. **Shift+F** for full screen.
 
 ## The three inputs
 
-Each input can be live or recorded, switched in the inputs drawer (**I**) at any time. The rest of the app does not care which.
+Each input can be live or recorded, switched in the Inputs section of the Build panel (step **1**) at any time. The rest of the app does not care which.
 
 | Input | Live | Recorded | Format and how-to |
 | --- | --- | --- | --- |
@@ -42,7 +42,7 @@ Each input can be live or recorded, switched in the inputs drawer (**I**) at any
 | Taps (orders and "done") | Tablet page `http://<laptop>:5179/tablet` | `taps.jsonl` | [docs/FORMATS.md](docs/FORMATS.md) |
 | Positions (where each worker was) | Camera page `http://localhost:5179/camera` on the laptop, with the filming phone as webcam | `positions.jsonl` | [docs/FORMATS.md](docs/FORMATS.md), [docs/CAMERA.md](docs/CAMERA.md) |
 
-The laptop's network addresses are printed by `npm start` and listed in the inputs drawer.
+The laptop's network addresses are printed by `npm start` and listed in Inputs, in the Build panel.
 
 ## Record a real run and load it
 
@@ -53,7 +53,7 @@ The laptop's network addresses are printed by `npm start` and listed in the inpu
    npx tsx tools/world/validate.ts recordings/rec-20261114-153000
    ```
    It prints `OK` or a list of problems with file and line. Fix by hand as in FORMATS.md.
-4. Load it. Press **I**, then under **Runs** pick it as **First run (base)**. Or open `http://localhost:5179/?run=rec-20261114-153000`.
+4. Load it. Open Build (**1**), then under **Runs** in the Inputs section pick it as **First run (base)**. Or open `http://localhost:5179/?run=rec-20261114-153000`.
 5. A **second run (Test)** appears in the list only if its `run.json` has `"baseRunId"` equal to the first run's `id`. A live second run made after a live first run says `"baseRunId": "live run"`; change it to the first run's id by hand.
 6. To bundle a run with the product, copy its folder to `fixtures/` (the folder name must match `id` in `run.json`).
 

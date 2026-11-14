@@ -9,6 +9,7 @@ import type { Candidate } from "../app/layout-match";
 import type { StageParams } from "../app/params";
 import { useRecordedKitchen, waitForLiveScan } from "./kitchen-actions";
 import { connectStage } from "./link";
+import { loadPanel } from "./panel-actions";
 import { preloadSecondRuns } from "./preload";
 import { stopAllPlayback } from "./runs";
 import { addNotice, base, bootError, candidates, catalog, firstRun, loading, orderCount, params, secondChoice, sources, view } from "./store";
@@ -77,6 +78,7 @@ export async function loadBase(runId: string): Promise<void> {
 
 export async function boot(p: StageParams): Promise<void> {
   const mode = p.mode === "live" ? "live" : "replay";
+  loadPanel();
   batch(() => {
     params.value = p;
     view.value = p.view;

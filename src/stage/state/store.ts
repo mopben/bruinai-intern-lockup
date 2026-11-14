@@ -91,7 +91,7 @@ export const linkState = signal<LinkState>("connecting");
 export const sources = signal<Sources>({ scan: "replay", taps: "replay", positions: "replay" });
 export const health = signal<readonly InputHealth[]>([]);
 export const notices = signal<readonly Notice[]>([]);
-export const drawerOpen = signal(false);
+export const panel = signal<{ open: boolean; width: number }>({ open: true, width: 420 });
 /** "auto" picks the recorded run matching the judge's change. */
 export const secondChoice = signal<string>("auto");
 

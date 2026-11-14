@@ -21,7 +21,7 @@ export const usableFirstRun = computed(() => {
 
 /** Why there is no usable first run, in words. */
 export const firstRunProblem = computed<string | null>(() => {
-  if (!kitchen.value) return "There is no kitchen yet. Scan one, or use the recorded scan (press I).";
+  if (!kitchen.value) return "There is no kitchen yet. Scan one, or switch the scan to recorded in Inputs in Build (step 1).";
   if (!firstRun.value) return "This kitchen has not been run yet. Go to step 3, Original run, and start a run.";
   if (!usableFirstRun.value) return "The run on file was made in a different kitchen. Go to step 3, Original run, and run this one.";
   return null;

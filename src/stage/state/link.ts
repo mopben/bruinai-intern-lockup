@@ -49,7 +49,7 @@ async function refreshInfo(): Promise<void> {
   try {
     serverInfo.value = await fetchServerInfo();
   } catch {
-    // No server (static preview or the server stopped): the drawer says so; replay still works.
+    // No server (static preview or the server stopped): the Inputs section says so; replay still works.
     serverInfo.value = null;
   }
 }

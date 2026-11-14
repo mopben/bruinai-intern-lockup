@@ -11,20 +11,21 @@ import { join } from "node:path";
 import type { Page } from "@playwright/test";
 import { connectCamera, listRecordings, newEntries, newRecordings, removeRecording, validateRecording } from "./support/devices";
 import { LIVE_PORT, origin } from "./support/ports";
-import { clockSeconds, expectStep, goView, hook, mainDebug, openStage, session, text, waitForSession } from "./support/stage";
+import { clockSeconds, expectStep, goView, hook, mainDebug, openStage, session, text, waitForSession, type View } from "./support/stage";
 import { FIXTURES, loadFixture } from "./support/truth";
 import { expect, test } from "./support/fixtures";
 
 const SCAN_TEXT = readFileSync(join(FIXTURES, "counter-a", "scan.json"), "utf8");
 
 async function setSources(page: Page, want: Partial<Record<"scan" | "taps" | "positions", "live" | "replay">>): Promise<void> {
-  await page.keyboard.press("i");
-  await expect(page.getByTestId("inputs-drawer")).toBeVisible();
+  const back = await hook<View>(page, "view");
+  await page.keyboard.press("1");
+  await expect(page.getByTestId("inputs-section")).toBeVisible();
   for (const [input, source] of Object.entries(want)) {
     await page.getByTestId(`source-${input}-${source}`).click();
-    await expect(page.getByTestId(`chip-source-${input}`)).toHaveAttribute("data-source", source);
+    await expect(page.getByTestId(`input-${input}`)).toHaveAttribute("data-source", source);
   }
-  await page.keyboard.press("Escape");
+  if (back !== "scan") await goView(page, back);
 }
 
 // Every live run is saved; none of them may stay behind.
@@ -63,7 +64,7 @@ test("rule 9: live with no tablet and no camera falls back to the recording, sur
   await waitForSession(page, "first", "running");
   // No tablet for 5 s: the recorded taps take over; no camera for 4 s: the recorded positions.
   await expect(page.getByTestId("notice").filter({ hasText: "Showing the recorded taps" })).toBeVisible({ timeout: 12_000 });
-  await expect(page.getByTestId("chip-source-positions")).toHaveAttribute("data-source", "replay", { timeout: 12_000 });
+  await expect.poll(async () => (await hook<{ positions: string }>(page, "sources")).positions, { timeout: 12_000 }).toBe("replay");
   const t1 = clockSeconds(await text(page, "run-clock"));
 
   // The link to the server drops mid-run: the run goes on.
@@ -109,7 +110,8 @@ test("live path: tablet taps and camera positions drive the run, saved as a vali
   const camera = await connectCamera(LIVE_PORT);
   const positions = loadFixture("counter-a").positions;
   try {
-    await expect.poll(async () => page.getByTestId("btn-inputs").innerText()).toContain("1 tablet, 1 camera");
+    await expect.poll(async () => page.getByTestId("health-taps").innerText()).toContain("1 tablet");
+    await expect.poll(async () => page.getByTestId("health-positions").innerText()).toContain("1 camera");
     await goView(page, "run");
     await waitForSession(page, "first", "idle");
     await page.keyboard.press("p");
@@ -195,7 +197,7 @@ test("scan: a scan posted to /api/scan, and a dropped scan.json, reveal with a s
       window.dispatchEvent(new DragEvent("drop", { dataTransfer: dt, bubbles: true, cancelable: true }));
     }, SCAN_TEXT);
     await expect(page.locator(".dr-tag:not(.mode-scan)").first()).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId("chip-source-scan")).toHaveAttribute("data-source", "live");
+    await expect(page.getByTestId("input-scan")).toHaveAttribute("data-source", "live");
   } finally {
     for (const id of newRecordings(LIVE_PORT, before)) removeRecording(LIVE_PORT, id);
   }
@@ -221,11 +223,10 @@ test("Test after a failover gives no verdict; with no matching recording nothing
 
   // The same change, run live; no tablet and no camera, so both inputs fail over to the matching recording.
   await setSources(page, { taps: "live", positions: "live" });
-  await page.keyboard.press("p");
   await waitForSession(page, "second", "idle");
   await page.keyboard.press("p");
   await waitForSession(page, "second", "running");
-  await expect(page.getByTestId("chip-source-taps")).toHaveAttribute("data-source", "replay", { timeout: 12_000 });
+  await expect.poll(async () => (await hook<{ taps: string }>(page, "sources")).taps, { timeout: 12_000 }).toBe("replay");
   await page.keyboard.press("e");
   await waitForSession(page, "second", "ended");
   await expect(page.getByText("Part of this run came from a recording")).toBeVisible();

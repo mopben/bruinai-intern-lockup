@@ -14,6 +14,7 @@ import { applySuggestion, startSuggest, suggestState, undoSuggestion } from "../
 import { applyRehearsed, resetPlay } from "../state/flow";
 import { candidates, kitchen, orderCount, playLayout } from "../state/store";
 import { BigNum, Btn } from "./bits";
+import { CostsSection } from "./CostsSection";
 import { ExtrapolationNote, NumbersBasis } from "./Basis";
 
 function Staffing() {
@@ -222,6 +223,7 @@ export function PlayRail() {
     <div class="st-card play">
       <Money />
       <Rehearsed />
+      <CostsSection />
       <p class="st-small st-roomy">Change one thing: drag the fridge, a station or the pickup, or add a worker.</p>
       <div class="st-nums pair">
         <BigNum

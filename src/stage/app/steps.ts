@@ -5,7 +5,7 @@
 export const STEPS = [
   { id: "build", name: "Build", views: ["scan"] },
   { id: "edit", name: "Edit", views: ["play"] },
-  { id: "results", name: "Run & results", views: ["compare", "run", "test"] },
+  { id: "results", name: "Run", views: ["compare", "run", "test"] },
 ] as const;
 
 export type StepId = (typeof STEPS)[number]["id"];
@@ -43,7 +43,6 @@ export type KeyAction =
   | { readonly type: "play" }
   | { readonly type: "faster" }
   | { readonly type: "skip" }
-  | { readonly type: "inputs" }
   | { readonly type: "escape" }
   | { readonly type: "reset" }
   | { readonly type: "rehearsed"; readonly key: "m" | "w" }
@@ -70,9 +69,6 @@ export function keyAction(key: string): KeyAction | null {
     case "e":
     case "E":
       return { type: "skip" };
-    case "i":
-    case "I":
-      return { type: "inputs" };
     case "Escape":
       return { type: "escape" };
     case "Backspace":
@@ -115,19 +111,25 @@ export function keyHints(view: ViewId, live: boolean): readonly { readonly keys:
     { keys: "→", does: "next" },
     { keys: "←", does: "back" },
   ];
-  const common = [{ keys: "I", does: "inputs" }];
   switch (view) {
     case "scan":
-      return [...nav, { keys: "P", does: "replay the scan" }, ...common, { keys: "⇧F", does: "full screen" }];
+      return [...nav, { keys: "P", does: "replay the scan" }, { keys: "⇧F", does: "full screen" }];
     case "run":
     case "test":
       return live
-        ? [...nav, { keys: "P", does: `start ${view === "run" ? "Original run" : "After the change"}` }, { keys: "E", does: "end run" }, ...common]
-        : [...nav, { keys: "P", does: `replay ${view === "run" ? "Original run" : "After the change"}` }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }, ...common];
+        ? [...nav, { keys: "P", does: `start ${view === "run" ? "Original run" : "After the change"}` }, { keys: "E", does: "end run" }]
+        : [...nav, { keys: "P", does: `replay ${view === "run" ? "Original run" : "After the change"}` }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }];
     case "play":
-      return [...nav, { keys: "M", does: "rehearsed move" }, { keys: "W", does: "rehearsed worker" }, { keys: "A", does: "suggest" }, { keys: "⌫", does: "reset" }, ...common];
+      return [
+        ...nav,
+        { keys: "M", does: "rehearsed move" },
+        { keys: "W", does: "rehearsed worker" },
+        { keys: "A", does: "suggest" },
+        { keys: "C", does: "costs" },
+        { keys: "⌫", does: "reset" },
+      ];
     case "compare":
-      return [...nav, { keys: "P", does: "replay Before vs after" }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }, ...common];
+      return [...nav, { keys: "P", does: "replay Before vs after" }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }];
     default:
       return nav;
   }

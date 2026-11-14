@@ -33,6 +33,8 @@ async function checkStep(page: Page, step: string, size: string): Promise<string
   const problems: string[] = [];
   const ids = ["step-strip", ...STEP_BUTTONS, ...(["run", "test", "compare"].includes(step) ? ["view-compare", "view-run", "view-test"] : []), ...(ESSENTIAL[step] ?? [])];
   for (const id of ids) {
+    // The side panel scrolls on small projectors: bring each essential into view, then check it is whole and uncovered.
+    await page.evaluate((sel) => document.querySelector(sel)?.scrollIntoView({ block: "nearest" }), `[data-testid="${id}"]`);
     const v = await checkVisible(page, `[data-testid="${id}"]`, id);
     if (!v.ok) problems.push(`${size} ${step}: ${id} ${v.why}`);
   }
@@ -41,10 +43,8 @@ async function checkStep(page: Page, step: string, size: string): Promise<string
     const n = await lineCount(page, `[data-testid="${id}"]`);
     if (n > 1) problems.push(`${size} ${step}: ${id} wraps onto ${n} lines`);
   }
-  for (const sel of [".st-inputs-chip", ".st-hints"]) {
-    const n = await lineCount(page, sel);
-    if (n > 1) problems.push(`${size} ${step}: ${sel} wraps onto ${n} lines`);
-  }
+  const hints = await checkVisible(page, ".st-panel .st-hints", "panel hints");
+  if (!hints.ok) problems.push(`${size} ${step}: ${hints.why}`);
   return problems;
 }
 
