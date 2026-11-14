@@ -56,7 +56,7 @@ function syncScene(scene: KitchenSceneHandle): () => void {
     effect(() => {
       const s = view.value;
       scene.setEditable(s === "play" || (s === "scan" && moveInScan.value));
-      scene.setSelected(s === "scan" ? selectedId.value : null);
+      scene.setSelected(s === "play" ? selectedId.value : null);
       scene.setGhost(s === "play" || s === "test" ? originalLayout.value : null);
     }),
     effect(() => {
@@ -111,7 +111,7 @@ export function SceneHost(props: { readonly hidden: boolean }) {
         if (view.value === "play") playLayout.value = layout;
       },
       onSelect: (id) => {
-        if (view.value === "scan" || view.value === "play") selectedId.value = id;
+        if (view.value === "play") selectedId.value = id;
       },
     });
     setMainScene(scene);

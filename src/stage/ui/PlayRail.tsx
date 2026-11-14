@@ -12,10 +12,12 @@ import { baselineNumbers, calibration, firstRunProblem, originalLayout, playNumb
 import { baselineProfit, costsOpen, economics, playProfit } from "../state/economics";
 import { applySuggestion, startSuggest, suggestState, undoSuggestion } from "../state/suggest";
 import { applyRehearsed, resetPlay } from "../state/flow";
-import { candidates, kitchen, orderCount, playLayout } from "../state/store";
+import { candidates, kitchen, orderCount, playLayout, selectedId } from "../state/store";
 import { BigNum, Btn } from "./bits";
 import { CostsSection } from "./CostsSection";
 import { ExtrapolationNote } from "./Basis";
+import { ItemPanel } from "./ItemPanel";
+import { RouteEditor } from "./RouteEditor";
 
 function Staffing() {
   const k = kitchen.value;
@@ -199,7 +201,16 @@ export function PlayRail() {
   const n = playNumbers.value;
   const before = baselineNumbers.value;
   const problem = firstRunProblem.value;
-  if (!n) return <div class="st-card"><h1>Change one thing</h1><p class="st-note">{problem}</p></div>;
+  const id = selectedId.value;
+  if (id && kitchen.value) return <ItemPanel boxId={id} />;
+  if (!n)
+    return (
+      <div class="st-card">
+        <h1>Change one thing</h1>
+        <p class="st-note">{problem}</p>
+        <RouteEditor />
+      </div>
+    );
   const walk = n.walking.ok ? n.walking.value.perOrderM : null;
   const walkBefore = before?.walking.ok ? before.walking.value.perOrderM : null;
   const time = n.time.ok ? n.time.value : null;
@@ -241,6 +252,7 @@ export function PlayRail() {
           Prediction{countChanged ? ` (${count} orders)` : ""}: <span data-testid="prediction-range">{formatRange(time.meanOrderTime)}</span>
         </p>
       ) : null}
+      <RouteEditor />
       <Staffing />
       <Orders />
       <Suggestions />

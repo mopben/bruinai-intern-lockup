@@ -4,7 +4,7 @@
  * actions add a scan and a floor mark.
  */
 import { join } from "node:path";
-import { expectStep, openStage } from "./support/stage";
+import { expectStep, goView, hook, mainDebug, openStage } from "./support/stage";
 import { FIXTURES } from "./support/truth";
 import { expect, test } from "./support/fixtures";
 
@@ -64,5 +64,22 @@ test("Build panel actions: add a scan by file and add a floor mark", async ({ pa
   await page.locator('.st-panel input[type="file"]').setInputFiles(join(FIXTURES, "counter-a", "scan.json"));
   await expect(page.locator(".dr-tag:not(.mode-scan)").first()).toBeVisible({ timeout: 10_000 });
   await page.getByTestId("btn-add-mark").click();
+  await expect.poll(async () => "mark-1" in (await mainDebug(page)).screen).toBe(true);
+  await expect(page.getByTestId("item-panel")).toHaveCount(0);
+});
+
+test("Edit panel: clicking a station opens its panel; renaming it updates the route", async ({ page }) => {
+  await openStage(page, { mode: "live" });
+  await page.locator('.st-panel input[type="file"]').setInputFiles(join(FIXTURES, "counter-a", "scan.json"));
+  await expect(page.locator(".dr-tag:not(.mode-scan)").first()).toBeVisible({ timeout: 10_000 });
+  await goView(page, "play");
+  const judge = await hook<{ workers: { stationId: string }[] }>(page, "playLayout");
+  const stationId = judge!.workers[0]!.stationId;
+  const d = await mainDebug(page);
+  const p = d.screen[stationId]!;
+  await page.mouse.click(p.x, p.y);
   await expect(page.getByTestId("item-panel")).toBeVisible();
+  await page.getByTestId("item-name").fill("Toastie press");
+  await page.getByTestId("btn-panel-done").click();
+  await expect(page.getByTestId("route")).toContainText("Toastie press");
 });

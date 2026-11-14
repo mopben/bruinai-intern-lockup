@@ -35,7 +35,7 @@ export function ItemPanel(props: { readonly boxId: string }) {
     const current = kitchen.value;
     const result = current ? splitBox(current, props.boxId) : null;
     if (!result) return;
-    editKitchen(() => result.kitchen);
+    editKitchen((x) => splitBox(x, props.boxId)?.kitchen ?? x);
     selectedId.value = result.newId;
   };
   return (

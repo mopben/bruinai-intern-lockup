@@ -164,7 +164,7 @@ test("scan: a scan posted to /api/scan, and a dropped scan.json, reveal with a s
     await expectStep(page, "scan");
     // Boxes rise with scanner labels, then the starter setup's names.
     await expect.poll(() => page.locator(".dr-tag:not(.mode-scan):not(.hidden)").count(), { timeout: 10_000 }).toBeGreaterThanOrEqual(5);
-    await expect(page.getByTestId("item-panel").or(page.locator(".st-rail"))).toBeVisible();
+    await expect(page.locator(".st-rail")).toBeVisible();
 
     // A live run on the phone's kitchen with no tablet or camera: no recording of this kitchen stands by,
     // so nothing is spliced in; ended by hand, it saves only what was observed, and it validates.

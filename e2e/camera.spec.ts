@@ -4,7 +4,7 @@
  * click on empty floor (or the Reset view chip) restores the home frame, and
  * a click on empty floor still deselects.
  */
-import { BOX, expectStep, mainDebug, openStage } from "./support/stage";
+import { BOX, expectStep, goView, mainDebug, openStage } from "./support/stage";
 import { expect, test } from "./support/fixtures";
 import type { SceneDebug } from "../src/stage/scene/api";
 
@@ -67,8 +67,10 @@ test("pan, zoom and reset on the main scene", async ({ page }) => {
   expect(d4.screen[BOX.make]!.x).toBeCloseTo(make0.x, 0);
   await expect(page.getByTestId("reset-view")).toHaveCount(0);
 
-  // A click on empty floor still deselects: select a box, then click empty floor.
-  const fridge = d4.screen[BOX.fridge]!;
+  // A click on empty floor still deselects: in Edit, select a box, then click empty floor.
+  await goView(page, "play");
+  const d5a = await mainDebug(page);
+  const fridge = d5a.screen[BOX.fridge]!;
   await page.mouse.click(fridge.x, fridge.y);
   await expect(page.getByTestId("item-panel")).toBeVisible();
   const d5 = await mainDebug(page);
