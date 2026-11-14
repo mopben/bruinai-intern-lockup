@@ -4,12 +4,14 @@
  */
 import * as THREE from "three";
 import { palette } from "../theme/tokens";
-import { DEFAULT_VIEW, framePoints, rectCorners, type V3, type ViewAngles } from "./framing";
+import { DEFAULT_VIEW, cameraAxes, clampPan, framePoints, panDelta, rectCorners, viewDir, zoomAtDelta, type V3, type ViewAngles } from "./framing";
 import type { Rect } from "./model";
 import { BOARD_PAD_M, BOARD_THICK_M } from "./board";
 
 const MAX_DPR = 2;
 const CAMERA_DISTANCE = 30;
+const MIN_ZOOM = 0.6;
+const MAX_ZOOM = 4;
 
 export class Viewport {
   readonly renderer: THREE.WebGLRenderer;
@@ -26,7 +28,12 @@ export class Viewport {
   height = 1;
   view: ViewAngles = DEFAULT_VIEW;
   zoom = 1;
+  /** World-space offset added to the framing target (pan). */
+  pan: V3 = { x: 0, y: 0, z: 0 };
   alignV: "center" | "bottom" = "center";
+  /** Frustum half sizes from the last applyFrame (world units). */
+  halfW = 1;
+  halfH = 1;
   private room: Rect = { minX: -2, maxX: 2, minZ: -1.5, maxZ: 1.5 };
   /** Extra points to keep in frame (box tops plus tag room), set by the scene. */
   contentPoints: readonly V3[] = [];
@@ -129,6 +136,8 @@ export class Viewport {
 
   setRoom(room: Rect): void {
     this.room = room;
+    this.pan = { x: 0, y: 0, z: 0 };
+    this.zoom = 1;
     this.applyFrame();
     // Shadow camera covers the room with a margin; light from front-left above.
     const cx = (room.minX + room.maxX) / 2;
@@ -151,18 +160,47 @@ export class Viewport {
     const board = { minX: this.room.minX - pad, maxX: this.room.maxX + pad, minZ: this.room.minZ - pad, maxZ: this.room.maxZ + pad };
     const points = [...rectCorners(board, -BOARD_THICK_M - 0.05, 0), ...this.contentPoints];
     const f = framePoints(points, this.width / this.height, { view: this.view, zoom: this.zoom, margin: 0.04, alignV: this.alignV });
+    this.halfW = f.halfW;
+    this.halfH = f.halfH;
+    const t = { x: f.target.x + this.pan.x, y: f.target.y + this.pan.y, z: f.target.z + this.pan.z };
     const c = this.camera;
     c.left = -f.halfW;
     c.right = f.halfW;
     c.top = f.halfH;
     c.bottom = -f.halfH;
-    c.position.set(f.target.x + f.dir.x * CAMERA_DISTANCE, f.target.y + f.dir.y * CAMERA_DISTANCE, f.target.z + f.dir.z * CAMERA_DISTANCE);
+    c.position.set(t.x + f.dir.x * CAMERA_DISTANCE, t.y + f.dir.y * CAMERA_DISTANCE, t.z + f.dir.z * CAMERA_DISTANCE);
     c.up.set(0, 1, 0);
-    c.lookAt(f.target.x, f.target.y, f.target.z);
+    c.lookAt(t.x, t.y, t.z);
     c.near = 0.1;
     c.far = CAMERA_DISTANCE * 2;
     c.updateProjectionMatrix();
     c.updateMatrixWorld();
+  }
+
+  /** Furthest the room centre may be dragged from the frame centre, metres. */
+  private panLimit(): number {
+    return Math.max(this.room.maxX - this.room.minX, this.room.maxZ - this.room.minZ) / 2 + 1;
+  }
+
+  /** Pan by a pointer drag of (dxPx, dyPx) CSS px; the content follows the pointer. */
+  panBy(dxPx: number, dyPx: number): void {
+    const { right, up } = cameraAxes(viewDir(this.view));
+    const d = panDelta(right, up, dxPx, dyPx, (2 * this.halfW) / this.width);
+    this.pan = clampPan({ x: this.pan.x + d.x, y: this.pan.y + d.y, z: this.pan.z + d.z }, this.panLimit());
+    this.applyFrame();
+  }
+
+  /** Zoom by `factor` keeping the world point under (cssX, cssY) fixed; css px inside the container. */
+  zoomAt(factor: number, cssX: number, cssY: number): void {
+    const next = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, this.zoom * factor));
+    if (next === this.zoom) return;
+    const { right, up } = cameraAxes(viewDir(this.view));
+    const wppOld = (2 * this.halfW) / this.width;
+    const wppNew = wppOld * (this.zoom / next);
+    const d = zoomAtDelta(right, up, cssX, cssY, this.width, this.height, wppOld, wppNew);
+    this.pan = clampPan({ x: this.pan.x + d.x, y: this.pan.y + d.y, z: this.pan.z + d.z }, this.panLimit());
+    this.zoom = next;
+    this.applyFrame();
   }
 
   private setNdc(clientX: number, clientY: number): void {

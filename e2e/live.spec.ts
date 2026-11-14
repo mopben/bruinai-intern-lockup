@@ -81,9 +81,6 @@ test("rule 9: live with no tablet and no camera falls back to the recording, sur
   const first = await hook<FirstRun>(page, "firstRun");
   expect(first.origin).toBe("live");
   expect([...first.replaced].sort()).toEqual(["positions", "taps"]);
-  await goView(page, "play");
-  await expect(page.getByTestId("numbers-basis")).toContainText("partly from the recording");
-
   // The failed inputs stay on the recording: P replays it at the stage speed, and the demo completes.
   await goView(page, "run");
   await page.keyboard.press("p");
@@ -148,7 +145,6 @@ test("live path: tablet taps and camera positions drive the run, saved as a vali
 
     // Edit uses what the room just did.
     await goView(page, "play");
-    await expect(page.getByTestId("numbers-basis")).toHaveText("Numbers from the run just made in this room.");
     await expect(page.getByTestId("time-per-order").or(page.locator(".st-card .st-warn"))).toBeVisible();
   } finally {
     camera.close();

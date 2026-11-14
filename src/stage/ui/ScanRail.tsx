@@ -1,49 +1,44 @@
 /**
- * Step 1. The scan appears; the owner names things and says how an order is
- * made. The Inputs section sits at the bottom of the panel.
+ * Step 1. The scan appears and the owner names things. The Inputs section
+ * sits at the bottom of the panel.
  */
 import { useRef } from "preact/hooks";
 import { addFloorMark, addRouteStation, moveRouteStep, removeRouteStep, toggleFetch } from "../app/kitchen-edit";
 import { acceptDroppedScan } from "../state/input-actions";
 import { editKitchen, reveal } from "../state/kitchen-actions";
-import { addNotice, base, kitchen, kitchenOrigin, moveInScan, scanNotes, scanState, selectedId, serverInfo, sources } from "../state/store";
+import { addNotice, kitchen, kitchenOrigin, moveInScan, scanNotes, scanState, selectedId, serverInfo } from "../state/store";
 import { Btn } from "./bits";
 import { InputsSection } from "./InputsSection";
 import { ItemPanel } from "./ItemPanel";
 
 function RouteEditor() {
   const k = kitchen.value;
-  if (!k) return null;
+  if (!k || kitchenOrigin.value !== "live") return null;
   const name = (id: string) => k.setup.items.find((i) => i.boxId === id)?.name ?? id;
   const steps = k.setup.menu[0]?.steps ?? [];
   const inRoute = new Set(steps.map((s) => s.stationId));
   const spare = k.setup.items.filter((i) => i.role === "station" && !inRoute.has(i.boxId));
   const storage = k.setup.items.filter((i) => i.role === "storage");
   const pickup = k.setup.items.find((i) => i.boxId === k.setup.pickupId);
-  const editable = kitchenOrigin.value === "live";
   return (
     <div class="st-field" data-testid="route">
-      <span>How an order is made{k.setup.menu[0] ? ` (${k.setup.menu[0].name})` : ""}</span>
+      <span>Order route</span>
       <div class="st-route">
         {steps.map((s, i) => (
           <>
             <span class="stop" key={s.stationId}>
               {name(s.stationId)}
               {(s.fetchFrom ?? []).length > 0 ? <span class="fetch">{`, gets ${s.fetchFrom?.map(name).join(", ")}`}</span> : null}
-              {editable ? (
-                <>
-                  <button type="button" aria-label={`Move ${name(s.stationId)} earlier`} disabled={i === 0} onClick={() => editKitchen((x) => moveRouteStep(x, i, -1))}>‹</button>
-                  <button type="button" aria-label={`Move ${name(s.stationId)} later`} disabled={i === steps.length - 1} onClick={() => editKitchen((x) => moveRouteStep(x, i, 1))}>›</button>
-                  <button type="button" aria-label={`Take ${name(s.stationId)} out`} onClick={() => editKitchen((x) => removeRouteStep(x, i))}>×</button>
-                </>
-              ) : null}
+              <button type="button" aria-label={`Move ${name(s.stationId)} earlier`} disabled={i === 0} onClick={() => editKitchen((x) => moveRouteStep(x, i, -1))}>‹</button>
+              <button type="button" aria-label={`Move ${name(s.stationId)} later`} disabled={i === steps.length - 1} onClick={() => editKitchen((x) => moveRouteStep(x, i, 1))}>›</button>
+              <button type="button" aria-label={`Take ${name(s.stationId)} out`} onClick={() => editKitchen((x) => removeRouteStep(x, i))}>×</button>
             </span>
             <span class="arrow" aria-hidden="true">→</span>
           </>
         ))}
         <span class="stop end">{pickup ? pickup.name : "no pickup yet"}</span>
       </div>
-      {editable && spare.length > 0 ? (
+      {spare.length > 0 ? (
         <div class="st-chips">
           {spare.map((s) => (
             <button key={s.boxId} type="button" class="st-pick" onClick={() => editKitchen((x) => addRouteStation(x, s.boxId))}>
@@ -52,7 +47,7 @@ function RouteEditor() {
           ))}
         </div>
       ) : null}
-      {editable && storage.length > 0 && steps.length > 0 ? (
+      {storage.length > 0 && steps.length > 0 ? (
         <div class="st-chips">
           {steps.flatMap((s, i) =>
             storage.map((st) => {
@@ -78,16 +73,7 @@ function Waiting() {
         <span class="st-pulse" />
         Waiting for the phone
       </h1>
-      <p class="st-lede">Sweep the phone around the counter with the Dry Run app. The kitchen appears here when the scan arrives.</p>
-      {info ? (
-        <p class="st-small">
-          The app sends to <strong>{info.urls.scanUpload}</strong>
-        </p>
-      ) : (
-        <p class="st-warn">Not connected to the laptop server, so the phone cannot reach this screen.</p>
-      )}
-      <p class="st-small">Or drop a scan.json file anywhere on this screen.</p>
-      <p class="st-small">To use the recorded scan instead, switch the scan to recorded in Inputs below.</p>
+      {info ? null : <p class="st-warn">Not connected to the laptop server, so the phone cannot reach this screen.</p>}
     </div>
   );
 }
@@ -130,7 +116,6 @@ function ScanBody() {
   if (!k) return <Waiting />;
   const id = selectedId.value;
   if (id) return <ItemPanel boxId={id} />;
-  const recorded = kitchenOrigin.value === "recorded";
   if (scanState.value === "revealing") {
     return (
       <div class="st-card">
@@ -139,14 +124,12 @@ function ScanBody() {
           <span class="st-pulse" />
           Reading the scan…
         </p>
-        <p class="st-lede">Each box is something the scanner found, at its real size and place.</p>
       </div>
     );
   }
   return (
     <div class="st-card">
       <h1>The kitchen, from a phone scan</h1>
-      <p class="st-lede">Real sizes and positions. The scanner only knows household names, so click any box to rename it or say what it is.</p>
       {scanNotes.value.map((n) => (
         <p class="st-warn" key={n}>
           {n}
@@ -156,10 +139,6 @@ function ScanBody() {
       <div class="st-row">
         <Btn label="Show the scan again" k="P" onClick={reveal} testId="btn-play" />
       </div>
-      <p class="st-small">
-        {recorded ? `Recorded scan, from the run “${base.value?.meta.title ?? ""}”.` : sources.value.scan === "live" ? "Live scan from the phone. This is a first guess: check each box." : ""}
-        {" "}A scanner cannot see tape on the floor: add a floor mark for a queue or pickup spot.
-      </p>
     </div>
   );
 }

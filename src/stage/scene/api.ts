@@ -40,8 +40,10 @@ export interface KitchenSceneOptions {
   readonly onLayoutCommit?: (next: Layout) => void;
   /** Called on a click: the box id, or null for empty floor. */
   readonly onSelect?: (boxId: string | null) => void;
-  /** Let the operator orbit (drag empty floor) and zoom (wheel). Default false. */
-  readonly allowOrbit?: boolean;
+  /** Let the operator pan (drag empty floor / middle-drag), zoom (wheel, pinch, +/-) and orbit (right- or Shift-drag). Default false. */
+  readonly cameraControls?: boolean;
+  /** Called after every camera move; `moved` is true while the view differs from the framed home view. */
+  readonly onCameraChange?: (moved: boolean) => void;
   /** Start with scan labels and raw paint (before a reveal). Default "names". */
   readonly initialLabels?: LabelMode;
   /** Override the "Fixed: power" hint for a locked item. */
@@ -83,7 +85,7 @@ export interface KitchenSceneHandle {
   setGhost(layout: Layout | null): void;
   /** Screen position (CSS px within the container) of a floor point, for anchoring panels. */
   projectToScreen(x: number, y: number, z: number): { x: number; y: number } | null;
-  /** Re-fit the camera on the room (after an orbit, say). */
+  /** Re-fit the camera on the room (after a pan, zoom or orbit, say). */
   reframe(): void;
   /** Stop rendering and free GPU memory, listeners and DOM. */
   dispose(): void;

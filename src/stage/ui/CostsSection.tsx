@@ -138,9 +138,6 @@ export function CostsSection() {
         <h2>Prices and costs</h2>
         <Btn small label="Close" k="Esc" onClick={() => (costsOpen.value = false)} testId="btn-close-costs" />
       </div>
-      <p class="st-small">
-        {economicsAreExamples.value ? "These are example numbers for a small café. Type yours: profit and the suggestions follow at once." : "Your numbers, kept in this browser."}
-      </p>
       <h3>Menu</h3>
       {k.setup.menu.map((m) => {
         const p = econ.menu[m.id] ?? { price: 0, ingredients: 0 };
@@ -175,10 +172,6 @@ export function CostsSection() {
           />
         </label>
       </div>
-      <p class="st-small">
-        The kitchen sells the orders that come in, up to as many as it can make; how fast it makes them comes from the measured run. Each worker is paid for the
-        whole hour, at their own wage if you set one and the usual wage otherwise; workers added in Play start on the usual wage. The example demand is the pace of the recorded run's orders.
-      </p>
       <div class="st-row">
         <Btn small label="Export" onClick={exportCosts} testId="btn-export-costs" title="Save these numbers as a file" />
         <label class="st-btn small" title="Load numbers from a file exported here">

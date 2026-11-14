@@ -26,7 +26,7 @@ function Rail() {
     case "test":
       return <TestRail />;
     case "compare":
-      return <p class="st-small">The two kitchens fill the stage beside this panel; collapse it for the full width.</p>;
+      return null;
     default:
       return null;
   }

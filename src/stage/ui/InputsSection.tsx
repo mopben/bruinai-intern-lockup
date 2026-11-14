@@ -76,7 +76,7 @@ export function InputsSection() {
           <code>{info.urls.scanUpload}</code>
         </div>
       ) : (
-        <p class="st-small">No laptop server reachable. Recorded runs still work.</p>
+        <p class="st-small">No laptop server reachable.</p>
       )}
       <h3>Runs</h3>
       <div class="st-field">
