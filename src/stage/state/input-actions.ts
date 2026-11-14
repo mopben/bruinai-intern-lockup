@@ -67,6 +67,6 @@ export function watchScans(): void {
       return;
     }
     latestLiveScan.value = scan;
-    addNotice({ id: "phone-scan", text: "A new scan arrived from the phone. Switch the scan to live in the Import menu in Build (step 1) to use it.", tone: "calm" });
+    addNotice({ id: "phone-scan", text: "A new scan arrived from the phone. Switch the scan to live in the Import menu in Setup (step 1) to use it.", tone: "calm" });
   });
 }

@@ -3,7 +3,7 @@
  */
 
 export const STEPS = [
-  { id: "build", name: "Build", views: ["play", "scan"] },
+  { id: "build", name: "Setup", views: ["play", "scan"] },
   { id: "orders", name: "Orders", views: ["orders"] },
   { id: "results", name: "Run", views: ["compare", "run", "test"] },
 ] as const;

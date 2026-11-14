@@ -100,16 +100,16 @@ export function perform(action: KeyAction): void {
       return;
     case "reset":
       if (here === "play") resetPlay();
-      else keyHint("Backspace undoes the change in Build (step 1).");
+      else keyHint("Backspace undoes the change in Setup (step 1).");
       return;
     case "rehearsed":
       if (action.key === "m") return;
       if (here === "play") workersOpen.value = true;
-      else keyHint("W opens Workers in Build (step 1).");
+      else keyHint("W opens Workers in Setup (step 1).");
       return;
     case "suggest":
       if (here === "play") startSuggest();
-      else keyHint("A suggests changes in Build (step 1).");
+      else keyHint("A suggests changes in Setup (step 1).");
       return;
     case "costs":
       if (here !== "play") {

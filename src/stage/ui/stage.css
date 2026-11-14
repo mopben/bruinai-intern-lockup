@@ -1164,6 +1164,7 @@
   .st-worker-add-fields { grid-template-columns: 1fr; }
 }
 
+.st-build-import { border-bottom: 2px dashed var(--dr-board-edge); }
 .st-import-body { gap: 20px; }
 .st-import-body .st-panel-actions { padding: 0; }
 .st-import-body .st-card { padding: 20px; border: 2px solid var(--dr-board-edge); border-radius: 14px; }

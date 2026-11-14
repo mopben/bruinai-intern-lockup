@@ -2,10 +2,10 @@ import { join } from "node:path";
 import { test, expect } from "./support/fixtures";
 import { mainDebug, openStage } from "./support/stage";
 
-test("Build combines import and editing with a centered import menu", async ({ page }) => {
+test("Setup combines import and editing with a centered import menu", async ({ page }) => {
   await openStage(page);
   await expect(page.getByTestId("step-strip").locator("button")).toHaveCount(3);
-  await expect(page.getByTestId("step-build")).toHaveAttribute("aria-label", "1: Build");
+  await expect(page.getByTestId("step-build")).toHaveAttribute("aria-label", "1: Setup");
   await expect(page.getByTestId("step-build")).toHaveAttribute("aria-current", "step");
   await expect(page.getByTestId("step-edit")).toHaveCount(0);
   const importButton = page.getByTestId("btn-import");
