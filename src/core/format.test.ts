@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   describeTrustError,
   formatCountRange,
+  formatGapSeconds,
   formatMetres,
   formatPercent,
   formatRange,
@@ -50,7 +51,17 @@ describe("format", () => {
 
 describe("checkPrediction", () => {
   const range = { p10: 18, p50: 21, p90: 26 };
-  it("inside", () => expect(checkPrediction(range, 20)).toEqual({ inside: true, side: null, missByS: 0, missByPct: 0, offMedianS: -1 }));
+  it("inside", () =>
+    expect(checkPrediction(range, 20)).toEqual({ inside: true, side: null, missByS: 0, missByPct: 0, offMedianS: -1, missText: "inside the predicted range" }));
+  it("never says 0.0 s for a real miss", () => {
+    expect(checkPrediction(range, 26.02).missText).toBe("under 0.1 s above the range");
+    expect(checkPrediction(range, 26.3).missText).toBe("0.3 s above the range");
+    expect(checkPrediction(range, 17.5).missText).toBe("0.5 s below the range");
+    expect(formatGapSeconds(0)).toBe("0 s");
+    expect(formatGapSeconds(Number.NaN)).toBe("\u2014");
+    expect(formatSeconds(0.3)).toBe("under 1 s");
+    expect(formatSeconds(0)).toBe("0 s");
+  });
   it("above", () => expect(checkPrediction(range, 29)).toMatchObject({ inside: false, side: "above", missByS: 3 }));
   it("below", () => {
     const c = checkPrediction(range, 9);

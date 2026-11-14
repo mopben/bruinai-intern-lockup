@@ -29,6 +29,13 @@ export interface ReplicationOptions {
   readonly bootstrap?: boolean;
   /** Also return the full trace for animation. Default false. */
   readonly trace?: boolean;
+  /**
+   * "calibrated" (default): every replication uses the calibrated pace method.
+   * "fit-or-speed": each replication draws its pace model, half the time the
+   * overhead + speed fit and half the time one effective speed (both bootstrapped),
+   * for walks outside the measured lengths. Only differs when the pace was fitted.
+   */
+  readonly paceModels?: "calibrated" | "fit-or-speed";
 }
 
 export interface Replication {
@@ -96,7 +103,7 @@ export function runReplication(model: SimModel, releases: Releases, seed: number
   const workRng = streamFor(seed, rep, 2);
   const u = new Float64Array(n * S);
   for (let i = 0; i < u.length; i += 1) u[i] = workRng();
-  const timed = timedItems(model, (opts.bootstrap ?? true) ? bootstrapPace(model.paceTrips, model.paceMethod, model.pace, streamFor(seed, rep, 3)) : model.pace);
+  const timed = timedItems(model, replicationPace(model, seed, rep, opts));
   const plans = releases.map((r) => {
     const p = timed.get(r.itemId);
     if (!p) throw new SimError(`Order "${r.orderId}" is for "${r.itemId}", which is not on the menu.`);
@@ -159,6 +166,15 @@ export function runReplication(model: SimModel, releases: Releases, seed: number
   const lastFinish = n > 0 ? Math.max(...finishedAt) : 0;
   const trace = want ? buildTrace(model, releases, plans, { start, tap, who, finished }, moves, S) : null;
   return { orderTimes, finishedAt, lastFinish, trace };
+}
+
+/** This replication's walking pace. Streams depend only on (seed, rep): the same on every layout. */
+function replicationPace(model: SimModel, seed: number, rep: number, opts: ReplicationOptions): Pace {
+  if (!(opts.bootstrap ?? true)) return model.pace;
+  const rng = streamFor(seed, rep, 3);
+  const pick = streamFor(seed, rep, 4)();
+  const method = opts.paceModels === "fit-or-speed" && model.paceMethod === "trip-fit" && pick >= 0.5 ? "trip-speed" : model.paceMethod;
+  return bootstrapPace(model.paceTrips, method, model.pace, rng);
 }
 
 /** A model step with walking turned into seconds for one replication's pace. */

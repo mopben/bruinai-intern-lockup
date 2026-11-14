@@ -2,8 +2,9 @@
  * Walking pace: how long a modelled walk takes.
  *
  * The model only uses pace to turn a path length into a duration, so it is
- * learned from whole trips (trip duration against modelled trip distance),
- * which include speeding up, turning round and reaching into the fridge.
+ * learned from whole trips timed rest to rest (trips.ts) against the full
+ * modelled round-trip distance, so speeding up, stopping, turning round and
+ * reaching into the fridge are all included.
  *
  * - "trip-fit": trips of clearly different lengths, so fit
  *   duration = overhead + distance / speed (least squares). `overheadS` is per round trip.
@@ -109,6 +110,13 @@ export function estimatePace(world: World, positions: readonly PositionSample[])
     return { pace: effectiveSpeed(trips), method: "trip-speed", trips, samples: trips.length, warnings: ["Trip times did not fit a fixed overhead plus speed; one effective walking pace used."] };
   }
   return { pace: effectiveSpeed(trips), method: "trip-speed", trips, samples: trips.length, warnings: ["Walking trips were all about the same length; one effective walking pace used."] };
+}
+
+/** Shortest and longest round trip measured, or null when the pace did not come from trips. */
+export function tripDistanceRange(trips: readonly Trip[]): { readonly min: number; readonly max: number } | null {
+  if (trips.length === 0) return null;
+  const ds = trips.map((t) => t.distanceM);
+  return { min: Math.min(...ds), max: Math.max(...ds) };
 }
 
 /** Bootstrap the pace: resample trips within each group (keeps the length spread), refit by the same method. */

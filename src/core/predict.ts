@@ -8,6 +8,7 @@ import { buildPathTable, walkingPerOrder, type PathTable, type WalkingSummary } 
 import { compileModel } from "./model";
 import { runReplication, type Releases } from "./sim";
 import { mean, rangeOf, type Range } from "./stats";
+import { walkExtrapolation, type WalkExtrapolation } from "./extrapolation";
 
 export const DEFAULT_REPS = 200;
 export const DEFAULT_SEED = 1;
@@ -43,8 +44,13 @@ export interface Prediction {
   readonly orderCount: number;
   readonly reps: number;
   readonly seed: number;
-  /** Plain words, to show next to the numbers. */
+  /** Plain words, to show next to the numbers. Includes `extrapolation.note` when outside. */
   readonly assumption: string;
+  /**
+   * Walks in this layout shorter or longer than any measured. When `outside`, each
+   * replication also draws which pace model to use, so the range includes that uncertainty.
+   */
+  readonly extrapolation: WalkExtrapolation;
 }
 
 function paceWords(cal: Calibration): string {
@@ -69,13 +75,13 @@ export function hasSharedStation(world: World): boolean {
 }
 
 /** The prediction's assumptions in plain words. */
-export function assumptionText(cal: Calibration, reps: number, world?: World): string {
+export function assumptionText(cal: Calibration, reps: number, world?: World, extrapolation?: WalkExtrapolation): string {
   const shared = world !== undefined && hasSharedStation(world)
     ? " Two people at one station work side by side without getting in each other's way, and a new person works at the pace of the person already there."
     : "";
   return (
     `People work and walk at the pace we measured (${cal.sampleCount} timed steps; ${paceWords(cal)}). ` +
-    `Only distances and staffing change.${shared} The range is the middle 80% of ${reps} simulated runs.`
+    `Only distances and staffing change.${shared}${extrapolation?.outside ? ` ${extrapolation.note}` : ""} The range is the middle 80% of ${reps} simulated runs.`
   );
 }
 
@@ -87,12 +93,14 @@ export function predict(world: World, calibration: Calibration, opts: PredictOpt
   const table = opts.table ?? buildPathTable(world);
   const model = compileModel(world, calibration, table);
   const walking = walkingPerOrder(world, table);
+  const extrapolation = walkExtrapolation(world, calibration, table);
+  const paceModels = extrapolation.outside ? "fit-or-speed" : "calibrated";
   const means: number[] = [];
   const lasts: number[] = [];
   const doneBy: number[] = [];
   const perOrderSum = new Float64Array(releases.length);
   for (let r = 0; r < reps; r += 1) {
-    const rep = runReplication(model, releases, seed, r, { bootstrap: opts.bootstrap ?? true });
+    const rep = runReplication(model, releases, seed, r, { bootstrap: opts.bootstrap ?? true, paceModels });
     means.push(mean(rep.orderTimes));
     lasts.push(rep.lastFinish);
     rep.orderTimes.forEach((v, i) => {
@@ -114,7 +122,8 @@ export function predict(world: World, calibration: Calibration, opts: PredictOpt
     orderCount: releases.length,
     reps,
     seed,
-    assumption: assumptionText(calibration, reps, world),
+    assumption: assumptionText(calibration, reps, world, extrapolation),
+    extrapolation,
   };
 }
 
@@ -129,10 +138,13 @@ export interface SimulateRunOptions {
 
 /** One simulated run with its full trace, for the stage to animate. */
 export function simulateRun(world: World, calibration: Calibration, opts: SimulateRunOptions = {}): RunTrace {
-  const model = compileModel(world, calibration, opts.table);
+  const table = opts.table ?? buildPathTable(world);
+  const model = compileModel(world, calibration, table);
+  const outside = walkExtrapolation(world, calibration, table).outside;
   const rep = runReplication(model, opts.releases ?? world.setup.schedule.orders, opts.seed ?? DEFAULT_SEED, opts.rep ?? 0, {
     bootstrap: opts.bootstrap ?? true,
     trace: true,
+    paceModels: outside ? "fit-or-speed" : "calibrated",
   });
   return rep.trace as RunTrace;
 }

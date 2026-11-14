@@ -16,6 +16,7 @@ export function formatSeconds(s: number): string {
   if (!Number.isFinite(s)) return "—";
   const step = secondsStep(s);
   const r = Math.round(s / step) * step;
+  if (r === 0 && s !== 0) return "under 1 s";
   if (r < 120) return `${r} s`;
   const m = Math.floor(r / 60);
   const rest = r - m * 60;
@@ -66,4 +67,13 @@ export function formatCountRange(r: Range, noun = "orders"): string {
   const lo = Math.floor(r.p10);
   const hi = Math.ceil(r.p90);
   return lo === hi ? `${lo} ${noun}` : `${lo}${EN_DASH}${hi} ${noun}`;
+}
+
+/** A small gap in seconds to one decimal: "0.3 s"; never "0.0 s" for a non-zero gap ("under 0.1 s"). */
+export function formatGapSeconds(s: number): string {
+  if (!Number.isFinite(s)) return "\u2014";
+  const a = Math.abs(s);
+  if (a === 0) return "0 s";
+  if (a < 0.05) return "under 0.1 s";
+  return `${a.toFixed(1)} s`;
 }

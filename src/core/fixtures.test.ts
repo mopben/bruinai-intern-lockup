@@ -66,8 +66,15 @@ describe.skipIf(!have)("fixtures (honest numbers)", () => {
       `  trust: error ${trust.errorPct?.toFixed(1)}% -> "${describeTrustError(trust.errorPct)}"; measured ${trust.measuredMeanS?.toFixed(1)} s vs model ${trust.modelMeanS?.toFixed(1)} s on ${trust.pairs.length} held-out orders; caveat: ${trust.caveat}`,
       `  pairs: ${trust.pairs.map((p) => `${p.orderId} ${p.measuredS.toFixed(1)}/${p.modelS.toFixed(1)}`).join(", ")}`,
     ];
+    const wc = trust.walkCheck;
+    lines.push(
+      `  baseline (guess the learned mean): ${trust.baselineErrorPct?.toFixed(1)}%; walk check: ${wc ? `MAE ${wc.maeS.toFixed(2)} s (${wc.mapePct.toFixed(1)}%) on ${wc.trips} trips; by group ${wc.byGroup.map((g) => `${g.group.split(":")[0]} ${g.errorS.toFixed(2)} s`).join(", ")}` : trust.walkCheckReason}`,
+    );
+    // Loose guards, not claims: a regression that breaks the model badly should fail here.
     expect(trust.errorPct).not.toBeNull();
-    expect(Number.isFinite(trust.errorPct)).toBe(true);
+    expect(Math.abs(trust.errorPct as number)).toBeLessThan(25);
+    expect(wc).not.toBeNull();
+    expect((wc as NonNullable<typeof wc>).maeS).toBeLessThan(2);
 
     const predA = predict(worldA, cal);
     const measuredA = summariseRun(runA).meanOrderTimeS as number;
@@ -83,9 +90,12 @@ describe.skipIf(!have)("fixtures (honest numbers)", () => {
       lines.push(
         `${id}: walking ${formatMetres(pred.walkingPerOrderM)} (was ${formatMetres(predA.walkingPerOrderM)}); ` +
           `predicted mean order time ${formatRange(pred.meanOrderTime)} (p10 ${pred.meanOrderTime.p10.toFixed(1)}, p50 ${pred.meanOrderTime.p50.toFixed(1)}, p90 ${pred.meanOrderTime.p90.toFixed(1)}); ` +
-          `measured ${measured.toFixed(1)} s; inside: ${check.inside}${check.inside ? "" : ` (${check.side} by ${check.missByS.toFixed(1)} s)`}; ` +
-          `last order predicted ${formatRange(pred.lastFinish)}, measured ${summariseRun(runB).lastFinishS?.toFixed(1)} s`,
+          `measured ${measured.toFixed(1)} s; ${check.missText}; ` +
+          `last order predicted ${formatRange(pred.lastFinish)}, measured ${summariseRun(runB).lastFinishS?.toFixed(1)} s` +
+          (pred.extrapolation.outside ? `\n    extrapolation: ${pred.extrapolation.note}` : ""),
       );
+      // Loose guard, not a claim: measured within 3 s of the predicted range.
+      expect(check.missByS).toBeLessThan(3);
       expect(Number.isFinite(pred.meanOrderTime.p50)).toBe(true);
       expect(Number.isFinite(measured)).toBe(true);
     }

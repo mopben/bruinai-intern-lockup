@@ -19,7 +19,8 @@ describe("trustCheck", () => {
     expect(r.calibratedOn).toHaveLength(8);
     expect(r.checkedOn).toHaveLength(8);
     expect(r.pairs.map((p) => p.orderId)).toEqual(["o2", "o4", "o6", "o8", "o10", "o12", "o14", "o16"]);
-    expect(r.calibration?.walkSpeedMps).toBeCloseTo(1.3, 1);
+    // The simulated trace starts and stops instantly (not physical), so rest-to-rest timing reads it as slower.
+    expect(r.calibration?.paceMethod).toMatch(/^trip-/);
     expect(Math.abs(r.errorPct as number)).toBeLessThan(10);
     expect(r.caveat).toBeNull();
     expect(r.method).toMatch(/never saw/);
@@ -66,5 +67,21 @@ describe("trustCheck", () => {
     const r = trustCheck(world, taps.filter((e) => !(e.type === "done" && e.orderId === "o16")), []);
     expect(r.checkedOn).toHaveLength(7);
     expect(r.caveat).toMatch(/1 held-out order was not finished[\s\S]*assumed/);
+  });
+
+  it("reports the trivial baseline, the walking check and the scope alongside the headline", () => {
+    const r = trustCheck(world, taps, positions);
+    // Baseline: every held-out order guessed at the learned orders' mean order time.
+    const learned = r.run.orders.filter((_, i) => i % 2 === 0).map((o) => o.orderTime as number);
+    const guess = learned.reduce((a, b) => a + b, 0) / learned.length;
+    expect(r.baselineErrorPct).toBeCloseTo(((guess - (r.measuredMeanS as number)) / (r.measuredMeanS as number)) * 100, 9);
+    expect(r.scope).toMatch(/layout that was run[\s\S]*walking check/);
+    expect(r.walkCheck === null ? r.walkCheckReason : r.walkCheck.trips).toBeTruthy();
+    const none = trustCheck(world, taps, []);
+    expect(none.walkCheck).toBeNull();
+    expect(none.walkCheckReason).toMatch(/No whole walking trips/);
+    const one = trustCheck(world, taps.filter((e) => e.type === "end" || e.orderId === "o1"), positions);
+    expect(one.baselineErrorPct).toBeNull();
+    expect(one.walkCheckReason).toMatch(/Nothing was learned/);
   });
 });

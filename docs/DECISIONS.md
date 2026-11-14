@@ -130,3 +130,21 @@ Short entries: what we chose and why. Append under your own heading.
 - **Compare plays one simulated run per side** (`simulateRun`, seed 1, replication 0, the same for both), labelled as such, with each side's exact walking and simulated range beneath. It is one draw, not the range: the range is the number to quote.
 - **Compare uses a more frontal, higher camera** (azimuth 0.14, elevation 1.06) than the main view, so each half-screen is filled top to bottom instead of leaving bands; the scene got a `view` option for this.
 - **Scene changes:** the bottleneck halo is now a soft glowing ring texture rather than a flat slab; each pawn has a see-through cap (depth test "greater") that shows only where a counter hides the real cap; the "Fixed: power" hint draws above the name tags; tickets are 20% larger.
+- **2026-11-14, after an independent review: four defects fixed.**
+  - **Trips are timed from rest to rest.** Each trip now runs from the last moment at rest at home to the first moment at rest back home. It is paired with the full modelled round trip, with no trimming, so the cost of starting and stopping lands in the fixed overhead.
+    - "At rest" means the speed over ±2 samples of the 5-sample running-median positions is below 0.12 m/s.
+    - For a physical start (speeding up from rest at about 1.5 m/s²), this finds the moment of departure to within one 10 Hz sample.
+    - A start that is instant (the simulator's own animation trace) is read about 0.2 s early at each end.
+  - **Home is each worker's own resting place.** It is the median of where they stood still within 1 m of their station's stand point, not the stand point itself. Two people sharing a station rest either side of it.
+  - **Extrapolation is stated and widens the range.** A walk shorter or longer than every measured trip (with 0.05 m tolerance) is named in `Prediction.extrapolation` and in the assumption text.
+    - In that case each replication draws its pace model 50/50 from the bootstrapped overhead + speed fit and the bootstrapped single effective speed. Both are defensible from run A alone.
+    - The draw uses a random stream keyed only by seed and replication, so a drag does not flicker. Inside the measured range the calibrated method is used alone, so the range can step wider as a drag crosses the boundary. That is deliberate.
+  - **The trust check reports more alongside the headline.** The headline is still the pre-registered even/odd order-time error. It now also reports:
+    - `baselineErrorPct`: every held-out order guessed at the learned orders' mean.
+    - `walkCheck`: leave-one-trip-out mean absolute error, plus leave-one-group-out per kind of walk. With two kinds of walk, the leave-one-trip-out part only sees scatter about the pace model; the per-group part is the test of a new walk length.
+    - `scope`: a sentence saying what the check covers.
+  - `checkPrediction` has `missText`, which never says "0.0 s".
+- **2026-11-14: counter-b and counter-c are no longer clean test data.** They have now been looked at repeatedly while the model was changed: three comparisons, two rounds of model changes. Their match to the predictions is no longer evidence. From here on the check is `npx tsx tools/coverage/coverage.ts 40`, which uses fresh generator seeds unrelated to the fixture seeds and predicts each changed run from its own original. The fixtures test keeps only loose guards. Numbers at the time of writing:
+  - **Before the fixes** (the reviewer's run, not re-run by us): about 19/40 and 20/40 inside, erring fast.
+  - **After:** fridge closer 39/40 inside (mean bias +0.11 s; wider than nominal, so it over-covers); fourth worker 24/40 inside (mean bias −1.13 s, the model now too slow).
+  - None of the constants were tuned to these numbers.

@@ -9,6 +9,8 @@ import { reconstructRun, type RunReconstruction } from "./reconstruct";
 import { calibrate, type Calibration } from "./calibrate";
 import { predict, DEFAULT_REPS, DEFAULT_SEED } from "./predict";
 import { mean } from "./stats";
+import type { OrderTrace } from "./trace";
+import { walkCheck, type WalkCheck } from "./walkcheck";
 
 /** Fewer held-out finished orders than this and the error number is flagged as shaky. */
 export const MIN_CHECK_ORDERS = 3;
@@ -32,6 +34,17 @@ export interface TrustResult {
   readonly caveat: string | null;
   readonly calibration: Calibration | null;
   readonly run: RunReconstruction;
+  /**
+   * Error of a trivial guess on the same held-out orders: every order takes the mean
+   * order time of the learned orders. What the model is being compared with. null when unavailable.
+   */
+  readonly baselineErrorPct: number | null;
+  /** Walking check on the detected trips (leave-one-trip-out); null when there are too few trips. */
+  readonly walkCheck: WalkCheck | null;
+  /** Why there is no walking check; null when there is one. */
+  readonly walkCheckReason: string | null;
+  /** What this check covers, in one plain sentence. */
+  readonly scope: string;
 }
 
 export interface TrustOptions {
@@ -43,8 +56,38 @@ const METHOD =
   "We learned work times from every other order (1st, 3rd, 5th...), then replayed the whole run in the model " +
   "with the real order times and compared the orders it never saw (2nd, 4th, 6th...).";
 
+export const TRUST_SCOPE =
+  "This check is for the layout that was run. A changed layout also relies on the walking check and on the stated assumptions.";
+
+function walkFields(cal: Calibration | null): { readonly walkCheck: WalkCheck | null; readonly walkCheckReason: string | null } {
+  if (cal === null) return { walkCheck: null, walkCheckReason: "Nothing was learned, so walking could not be checked." };
+  const w = walkCheck(cal);
+  return { walkCheck: w.check, walkCheckReason: w.reason };
+}
+
 function failed(run: RunReconstruction, caveat: string, cal: Calibration | null, calibratedOn: readonly string[], checkedOn: readonly string[]): TrustResult {
-  return { errorPct: null, measuredMeanS: null, modelMeanS: null, pairs: [], calibratedOn, checkedOn, method: METHOD, caveat, calibration: cal, run };
+  return {
+    errorPct: null,
+    measuredMeanS: null,
+    modelMeanS: null,
+    pairs: [],
+    calibratedOn,
+    checkedOn,
+    method: METHOD,
+    caveat,
+    calibration: cal,
+    run,
+    baselineErrorPct: null,
+    ...walkFields(cal),
+    scope: TRUST_SCOPE,
+  };
+}
+
+/** Error of guessing the learned orders' mean order time for every held-out order. */
+function baselineError(learned: readonly OrderTrace[], measuredMeanS: number): number | null {
+  const times = learned.filter((o) => o.completed).map((o) => o.orderTime as number);
+  if (times.length === 0) return null;
+  return ((mean(times) - measuredMeanS) / measuredMeanS) * 100;
 }
 
 /** Run the trust check on a recorded run, in the world (layout) it was recorded in. */
@@ -82,5 +125,8 @@ export function trustCheck(world: World, taps: readonly TapEvent[], positions: r
     caveat: notes.length > 0 ? notes.join(" ") : null,
     calibration: cal,
     run,
+    baselineErrorPct: baselineError(run.orders.filter((_, i) => i % 2 === 0), measuredMeanS),
+    ...walkFields(cal),
+    scope: TRUST_SCOPE,
   };
 }

@@ -5,13 +5,13 @@ import { reconstructRun } from "./reconstruct";
 import { calibrate, DEFAULT_WALK_SPEED_MPS, estimateWalkSpeed, MIN_WORK_S } from "./calibrate";
 import { kitLayout, kitScan, kitSetup, worker, type KitSpec } from "./testkit";
 
-/** A(0) -> B(3, fetch from F at 6) -> pickup P(10). Stand points on z = 0.85, straight paths. */
+/** A(0) -> B(3, fetch from F at 6) -> pickup P(10.5). Stand points on z = 0.85, straight paths. */
 const spec: KitSpec = {
   boxes: [
     { id: "A", x: 0, z: 0, role: "station" },
     { id: "B", x: 3, z: 0, role: "station" },
     { id: "F", x: 6, z: 0, role: "storage" },
-    { id: "P", x: 10, z: 0, role: "pickup" },
+    { id: "P", x: 10.5, z: 0, role: "pickup" },
   ],
   menu: [{ id: "latte", name: "Latte", steps: [{ stationId: "A" }, { stationId: "B", fetchFrom: ["F"] }] }],
   workers: [worker("wa", "A"), worker("wb", "B")],
@@ -22,10 +22,24 @@ const spec: KitSpec = {
 };
 const world = resolveWorld(kitScan(spec), kitSetup(spec), kitLayout(spec));
 
+/**
+ * Walking profile, rest to rest: accelerate at 1.5 m/s^2 to 1.5 m/s (1 s, 0.75 m), cruise,
+ * decelerate (1 s, 0.75 m). One way over L metres takes L / 1.5 + 1 s, so a round trip is
+ * RT / 1.5 + 2 s: speed 1.5 m/s and 2 s overhead per round trip, exactly.
+ */
 const CRUISE = 1.5;
-const DWELL = 1; // reaching into the fridge / putting the cup down, at the far end
+const ACCEL = 1.5;
+function along(L: number, dt: number): number {
+  const ta = CRUISE / ACCEL;
+  const da = (CRUISE * ta) / 2;
+  const tc = (L - 2 * da) / CRUISE;
+  if (dt <= ta) return 0.5 * ACCEL * dt * dt;
+  if (dt <= ta + tc) return da + CRUISE * (dt - ta);
+  const r = Math.min(dt - ta - tc, ta);
+  return da + CRUISE * tc + CRUISE * r - 0.5 * ACCEL * r * r;
+}
+const oneWay = (L: number): number => L / CRUISE + CRUISE / ACCEL;
 
-/** A trip at constant cruise speed with a dwell at the far end. */
 interface HandTrip {
   readonly workerId: string;
   readonly fromX: number;
@@ -33,8 +47,8 @@ interface HandTrip {
   readonly t0: number;
 }
 
-/** 10 Hz positions: each worker stands at home except during their trips. */
-function positionsFor(trips: readonly HandTrip[], homes: Readonly<Record<string, number>>, endT: number): PositionSample[] {
+/** 10 Hz positions: each worker stands at home except during their trips (out, straight back). */
+function positionsFor(trips: readonly HandTrip[], homes: Readonly<Record<string, number>>, endT: number, z = 0.85): PositionSample[] {
   const out: PositionSample[] = [];
   for (const [workerId, homeX] of Object.entries(homes)) {
     const mine = trips.filter((t) => t.workerId === workerId);
@@ -42,62 +56,86 @@ function positionsFor(trips: readonly HandTrip[], homes: Readonly<Record<string,
       const t = i / 10;
       let x = homeX;
       for (const tr of mine) {
-        const leg = Math.abs(tr.toX - tr.fromX) / CRUISE;
+        const L = Math.abs(tr.toX - tr.fromX);
         const dir = Math.sign(tr.toX - tr.fromX);
         const dt = t - tr.t0;
-        if (dt < 0 || dt > 2 * leg + DWELL) continue;
-        const along = dt < leg ? dt * CRUISE : dt < leg + DWELL ? leg * CRUISE : (2 * leg + DWELL - dt) * CRUISE;
-        x = tr.fromX + dir * along;
+        const T = oneWay(L);
+        if (dt < 0 || dt > 2 * T) continue;
+        x = tr.fromX + dir * (dt <= T ? along(L, dt) : L - along(L, dt - T));
       }
-      out.push({ type: "pos", t, workerId, x, z: 0.85 });
+      out.push({ type: "pos", t: Math.round(t * 10) / 10, workerId, x, z });
     }
   }
   return out;
 }
 
 /**
- * Hand-computed run with pace "1 s per round trip + distance / 1.5 m/s" and work A = 2 s, B = 3 s.
- * Model: one-way time = 0.5 + d / 1.5. A->B 3 m: 2.5 s; fetch B->F->B: 5 s; carry B->P 7 m: 5.1667 s one way.
- * o1: A 0..2, arrives B 4.5, wa free 7. B starts 4.5, fetch 5, work 3 -> tap 12.5; wb free 12.5 + 10.3333 = 22.8333.
- * o2: A starts 7, taps 9, free 14, arrives B 11.5. B starts 22.8333 -> tap 30.8333.
+ * Hand-computed run with that pace and work A = 2 s, B = 3 s. Model one-way = 1 + L / 1.5:
+ * A->B 3 m: 3 s; fetch B->F->B: 6 s; carry B->P 7.5 m: 6 s one way.
+ * o1: A 0..2, arrives B 5, wa free 8. B starts 5, fetch 6, work 3 -> tap 14; wb free 26.
+ * o2: A starts 8, taps 10, free 16, arrives B 13. B starts 26 -> tap 35.
  */
-const T_O2_B = 22 + 5 / 6;
 const taps: readonly TapEvent[] = [
   { type: "order", t: 0, orderId: "o1", itemId: "latte" },
   { type: "order", t: 1, orderId: "o2", itemId: "latte" },
   { type: "done", t: 2, orderId: "o1", step: 0, stationId: "A" },
-  { type: "done", t: 9, orderId: "o2", step: 0, stationId: "A" },
-  { type: "done", t: 12.5, orderId: "o1", step: 1, stationId: "B" },
-  { type: "done", t: T_O2_B + 8, orderId: "o2", step: 1, stationId: "B" },
+  { type: "done", t: 10, orderId: "o2", step: 0, stationId: "A" },
+  { type: "done", t: 14, orderId: "o1", step: 1, stationId: "B" },
+  { type: "done", t: 35, orderId: "o2", step: 1, stationId: "B" },
 ];
 const handTrips: readonly HandTrip[] = [
   { workerId: "wa", fromX: 0, toX: 3, t0: 2 },
-  { workerId: "wa", fromX: 0, toX: 3, t0: 9 },
-  { workerId: "wb", fromX: 3, toX: 6, t0: 4.5 },
-  { workerId: "wb", fromX: 3, toX: 10, t0: 12.5 },
-  { workerId: "wb", fromX: 3, toX: 6, t0: T_O2_B },
-  { workerId: "wb", fromX: 3, toX: 10, t0: T_O2_B + 8 },
+  { workerId: "wa", fromX: 0, toX: 3, t0: 10 },
+  { workerId: "wb", fromX: 3, toX: 6, t0: 5 },
+  { workerId: "wb", fromX: 3, toX: 10.5, t0: 14 },
+  { workerId: "wb", fromX: 3, toX: 6, t0: 26 },
+  { workerId: "wb", fromX: 3, toX: 10.5, t0: 35 },
 ];
-const positions = positionsFor(handTrips, { wa: 0, wb: 3 }, 45);
+const positions = positionsFor(handTrips, { wa: 0, wb: 3 }, 50);
 
-describe("walking pace from whole trips", () => {
-  it("fits overhead + distance / speed from trips of two lengths", () => {
+/** The previous timing: from crossing a 0.25 m circle round home, distance trimmed by the two 0.25 m ends. */
+function oldStyleTiming(list: readonly PositionSample[], homeX: number, t0: number, t1: number): { durationS: number; trimmedM: number } {
+  const mine = list.filter((p) => p.workerId === "wb" && p.t >= t0 && p.t <= t1);
+  const out = mine.filter((p) => Math.abs(p.x - homeX) > 0.25);
+  const first = mine.filter((p) => p.t < out[0]!.t).at(-1)!;
+  const last = mine.find((p) => p.t > out.at(-1)!.t)!;
+  return { durationS: last.t - first.t, trimmedM: Math.abs(first.x - homeX) + Math.abs(last.x - homeX) };
+}
+
+describe("walking pace from whole trips, rest to rest", () => {
+  it("times each trip from rest to rest and pairs it with the full round trip", () => {
+    const c = calibrate(world, reconstructRun(world.setup, taps), positions);
+    expect(c.paceTrips.map((t) => [t.workerId, t.group, t.t0, t.t1, +t.distanceM.toFixed(9)])).toEqual([
+      ["wa", "carry:B", 2, 8, 6],
+      ["wa", "carry:B", 10, 16, 6],
+      ["wb", "fetch:F", 5, 11, 6],
+      ["wb", "carry:P", 14, 26, 15],
+      ["wb", "fetch:F", 26, 32, 6],
+      ["wb", "carry:P", 35, 47, 15],
+    ]);
+  });
+
+  it("fits speed and stop/start overhead exactly", () => {
     const c = calibrate(world, reconstructRun(world.setup, taps), positions);
     expect(c.paceMethod).toBe("trip-fit");
-    expect(c.paceTrips.map((t) => t.group).sort()).toEqual(["carry:B", "carry:B", "carry:P", "carry:P", "fetch:F", "fetch:F"]);
     expect(c.walkSpeedMps).toBeCloseTo(CRUISE, 6);
-    expect(c.walkOverheadS).toBeCloseTo(DWELL, 6);
+    expect(c.walkOverheadS).toBeCloseTo(2 * (CRUISE / ACCEL), 6);
     expect(c.warnings).toEqual([]);
   });
 
-  it("the instantaneous median gets the trip times wrong; the trip estimator gets them right", () => {
-    // The 6 m fetch round trip really takes 5 s. Moment-to-moment speed only sees the 1.5 m/s cruise.
-    const instant = estimateWalkSpeed(positions);
-    expect(instant.mps).toBeCloseTo(1.5, 6);
-    expect(6 / instant.mps).toBeCloseTo(4, 6); // 1 s short
+  it("the old circle-crossing timing is short by a computable amount; the new one is exact", () => {
+    // Crossing 0.25 m from rest takes sqrt(2 * 0.25 / 1.5) = 0.577 s at each end, but the old fit charged
+    // those 0.5 m at cruise (0.333 s): short by 2 * 0.577 - 0.333 = 0.82 s per round trip.
+    const old = oldStyleTiming(positions, 3, 5, 11);
+    const charged = old.durationS + old.trimmedM / CRUISE;
+    const expectedShort = 2 * Math.sqrt((2 * 0.25) / ACCEL) - 0.5 / CRUISE;
+    expect(Math.abs(6 - charged - expectedShort)).toBeLessThan(0.1); // 10 Hz sampling
     const c = calibrate(world, reconstructRun(world.setup, taps), positions);
-    expect(c.walkOverheadS + 6 / c.walkSpeedMps).toBeCloseTo(5, 6);
-    expect(c.walkOverheadS + 14 / c.walkSpeedMps).toBeCloseTo(14 / 1.5 + 1, 6);
+    const fetch = c.paceTrips.find((t) => t.group === "fetch:F")!;
+    expect(fetch.durationS).toBeCloseTo(c.walkOverheadS + fetch.distanceM / c.walkSpeedMps, 9);
+    expect(fetch.durationS).toBe(6);
+    // The moment-to-moment median only sees the cruise and would say 4 s for the same walk.
+    expect(6 / estimateWalkSpeed(positions).mps).toBeCloseTo(4, 1);
   });
 
   it("then recovers the known work times exactly", () => {
@@ -108,13 +146,36 @@ describe("walking pace from whole trips", () => {
     expect(c.sampleCount).toBe(4);
   });
 
+  it("uses each worker's own resting place as home when two share a station", () => {
+    // Two workers at B rest 0.28 m either side of its stand point and take turns fetching.
+    const two: KitSpec = { ...spec, workers: [worker("wa", "A"), worker("wb", "B"), worker("wc", "B")] };
+    const w2 = resolveWorld(kitScan(two), kitSetup(two), kitLayout(two));
+    const trips2: HandTrip[] = [
+      { workerId: "wb", fromX: 2.72, toX: 6, t0: 2 },
+      { workerId: "wc", fromX: 3.28, toX: 6, t0: 4 },
+      { workerId: "wb", fromX: 2.72, toX: 10.5, t0: 12 },
+      { workerId: "wc", fromX: 3.28, toX: 10.5, t0: 14 },
+      { workerId: "wb", fromX: 2.72, toX: 6, t0: 28 },
+      { workerId: "wc", fromX: 3.28, toX: 10.5, t0: 30 },
+    ];
+    const pos = positionsFor(trips2, { wb: 2.72, wc: 3.28 }, 50);
+    const c = calibrate(w2, reconstructRun(w2.setup, taps), pos);
+    expect(c.paceTrips).toHaveLength(6);
+    const byWorker = (id: string) => c.paceTrips.filter((t) => t.workerId === id).map((t) => t.t0);
+    expect(byWorker("wb")).toEqual([2, 12, 28]);
+    expect(byWorker("wc")).toEqual([4, 14, 30]);
+    // Each trip was timed rest to rest from its own home; fetches are 6.56 m / 5.44 m round trips in
+    // reality but the model uses the stand point's 6 m, so the fitted speed is near, not equal, 1.5 m/s.
+    expect(c.paceMethod).toBe("trip-fit");
+    expect(c.walkSpeedMps).toBeGreaterThan(1.3);
+  });
+
   it("uses one effective pace, and says so, when trips are all one length", () => {
-    const sameLength = positionsFor(handTrips.filter((t) => t.toX !== 10), { wa: 0, wb: 3 }, 45);
+    const sameLength = positionsFor(handTrips.filter((t) => t.toX !== 10.5), { wa: 0, wb: 3 }, 50);
     const c = calibrate(world, reconstructRun(world.setup, taps), sameLength);
     expect(c.paceMethod).toBe("trip-speed");
     expect(c.walkOverheadS).toBe(0);
-    // Every trip covers 6 m less the home-circle ends in (5 s less the matching time): 1.2 m/s effective.
-    expect(c.walkSpeedMps).toBeCloseTo(1.2, 1);
+    expect(c.walkSpeedMps).toBeCloseTo(1, 6); // 6 m in 6 s
     expect(c.warnings.join()).toMatch(/all about the same length/);
   });
 
