@@ -59,6 +59,41 @@ describe("JSON files", () => {
   });
 });
 
+describe("tasks, covers and capacity", () => {
+  const withTasks = {
+    ...testSetup,
+    items: testSetup.items.map((i) => (i.boxId === "b-make" ? { ...i, capacity: 2 } : i)),
+    menu: [
+      {
+        id: "latte",
+        name: "Latte",
+        steps: [{ stationId: "b-till" }, { stationId: "b-make" }],
+        tasks: [
+          { id: "take", stationId: "b-till" },
+          { id: "make", stationId: "b-make", after: ["take"] },
+        ],
+      },
+    ],
+  };
+  const withCapacity = (capacity: unknown) => ({ ...testSetup, items: [{ ...testSetup.items[0], capacity }, ...testSetup.items.slice(1)] });
+  const withCovers = (covers: unknown) => ({ ...testLayout, workers: [{ ...testLayout.workers[0], covers }, ...testLayout.workers.slice(1)] });
+
+  it("parses a setup with tasks and capacity, and a layout with covers", () => {
+    expect(unwrap(parseSetup(JSON.stringify(withTasks)))).toEqual(withTasks);
+    const covered = withCovers(["b-make"]);
+    expect(unwrap(parseLayout(JSON.stringify(covered)))).toEqual(covered);
+  });
+
+  it("rejects a capacity that is not a whole number of at least 1", () => {
+    expect(errorOf(parseSetup(JSON.stringify(withCapacity(0))))).toMatch(/field "items\[0\]\.capacity" must be 1 or more/);
+    expect(errorOf(parseSetup(JSON.stringify(withCapacity(1.5))))).toMatch(/field "items\[0\]\.capacity" must be a whole number/);
+  });
+
+  it("rejects an empty covers list", () => {
+    expect(errorOf(parseLayout(JSON.stringify(withCovers([]))))).toMatch(/field "workers\[0\]\.covers" must name at least one station/);
+  });
+});
+
 describe("JSONL", () => {
   const header = '{"type":"header","format":"dryrun.taps","version":1,"startedAt":"2026-11-13T10:00:00Z"}';
 

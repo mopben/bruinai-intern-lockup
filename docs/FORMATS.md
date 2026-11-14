@@ -6,7 +6,7 @@ The examples come from the bundled run `fixtures/counter-a`. Open those files ne
 
 ## The run folder
 
-One run is one folder with six files:
+One run is one folder with six files, and sometimes a seventh:
 
 ```
 fixtures/counter-a/
@@ -16,9 +16,10 @@ fixtures/counter-a/
   layout.json       where each box stands and who works where
   taps.jsonl        orders shown on the tablet and "done" taps
   positions.jsonl   where each worker was, about 10 times a second
+  actions.jsonl     optional: what each worker was doing, and when
 ```
 
-All six files must be there. The folder name should match the `id` in `run.json`.
+The first six files must be there. `actions.jsonl` is optional: a folder without it loads exactly the same. The folder name should match the `id` in `run.json`.
 
 **Where to put it.** Runs bundled with the product live in `fixtures/<id>/`. When the product records a live run, the server saves it to `recordings/<id>/` in exactly this format. You can copy a folder from `recordings/` to `fixtures/` to bundle it.
 
@@ -162,10 +163,47 @@ The owner's corrections and the process: what each box really is, the menu, the 
 | `role` | `station` (a worker stands here and does a step), `storage` (workers fetch from it, e.g. a fridge), `pickup` (finished orders go here), `queue` (where customers wait; shown, not simulated), `fixture` (takes up floor, e.g. a sink), `ignore` (scan noise; hidden, does not block walking). |
 | `locked` | `true` if it depends on plumbing or power and cannot be dragged. |
 | `standSide` | Optional, default `"front"`. Which side a person stands at to use it. |
+| `capacity` | Optional, stations only. How many people can work here at once: a whole number, 1 or more. Default: no limit. |
 
 A scanned box with no entry in `items` is treated as a fixture.
 
+**`capacity`**: a station with one espresso machine fits one person, however many stand near it:
+
+```json
+{ "boxId": "98EA7E27-B557-42A2-9AE3-1C7A609FDAC0", "name": "Espresso machine",
+  "role": "station", "locked": true, "capacity": 1 }
+```
+
 **`menu`**: the items you can order. Each step happens at a station. `fetchFrom` is optional: storage boxes the worker walks to and back from, once each, before working. Steps are numbered from 0. After the last step the item is carried to the pickup.
+
+**`tasks`** (optional, per menu item): which steps must be done before which. Without it, `steps` is a chain: step k comes after step k−1. With it, `tasks[k]` describes `steps[k]`, and a tap's `step` is still the index in the list.
+
+```json
+{ "id": "latte", "name": "Latte",
+  "steps": [
+    { "stationId": "61A93A22-761D-47DF-BC5F-5EB3A7D8334A" },
+    { "stationId": "98EA7E27-B557-42A2-9AE3-1C7A609FDAC0" },
+    { "stationId": "9886D544-4186-4B47-978D-7D032CCECDEA",
+      "fetchFrom": ["65E69210-5EED-4D93-9F34-955C39B9EDBF"] }
+  ],
+  "tasks": [
+    { "id": "shot", "stationId": "61A93A22-761D-47DF-BC5F-5EB3A7D8334A" },
+    { "id": "milk", "stationId": "98EA7E27-B557-42A2-9AE3-1C7A609FDAC0" },
+    { "id": "pour", "stationId": "9886D544-4186-4B47-978D-7D032CCECDEA",
+      "fetchFrom": ["65E69210-5EED-4D93-9F34-955C39B9EDBF"], "after": ["shot", "milk"] }
+  ] }
+```
+
+Here the shot and the milk start when the order appears, and the pour waits for both.
+
+| Field | Meaning |
+| --- | --- |
+| `tasks[].id` | Short text, unique in the menu item. |
+| `tasks[].stationId` | Must be the same as `steps[k].stationId`. |
+| `tasks[].fetchFrom` | Must be the same list as `steps[k].fetchFrom`. |
+| `tasks[].after` | Optional. Ids of tasks that must be done first. Each must come earlier in the list. Empty or missing: the task starts when the order appears. |
+
+A task may wait for several tasks, but at most one task may name it in `after`. A task that no other task names carries its output to the pickup. `tasks` and `steps` must have the same length.
 
 **`schedule`**: when each order appears on the tablet, in seconds from the start. Keep it in time order. The stage releases orders from this list, so `taps.jsonl` should show the same orders at the same times.
 
@@ -193,8 +231,16 @@ Where every box stands and who works where. A changed run (a box dragged, a work
 | `workers[].id` | Short unique text. `taps.jsonl` and `positions.jsonl` use the same id. |
 | `workers[].color` | The hat colour as `#rrggbb`. It is also the dot colour and what the camera looks for. Pick colours far apart in hue: the bundled runs use red `#e8312f`, blue `#1f6fe0`, yellow `#f5c400` and green `#1fa84f`. |
 | `workers[].stationId` | The station this person works at. Two people may share a station. |
+| `workers[].covers` | Optional. The stations this person may work at, at least one id. `stationId` is always one of them: it is the home station, where the person waits with nothing to do. Default: only `stationId`. |
 
 Every station used by the menu needs at least one worker.
+
+**`covers`**: a person who takes orders and also pulls shots when the till is quiet:
+
+```json
+{ "id": "red", "name": "Ana", "color": "#e8312f", "stationId": "61A93A22-761D-47DF-BC5F-5EB3A7D8334A",
+  "covers": ["98EA7E27-B557-42A2-9AE3-1C7A609FDAC0"] }
+```
 
 ## taps.jsonl
 
@@ -230,6 +276,48 @@ Line 1 is the header, with `hz`, the nominal samples per second per worker. Then
 
 `x` and `z` are where the worker stood, in metres, in the scan's floor frame. Missing frames are fine: leave the line out. A few centimetres of noise is normal.
 
+## actions.jsonl (optional)
+
+What each worker was doing, and when: working at a station, fetching from a fridge, carrying an order, walking or standing. The video pipeline writes this file from a filmed run, next to the `positions.jsonl` it makes from the same video. You do not need it: leave it out and the folder loads as before. The bundled runs do not have one.
+
+Line 1 is the header. Then one line per segment: one worker doing one thing from `t0` to `t1`.
+
+```
+{"type":"header","format":"dryrun.actions","version":1,"startedAt":"2026-11-12T15:10:05.000Z","source":"zones"}
+{"type":"action","workerId":"red","t0":1.4,"t1":2.8,"kind":"work","boxId":"61A93A22-761D-47DF-BC5F-5EB3A7D8334A"}
+{"type":"action","workerId":"blue","t0":2.9,"t1":7.1,"kind":"fetch","boxId":"65E69210-5EED-4D93-9F34-955C39B9EDBF"}
+{"type":"action","workerId":"blue","t0":7.1,"t1":11.2,"kind":"work","boxId":"98EA7E27-B557-42A2-9AE3-1C7A609FDAC0","label":"steaming milk","confidence":0.71}
+```
+
+**Header.**
+
+| Field | Meaning |
+| --- | --- |
+| `startedAt` | When the run started. The same as in `taps.jsonl` and `positions.jsonl`. |
+| `source` | `"zones"` if the actions come from the positions alone. `"zones+model"` if a model also added labels. |
+| `model` | Optional. The name of the model that added labels. |
+
+**Segments.**
+
+| Field | Meaning |
+| --- | --- |
+| `workerId` | A worker `id` from `layout.json`. |
+| `t0`, `t1` | When the segment starts and ends, in seconds since the run started (the same clock as taps and positions). `t1` must be more than `t0`. |
+| `kind` | What the worker was doing. See below. |
+| `boxId` | The box it was done at, from `scan.json`. Needed for `work`, `fetch` and `carry`. Left out for `walk` and `idle`. |
+| `label` | Optional. A model's words for it, e.g. `"steaming milk"`. |
+| `confidence` | Optional. How sure the model was, from `0` to `1`. Written together with `label`. |
+
+| `kind` | Meaning | `boxId` |
+| --- | --- | --- |
+| `work` | Standing still at a station's stand point. | That station. |
+| `fetch` | A round trip from a station to a storage box and back. | The storage box. |
+| `carry` | A trip to the pickup or to another station. | Where it went: the pickup or a station. |
+| `walk` | Moving, but not on a trip the product knows. | None. |
+| `idle` | Standing still away from any stand point. | None. |
+
+One worker's segments must not overlap. One may start exactly when the last one ends. Gaps are fine: nobody knew what the worker was doing then. Keep the file in order of `t0`.
+
 ## Checking a folder
 
 Run the validator from the repository folder:
@@ -238,7 +326,7 @@ Run the validator from the repository folder:
 npx tsx tools/world/validate.ts fixtures/my-run
 ```
 
-You can name several folders at once. It prints `OK` or a list of problems, each with the file, the line and what to do:
+You can name several folders at once. It checks `actions.jsonl` too when the folder has one. It prints `OK` or a list of problems, each with the file, the line and what to do:
 
 ```
 NOT OK: fixtures/my-run has 2 problems to fix.
@@ -267,7 +355,7 @@ Use a plain text editor. Keep each `.jsonl` object on one line.
 - **A scanned box is noise.** Give it `"role": "ignore"` in `setup.json`. Do not delete it from `scan.json`.
 - **A box is in the wrong place.** Change its entry in `placements` in `layout.json`, not `scan.json`.
 
-**Trimming the start.** Say the recording started 4.2 s before anything happened. Subtract 4.2 from every `t` in both `.jsonl` files and from every `t` in the `setup.json` schedule. Add 4.2 s to both `startedAt` values. Only trim time before the first order. This command does the `.jsonl` part and drops lines that would fall before 0:
+**Trimming the start.** Say the recording started 4.2 s before anything happened. Subtract 4.2 from every `t` in both `.jsonl` files and from every `t` in the `setup.json` schedule. Add 4.2 s to both `startedAt` values. If the folder has an `actions.jsonl`, subtract 4.2 from every `t0` and `t1` and add 4.2 s to its `startedAt` too; the command below does not do that file. Only trim time before the first order. This command does the `.jsonl` part and drops lines that would fall before 0:
 
 ```
 cd fixtures/my-run
@@ -283,7 +371,7 @@ Then fix the schedule in `setup.json` by hand and run the validator.
 - **Degrees instead of radians.** A yaw of `90` is wrong. Write `1.5708`.
 - **Centimetres instead of metres.** A table `"w": 120` is wrong. Write `1.2`.
 - **Milliseconds or clock times for `t`.** `t` is seconds since the start: `12.5`, not `12500` or `"15:10:17"`.
-- **Ids that do not match.** Box ids in `setup.json` and `layout.json`, and `stationId` in taps, must be copied exactly from `scan.json`. Worker ids must match between `layout.json`, `taps.jsonl` and `positions.jsonl`.
+- **Ids that do not match.** Box ids in `setup.json` and `layout.json`, `stationId` in taps and `boxId` in actions, must be copied exactly from `scan.json`. Worker ids must match between `layout.json`, `taps.jsonl`, `positions.jsonl` and `actions.jsonl`.
 - **Steps counted from 1.** The first step is `0`.
 - **No header line**, or a header that is not the first line of a `.jsonl` file.
 - **Pretty-printed `.jsonl`.** One object per line, always.

@@ -107,6 +107,43 @@ describe("validator", () => {
     expect(messages(withFile("scan.json", JSON.stringify(big))).warnings.some((w) => w.includes("is this centimetres?"))).toBe(true);
   });
 
+  it("accepts tasks, covers and capacity without unknown-field warnings", () => {
+    const setup = JSON.parse(good["setup.json"]) as { items: { boxId: string }[]; menu: { steps: { stationId: string; fetchFrom?: string[] }[] }[] };
+    const layout = JSON.parse(good["layout.json"]) as { workers: { stationId: string }[] };
+    const menu = setup.menu.map((m) => ({ ...m, tasks: m.steps.map((s, k) => ({ id: `t${k}`, ...s, ...(k > 0 ? { after: [`t${k - 1}`] } : {}) })) }));
+    const items = setup.items.map((i) => (i.boxId === MAKE ? { ...i, capacity: 2 } : i));
+    const workers = layout.workers.map((w, i) => (i === 0 ? { ...w, covers: [MAKE] } : w));
+    const r = messages({ ...good, "setup.json": JSON.stringify({ ...setup, items, menu }), "layout.json": JSON.stringify({ ...layout, workers }) });
+    expect(r.errors).toEqual([]);
+    expect(r.warnings.filter((w) => /unknown field/.test(w))).toEqual([]);
+  });
+
+  it("reports a task cycle naming setup.json, the menu item and the task", () => {
+    const setup = JSON.parse(good["setup.json"]) as { menu: { id: string; steps: { stationId: string; fetchFrom?: string[] }[] }[] };
+    const menu = setup.menu.map((m, mi) =>
+      mi === 0 ? { ...m, tasks: m.steps.map((s, k) => ({ id: `t${k}`, ...s, after: k === 0 ? [`t${m.steps.length - 1}`] : [`t${k - 1}`] })) } : m,
+    );
+    const { errors } = messages(withFile("setup.json", JSON.stringify({ ...setup, menu })));
+    const last = `t${(setup.menu[0]?.steps.length ?? 1) - 1}`;
+    expect(errors).toContain(`setup.json menu[0] ("${setup.menu[0]?.id}"): task "t0" waits for "${last}", which must come earlier in the list.`);
+  });
+
+  it("reports a covers id that is not a station", () => {
+    const layout = JSON.parse(good["layout.json"]) as { workers: { id: string }[] };
+    const workers = layout.workers.map((w, i) => (i === 0 ? { ...w, covers: [MAKE, "nope", base.ids.fridge] } : w));
+    const { errors } = messages(withFile("layout.json", JSON.stringify({ ...layout, workers })));
+    const who = layout.workers[0]?.id;
+    expect(errors).toContain(`layout.json workers[0] ("${who}") covers "nope", which is not in scan.json.`);
+    expect(errors.some((e) => e.startsWith(`layout.json workers[0] ("${who}") covers "`) && e.includes("which is not a station"))).toBe(true);
+  });
+
+  it("still passes the three fixture folders", () => {
+    for (const name of ["counter-a", "counter-b-fridge-closer", "counter-c-fourth-worker"]) {
+      const path = join("fixtures", name);
+      expect(formatReport(path, validateRunFolder(path))).toMatch(/^OK: /);
+    }
+  });
+
   it("reads a folder from disk and warns when run.json id and folder name differ", () => {
     const dir = mkdtempSync(join(tmpdir(), "dryrun-validate-"));
     try {
