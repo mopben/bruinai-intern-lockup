@@ -3,7 +3,7 @@
  * browser helpers that load runs, list them and save recordings.
  */
 import type { RunBundle, RunMeta } from "../core/types";
-import { parseRunFiles, RUN_FILES, type RunFiles } from "./bundle";
+import { OPTIONAL_RUN_FILES, parseRunFiles, RUN_FILES, type RunFiles } from "./bundle";
 import { InputFormatError, unwrap } from "./parse";
 
 /** Every JSON response from the server. */
@@ -79,26 +79,35 @@ function joinUrl(base: string, file: string): string {
   return base.endsWith("/") ? `${base}${file}` : `${base}/${file}`;
 }
 
+const HTTP_NOT_FOUND = 404;
+
+/** A file's text, or undefined if it is optional and the server says 404. Throws InputFormatError otherwise. */
+async function fetchRunFile(url: string, fetchImpl: FetchLike, optional: boolean): Promise<string | undefined> {
+  let response: Response;
+  try {
+    response = await fetchImpl(url);
+  } catch (error) {
+    throw new InputFormatError(`Could not reach ${url} (${error instanceof Error ? error.message : String(error)})`);
+  }
+  if (optional && response.status === HTTP_NOT_FOUND) return undefined;
+  if (!response.ok) throw new InputFormatError(`Could not load ${url} (HTTP ${response.status})`);
+  return response.text();
+}
+
 /**
  * Loads a run folder, e.g. loadRunBundle("/fixtures/counter-a/").
+ * Optional files (actions.jsonl) that are not there are left out of the bundle.
  * Throws InputFormatError naming the file, line and field on bad data.
  */
 export async function loadRunBundle(baseUrl: string, fetchImpl: FetchLike = defaultFetch): Promise<RunBundle> {
-  const names = Object.values(RUN_FILES);
+  const wanted = [
+    ...Object.values(RUN_FILES).map((file) => ({ file, optional: false })),
+    ...Object.values(OPTIONAL_RUN_FILES).map((file) => ({ file, optional: true })),
+  ];
   const texts = await Promise.all(
-    names.map(async (file) => {
-      const url = joinUrl(baseUrl, file);
-      let response: Response;
-      try {
-        response = await fetchImpl(url);
-      } catch (error) {
-        throw new InputFormatError(`Could not reach ${url} (${error instanceof Error ? error.message : String(error)})`);
-      }
-      if (!response.ok) throw new InputFormatError(`Could not load ${url} (HTTP ${response.status})`);
-      return [file, await response.text()] as const;
-    }),
+    wanted.map(async ({ file, optional }) => [file, await fetchRunFile(joinUrl(baseUrl, file), fetchImpl, optional)] as const),
   );
-  const files = Object.fromEntries(texts) as unknown as RunFiles;
+  const files = Object.fromEntries(texts.filter(([, text]) => text !== undefined)) as unknown as RunFiles;
   return unwrap(parseRunFiles(files, baseUrl));
 }
 

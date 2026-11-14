@@ -1,17 +1,19 @@
 /**
- * Run bundles: a run folder's six files <-> a RunBundle.
+ * Run bundles: a run folder's files <-> a RunBundle.
  *
  * A run folder holds run.json, scan.json, setup.json, layout.json, taps.jsonl
- * and positions.jsonl. The same code reads fixtures, team recordings and live
+ * and positions.jsonl, and may also hold actions.jsonl. The same code reads fixtures, team recordings and live
  * sessions saved by the stage, so all three are interchangeable.
  */
 import {
+  ACTIONS_FORMAT,
   FORMAT_VERSION,
   POSITIONS_FORMAT,
   TAPS_FORMAT,
 } from "../core/types";
-import type { PositionSample, PositionsHeader, RunBundle, TapEvent, TapsHeader } from "../core/types";
+import type { PositionSample, PositionsHeader, RunActions, RunBundle, TapEvent, TapsHeader } from "../core/types";
 import {
+  parseActions,
   parseLayout,
   parsePositions,
   parseRunMeta,
@@ -30,8 +32,14 @@ export const RUN_FILES = {
   positions: "positions.jsonl",
 } as const;
 
+/** Files a run folder may leave out. A folder without them loads as before. */
+export const OPTIONAL_RUN_FILES = {
+  actions: "actions.jsonl",
+} as const;
+
 export type RunFileName = (typeof RUN_FILES)[keyof typeof RUN_FILES];
-export type RunFiles = Readonly<Record<RunFileName, string>>;
+export type OptionalRunFileName = (typeof OPTIONAL_RUN_FILES)[keyof typeof OPTIONAL_RUN_FILES];
+export type RunFiles = Readonly<Record<RunFileName, string>> & Readonly<Partial<Record<OptionalRunFileName, string>>>;
 
 /** Default samples-per-second written into a positions header when none is known. */
 export const DEFAULT_POSITIONS_HZ = 10;
@@ -53,13 +61,19 @@ export function serialisePositions(
   return jsonl([header, ...samples]);
 }
 
+/** actions.jsonl text. The header is written as given (it carries source and model). */
+export function serialiseActions(actions: RunActions): string {
+  const header = { ...actions.header, type: "header" as const, format: ACTIONS_FORMAT, version: FORMAT_VERSION };
+  return jsonl([header, ...actions.segments]);
+}
+
 export interface SerialiseOptions {
   /** Written to both JSONL headers. Defaults to meta.recordedAt. */
   readonly startedAt?: string;
   readonly positionsHz?: number;
 }
 
-/** Turns a bundle into the six files of a run folder, in fixture format. */
+/** Turns a bundle into the files of a run folder, in fixture format: six, plus actions.jsonl if the bundle has actions. */
 export function serialiseRunBundle(bundle: RunBundle, options: SerialiseOptions = {}): RunFiles {
   const startedAt = options.startedAt ?? bundle.meta.recordedAt;
   return {
@@ -69,13 +83,24 @@ export function serialiseRunBundle(bundle: RunBundle, options: SerialiseOptions 
     "layout.json": json(bundle.layout),
     "taps.jsonl": serialiseTaps(bundle.taps, startedAt),
     "positions.jsonl": serialisePositions(bundle.positions, startedAt, options.positionsHz),
+    ...(bundle.actions ? { "actions.jsonl": serialiseActions(bundle.actions) } : {}),
   };
 }
 
-/** Parses the six files of a run folder. `folder` is only used in error messages. */
+/** Parses actions.jsonl if given. Absent text is not an error: the file is optional. */
+function parseOptionalActions(text: string | undefined, fileName: string): ParseResult<RunActions | undefined> {
+  if (text === undefined) return { ok: true, value: undefined };
+  const parsed = parseActions(text, fileName);
+  return parsed.ok ? { ok: true, value: parsed.value } : parsed;
+}
+
+/**
+ * Parses the files of a run folder: the six required ones, and actions.jsonl
+ * when given. `folder` is only used in error messages.
+ */
 export function parseRunFiles(files: Partial<RunFiles>, folder = ""): ParseResult<RunBundle> {
   const prefix = folder === "" ? "" : `${folder.replace(/\/+$/, "")}/`;
-  const name = (file: RunFileName) => `${prefix}${file}`;
+  const name = (file: RunFileName | OptionalRunFileName) => `${prefix}${file}`;
   for (const file of Object.values(RUN_FILES)) {
     if (files[file] === undefined) return { ok: false, error: `${name(file)} is missing` };
   }
@@ -93,6 +118,8 @@ export function parseRunFiles(files: Partial<RunFiles>, folder = ""): ParseResul
   if (!taps.ok) return taps;
   const positions = parsePositions(text("positions.jsonl"), name("positions.jsonl"));
   if (!positions.ok) return positions;
+  const actions = parseOptionalActions(files["actions.jsonl"], name("actions.jsonl"));
+  if (!actions.ok) return actions;
 
   return {
     ok: true,
@@ -103,6 +130,7 @@ export function parseRunFiles(files: Partial<RunFiles>, folder = ""): ParseResul
       layout: layout.value,
       taps: taps.value.events,
       positions: positions.value.samples,
+      ...(actions.value ? { actions: actions.value } : {}),
     },
   };
 }

@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { WebSocket } from "ws";
 import { parseRunFiles, serialiseRunBundle } from "../src/inputs/bundle";
 import { unwrap } from "../src/inputs/parse";
-import { testBundle, testScan } from "../src/inputs/test-data";
+import { testActions, testBundle, testScan } from "../src/inputs/test-data";
 import { startServer, type RunningServer } from "./app";
 import { createMemoryLogger } from "./logger";
 import { lanAddresses, serverInfo } from "./net-info";
@@ -201,6 +201,17 @@ describe("api", () => {
 
     const served = await raw("GET", "/recordings/evil-run/run.json");
     expect(JSON.parse(served.text).id).toBe("evil-run");
+  });
+
+  it("POST /api/recordings also writes actions.jsonl when the bundle has actions", async () => {
+    const bundle = { ...testBundle, meta: { ...testBundle.meta, id: "with-actions" }, actions: testActions };
+    const r = await json("POST", "/api/recordings", bundle);
+    expect(r.status).toBe(201);
+    const folder = join(dir, "recordings", "with-actions");
+    const names = await readdir(folder);
+    expect(names).toContain("actions.jsonl");
+    const files = Object.fromEntries(await Promise.all(names.map(async (n) => [n, await readFile(join(folder, n), "utf8")])));
+    expect(unwrap(parseRunFiles(files)).actions).toEqual(testActions);
   });
 
   it("POST /api/recordings rejects an invalid bundle", async () => {

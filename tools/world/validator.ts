@@ -8,14 +8,16 @@
 import { existsSync, readFileSync } from "node:fs";
 import { basename } from "node:path";
 import type { z } from "zod";
-import type { Layout, PositionSample, PositionsHeader, RunMeta, Scan, Setup, TapEvent, TapsHeader } from "../../src/core/types";
+import type { ActionSegment, ActionsHeader, Layout, PositionSample, PositionsHeader, RunMeta, Scan, Setup, TapEvent, TapsHeader } from "../../src/core/types";
 import { crossCheck, type Issue, type Parsed } from "./checks";
 import { LOOSE, STRICT } from "./schemas";
 
 export type { Issue } from "./checks";
 
 export const RUN_FILES = ["run.json", "scan.json", "setup.json", "layout.json", "taps.jsonl", "positions.jsonl"] as const;
-export type RunFileName = (typeof RUN_FILES)[number];
+/** Files a run folder may leave out; checked only when they are there. */
+export const OPTIONAL_RUN_FILES = ["actions.jsonl"] as const;
+export type RunFileName = (typeof RUN_FILES)[number] | (typeof OPTIONAL_RUN_FILES)[number];
 
 export interface Report {
   readonly errors: readonly Issue[];
@@ -131,7 +133,20 @@ const capped = (issues: readonly Issue[]): readonly Issue[] => {
   });
 };
 
-/** Validates the six files given as text (missing ones as undefined). */
+const ACTIONS_EXAMPLE = '{"type":"header","format":"dryrun.actions","version":1,"startedAt":"2026-11-13T10:00:00Z","source":"zones"}';
+
+/** actions.jsonl is optional: no text means nothing to check. */
+function optionalActions(textIn: string | undefined): Checked<Lines<ActionsHeader, ActionSegment>> | undefined {
+  if (textIn === undefined) return undefined;
+  return jsonlFile<ActionsHeader, ActionSegment>(
+    "actions.jsonl",
+    textIn,
+    { strict: STRICT.actionsHeader, loose: LOOSE.actionsHeader, example: ACTIONS_EXAMPLE },
+    { strict: STRICT.action, loose: LOOSE.action },
+  );
+}
+
+/** Validates the six files, and actions.jsonl if there, given as text (missing ones as undefined). */
 export function validateRunFiles(files: Partial<Record<RunFileName, string>>, folderName?: string): Report {
   const run = jsonFile<RunMeta>("run.json", files["run.json"], STRICT.run, LOOSE.run);
   const scan = jsonFile<Scan>("scan.json", files["scan.json"], STRICT.scan, LOOSE.scan);
@@ -153,7 +168,8 @@ export function validateRunFiles(files: Partial<Record<RunFileName, string>>, fo
     },
     { strict: STRICT.pos, loose: LOOSE.pos },
   );
-  const parts = [run, scan, setup, layout, taps, positions];
+  const actions = optionalActions(files["actions.jsonl"]);
+  const parts = [run, scan, setup, layout, taps, positions, ...(actions ? [actions] : [])];
   const parsed: Parsed = {
     folderName,
     run: run.value,
@@ -162,6 +178,7 @@ export function validateRunFiles(files: Partial<Record<RunFileName, string>>, fo
     layout: layout.value,
     taps: taps.value,
     positions: positions.value,
+    ...(actions ? { actions: actions.value } : {}),
   };
   const cross = crossCheck(parsed);
   return {
@@ -174,7 +191,7 @@ export function validateRunFiles(files: Partial<Record<RunFileName, string>>, fo
 export function validateRunFolder(dir: string): Report {
   if (!existsSync(dir)) return { errors: [{ file: dir, message: "does not exist" }], warnings: [] };
   const files = Object.fromEntries(
-    RUN_FILES.flatMap((name) => {
+    [...RUN_FILES, ...OPTIONAL_RUN_FILES].flatMap((name) => {
       const path = `${dir}/${name}`;
       return existsSync(path) ? [[name, readFileSync(path, "utf8")]] : [];
     }),
