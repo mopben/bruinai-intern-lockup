@@ -6,7 +6,7 @@ import { setRecipeQuantity, updateRecipe } from "../app/recipes";
 import { editKitchen } from "./kitchen-actions";
 import { storedEconomics } from "./economics";
 import { activeSetupId, activeShiftId, base, candidates, firstRun, kitchen, kitchenOrigin, playLayout, workspaceReady } from "./store";
-import { createSetup, createShift, initializeWorkspace, loadDemoShift, renameSetup, renameShift, saveWorkspace, savedSetups, savedShifts, selectSetup, selectShift, setShiftFinance } from "./workspace";
+import { createSetup, createShift, initializeWorkspace, renameSetup, renameShift, saveWorkspace, savedSetups, savedShifts, selectSetup, selectShift, setShiftFinance } from "./workspace";
 
 let cleanup: (() => void) | undefined;
 beforeEach(() => {
@@ -23,11 +23,11 @@ beforeEach(() => {
 afterEach(() => { cleanup?.(); cleanup = undefined; });
 
 describe("saved setups and shifts", () => {
-  it("loads and persists a six-hour demo without replacing an existing shift", () => {
+  it("prefills and persists six-hour shifts without replacing an existing shift", () => {
     createSetup(); createShift();
     const originalId = activeShiftId.value!;
-    loadDemoShift();
-    expect(savedShifts.value.find(shift => shift.id === originalId)!.schedule.orders).toHaveLength(0);
+    createShift();
+    expect(savedShifts.value.find(shift => shift.id === originalId)!.schedule.orders).toHaveLength(360);
     const demoId = activeShiftId.value!;
     expect(kitchen.value!.setup.schedule.orders).toHaveLength(360);
     saveWorkspace(); cleanup?.();
@@ -60,14 +60,14 @@ describe("saved setups and shifts", () => {
     editKitchen((k) => setRecipeQuantity(updateRecipe(k, "latte", { name: "Morning latte" }), "latte", 2));
     createShift(); renameShift("Evening");
     const b = activeShiftId.value!;
-    expect(kitchen.value!.setup.schedule.orders).toHaveLength(0);
+    expect(kitchen.value!.setup.schedule.orders).toHaveLength(360);
     editKitchen((k) => setRecipeQuantity(updateRecipe(k, "latte", { name: "Evening latte" }), "latte", 5));
     selectShift(a);
     expect(kitchen.value!.setup.menu[0]!.name).toBe("Morning latte");
-    expect(kitchen.value!.setup.schedule.orders).toHaveLength(2);
+    expect(kitchen.value!.setup.schedule.orders.filter(order => order.itemId === "latte")).toHaveLength(2);
     selectShift(b);
     expect(kitchen.value!.setup.menu[0]!.name).toBe("Evening latte");
-    expect(kitchen.value!.setup.schedule.orders).toHaveLength(5);
+    expect(kitchen.value!.setup.schedule.orders.filter(order => order.itemId === "latte")).toHaveLength(5);
   });
 
   it("restores the active setup and shift without overwriting their saved orders with the boot template", () => {
@@ -82,7 +82,7 @@ describe("saved setups and shifts", () => {
     cleanup = initializeWorkspace();
     expect(savedSetups.value[0]!.name).toBe("Saved kitchen");
     expect(savedShifts.value[0]!.name).toBe("Lunch");
-    expect(kitchen.value!.setup.schedule.orders).toHaveLength(7);
+    expect(kitchen.value!.setup.schedule.orders.filter(order => order.itemId === "latte")).toHaveLength(7);
   });
 });
 

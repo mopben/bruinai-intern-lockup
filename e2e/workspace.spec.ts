@@ -1,10 +1,11 @@
 import { test, expect } from "./support/fixtures";
-import { BOX, chooseLibraryEntry, renameLibraryEntry, mainDebug, openStage, sceneDebug } from "./support/stage";
+import { BOX, chooseLibraryEntry, renameLibraryEntry, mainDebug, clearShiftOrders, openStage, sceneDebug } from "./support/stage";
 
 test("an empty shift explains missing predictions and recovers when orders are added", async ({ page }) => {
   await openStage(page);
   await page.getByTestId("step-orders").click();
   await chooseLibraryEntry(page, "shift", "__create_shift__");
+  await clearShiftOrders(page);
   await page.getByTestId("step-results").click();
   for (const side of ["before", "after"]) {
     await expect(page.getByTestId(`compare-${side}-sales`)).toHaveText("$0.00");
@@ -26,6 +27,7 @@ test("Run offers only comparison and a single simulated scenario", async ({ page
   await openStage(page);
   await page.getByTestId("step-orders").click();
   await chooseLibraryEntry(page, "shift", "__create_shift__");
+  await clearShiftOrders(page);
   await page.getByTestId("recipe-latte").locator("summary").click();
   await page.getByTestId("recipe-latte").getByLabel("Quantity in simulation").fill("3");
   await page.getByTestId("step-results").click();
@@ -61,6 +63,7 @@ test("requires a setup before importing or editing", async ({ page }) => {
   await expect(page.getByTestId("active-shift")).toBeVisible();
   await expect(page.locator(".st-recipes")).toHaveCount(0);
   await chooseLibraryEntry(page, "shift", "__create_shift__");
+  await clearShiftOrders(page);
   await expect(page.locator(".st-recipes")).toBeVisible();
   await expect(page.getByText("Choose an order to customize", { exact: false })).toHaveCount(0);
 });
@@ -98,12 +101,14 @@ test("compares independent shift/setup pairs and preserves them after reload", a
 
   await page.getByTestId("step-orders").click();
   await chooseLibraryEntry(page, "shift", "__create_shift__");
+  await clearShiftOrders(page);
   await renameLibraryEntry(page, "shift", "Morning");
   const shiftA = (await page.getByTestId("active-shift").getAttribute("data-value"))!;
   await page.getByTestId("recipe-latte").locator("summary").click();
   await page.getByTestId("recipe-latte").getByLabel("Quantity in simulation").fill("2");
   await page.getByTestId("orders-rail").getByRole("heading", { name: "Orders", exact: true }).click();
   await chooseLibraryEntry(page, "shift", "__create_shift__");
+  await clearShiftOrders(page);
   await renameLibraryEntry(page, "shift", "Evening");
   const shiftB = (await page.getByTestId("active-shift").getAttribute("data-value"))!;
   // Opening state belongs to the recipe card; it stays open when switching shifts.

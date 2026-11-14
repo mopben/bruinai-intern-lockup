@@ -1,11 +1,12 @@
 import { test, expect } from './support/fixtures';
-import { openStage, chooseLibraryEntry } from './support/stage';
+import { clearShiftOrders, openStage, chooseLibraryEntry } from './support/stage';
 
 test('profit appears on selection, updates from prices and salaries, and playback is optional', async ({ page }) => {
   await openStage(page);
   const setupA = (await page.getByTestId('active-setup').getAttribute('data-value'))!;
   await page.getByTestId('step-orders').click();
   await chooseLibraryEntry(page, 'shift', '__create_shift__');
+  await clearShiftOrders(page);
   await page.getByTestId('shift-hours').fill('1');
   const recipe = page.getByTestId('recipe-latte');
   await recipe.locator('summary').click();

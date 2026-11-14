@@ -1,10 +1,12 @@
 import { test, expect } from "./support/fixtures";
-import { openStage } from "./support/stage";
+import { chooseLibraryEntry, openStage } from "./support/stage";
 
 test("loads, simulates, and restores the six-hour café demo", async ({ page }) => {
   await openStage(page);
   await page.getByTestId("step-orders").click();
-  await page.getByTestId("load-demo-shift").click();
+  await expect(page.getByTestId("load-demo-shift")).toHaveCount(0);
+  await expect(page.getByText("Example morning:", { exact: false })).toHaveCount(0);
+  await chooseLibraryEntry(page, "shift", "__create_shift__");
   await expect(page.getByTestId("shift-hours")).toHaveValue("6");
   await expect(page.getByTestId("recipe-latte").locator("summary")).toContainText("180 orders");
   await expect(page.getByTestId("recipe-cappuccino").locator("summary")).toContainText("108 orders");

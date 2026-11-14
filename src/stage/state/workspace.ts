@@ -156,10 +156,14 @@ export function createShift(duplicate = false): void {
   if (!k || !activeSetupId.peek()) return;
   snapshotShift();
   const cal = calibration.peek();
-  const orders = shiftOrders(k, cal?.ok ? cal.value : null);
+  const current = savedShifts.peek().find(entry => entry.id === activeShiftId.peek());
+  const orders = duplicate ? {
+    ...shiftOrders(k, cal?.ok ? cal.value : null),
+    durationSeconds: current?.durationSeconds ?? 6 * 3600,
+    prices: { ...(current?.prices ?? storedEconomics.peek()?.menu ?? {}) },
+  } : demoShift(k.setup);
   const shift: SavedShift = {
-    ...orders, durationSeconds: 3600, prices: { ...(storedEconomics.peek()?.menu ?? {}) }, id: crypto.randomUUID(), name: `Shift ${savedShifts.peek().length + 1}`,
-    schedule: duplicate ? orders.schedule : { orders: [] },
+    ...orders, id: crypto.randomUUID(), name: `Shift ${savedShifts.peek().length + 1}`,
   };
   savedShifts.value = [...savedShifts.peek(), shift];
   selectShift(shift.id);
@@ -167,16 +171,6 @@ export function createShift(duplicate = false): void {
 
 export function renameShift(name: string): void {
   savedShifts.value = savedShifts.peek().map((entry) => entry.id === activeShiftId.peek() ? { ...entry, name } : entry);
-}
-
-/** Create a separate demo so loading it preserves every existing shift. */
-export function loadDemoShift(): void {
-  const k = kitchen.peek();
-  if (!k || !activeSetupId.peek()) return;
-  snapshotShift();
-  const shift: SavedShift = { ...demoShift(k.setup), id: crypto.randomUUID(), name: "Café morning · 6 hours" };
-  savedShifts.value = [...savedShifts.peek(), shift];
-  selectShift(shift.id);
 }
 
 export function chooseScenario(index: number, change: Partial<ScenarioChoice>): void {

@@ -158,3 +158,15 @@ export async function renameLibraryEntry(page: Page, kind: "setup" | "shift", na
   await page.getByTestId(`${kind}-name`).fill(name);
   await page.getByTestId(`save-${kind}-name`).click();
 }
+
+/** Start a test's custom order mix by clearing the prefilled café quantities. */
+export async function clearShiftOrders(page: Page): Promise<void> {
+  for (const card of await page.locator(".st-recipe[data-testid^='recipe-']").all()) {
+    const quantity = card.getByLabel("Quantity in simulation");
+    const wasOpen = await quantity.isVisible();
+    if (!wasOpen) await card.locator("summary").click();
+    await quantity.fill("0");
+    await quantity.blur();
+    if (!wasOpen) await card.locator("summary").click();
+  }
+}

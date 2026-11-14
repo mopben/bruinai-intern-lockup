@@ -2,7 +2,7 @@ import { LibraryDropdown } from "./LibraryDropdown";
 import { activeSetupId, activeShiftId, loading, workspaceReady } from "../state/store";
 import {
   chooseScenario, createSetup, createShift, renameSetup, renameShift, resolvedChoice,
-  savedSetups, savedShifts, selectSetup, selectShift, workspaceProblem, loadDemoShift,
+  savedSetups, savedShifts, selectSetup, selectShift, workspaceProblem,
 } from "../state/workspace";
 
 function SetupOptions() {
@@ -25,8 +25,6 @@ export function ShiftControls() {
     <h1>Shifts</h1>
     <LibraryDropdown kind="shift" entries={savedShifts.value} activeId={activeShiftId.value} disabled={!workspaceReady.value || loading.value || !activeSetupId.value} onSelect={selectShift} onCreate={() => createShift()} onRename={renameShift} />
     {!active ? <p>Create a shift to organize its orders and quantities.</p> : null}
-    <button type="button" class="st-btn small" data-testid="load-demo-shift" disabled={!workspaceReady.value || loading.value || !activeSetupId.value} onClick={loadDemoShift}>Load 6-hour café demo</button>
-    <p class="st-small">Example morning: 360 drinks over 6 hours, with a morning rush. Preparation times and prices are illustrative. Loads as a separate shift.</p>
   </div>;
 }
 
