@@ -13,3 +13,12 @@ Short entries: what we chose and why. Append under your own heading.
 - **The brief wins over the team summary where they differ.** The close is the side-by-side run, not a slide. Level 1 uses a recorded scan, not a hand-built kitchen.
 - **`npm start` installs and builds on first run.** That first run needs internet; the demo does not. Committing build output to avoid this was judged worse.
 - **The stage is the run clock.** It releases orders and stamps taps on receipt, so device clocks never need to agree.
+
+## Scan app (iOS)
+
+- **The app maps RoomPlan output to our `Scan` itself**, in a pure function with unit tests. We do not ship RoomPlan's own JSON, because its shape cannot be checked without a device.
+- **Walls get a nominal thickness of 0.1 m.** RoomPlan walls have none.
+- **No re-centring.** x and z stay in the phone's frame, with the origin where the scan started. Nothing downstream needs a centred scan: the scene frames whatever it is given, and positions use the same frame.
+- **Categories are RoomPlan's own case names** (`table`, `storage`, `refrigerator`, `washerDryer`). An unknown case becomes `unknown`.
+- **Doors, windows, openings and wall curvature are skipped.** The model does not use them.
+- **Unknown until a real scan exists:** which side RoomPlan treats as an object's front. The owner can set the stand side in the stage app.

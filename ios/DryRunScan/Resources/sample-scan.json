@@ -1,0 +1,80 @@
+{
+  "boxes" : [
+    {
+      "category" : "table",
+      "center" : { "x" : 1.3, "y" : 0.45, "z" : 0.9 },
+      "confidence" : "high",
+      "id" : "box-1",
+      "size" : { "d" : 0.6, "h" : 0.9, "w" : 1 },
+      "yaw" : 3.142
+    },
+    {
+      "category" : "storage",
+      "center" : { "x" : -0.6, "y" : 0.45, "z" : -1.4 },
+      "confidence" : "high",
+      "id" : "box-2",
+      "size" : { "d" : 0.6, "h" : 0.9, "w" : 0.9 },
+      "yaw" : 0
+    },
+    {
+      "category" : "table",
+      "center" : { "x" : 0.6, "y" : 0.45, "z" : -1.4 },
+      "confidence" : "high",
+      "id" : "box-3",
+      "size" : { "d" : 0.6, "h" : 0.9, "w" : 1.2 },
+      "yaw" : 0
+    },
+    {
+      "category" : "refrigerator",
+      "center" : { "x" : -1.85, "y" : 0.9, "z" : 0.6 },
+      "confidence" : "medium",
+      "id" : "box-4",
+      "size" : { "d" : 0.7, "h" : 1.8, "w" : 0.7 },
+      "yaw" : 1.571
+    },
+    {
+      "category" : "table",
+      "center" : { "x" : -0.4, "y" : 0.45, "z" : 1.2 },
+      "confidence" : "high",
+      "id" : "box-5",
+      "size" : { "d" : 0.5, "h" : 0.9, "w" : 1.2 },
+      "yaw" : 3.142
+    },
+    {
+      "category" : "sink",
+      "center" : { "x" : 1.75, "y" : 0.45, "z" : -1.4 },
+      "confidence" : "high",
+      "id" : "box-6",
+      "size" : { "d" : 0.6, "h" : 0.9, "w" : 0.8 },
+      "yaw" : 0
+    },
+    {
+      "category" : "chair",
+      "center" : { "x" : 1.9, "y" : 0.45, "z" : 1.4 },
+      "confidence" : "low",
+      "id" : "box-7",
+      "size" : { "d" : 0.45, "h" : 0.9, "w" : 0.45 },
+      "yaw" : 0.3
+    }
+  ],
+  "capturedAt" : "2026-11-14T10:00:00Z",
+  "device" : "sample (hand-written, not a real capture)",
+  "format" : "dryrun.scan",
+  "source" : "synthetic",
+  "units" : "m",
+  "version" : 1,
+  "walls" : [
+    {
+      "center" : { "x" : 0, "y" : 1.2, "z" : -1.8 },
+      "id" : "wall-1",
+      "size" : { "d" : 0.1, "h" : 2.4, "w" : 4.5 },
+      "yaw" : 0
+    },
+    {
+      "center" : { "x" : -2.3, "y" : 1.2, "z" : 0 },
+      "id" : "wall-2",
+      "size" : { "d" : 0.1, "h" : 2.4, "w" : 3.5 },
+      "yaw" : 1.571
+    }
+  ]
+}
