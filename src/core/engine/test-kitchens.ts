@@ -118,3 +118,21 @@ export function walledOffKitchen(): KitSpec {
     ],
   };
 }
+
+/**
+ * Station s holds one person at a time. w1 lives at s and also covers t (3 m away);
+ * w2 lives at s alone. Two ready tasks at s and two free workers: one waits for the place.
+ * The pickup is a hand-off from t.
+ */
+export function coveringCapacityKitchen(): KitSpec {
+  return {
+    boxes: [
+      { id: "s", x: 0, z: 0, role: "station", capacity: 1 },
+      { id: "t", x: 3, z: 0, role: "station" },
+      { id: "P", x: 4, z: 0, role: "pickup" },
+    ],
+    menu: [{ id: "x", name: "X", steps: [{ stationId: "s" }, { stationId: "t" }] }],
+    workers: [worker("w1", "s", ["t"]), worker("w2", "s")],
+    orders: [{ orderId: "o1", itemId: "x", t: 0 }],
+  };
+}

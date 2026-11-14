@@ -8,7 +8,7 @@ import { calibrate, DEFAULT_WALK_SPEED_MPS, estimateWalkSpeed, MIN_TASK_SAMPLES,
 import { fixedCalibration, kitLayout, kitScan, kitSetup, tapsFromTrace, worker, type KitSpec } from "./testkit";
 import { isChainKitchen } from "./tasks";
 import { compileEngineModel, runEngine } from "./engine";
-import { buildKitchen, coveringKitchen, joinKitchen } from "./engine/test-kitchens";
+import { buildKitchen, coveringCapacityKitchen, coveringKitchen, joinKitchen } from "./engine/test-kitchens";
 
 /** A(0) -> B(3, fetch from F at 6) -> pickup P(10.5). Stand points on z = 0.85, straight paths. */
 const spec: KitSpec = {
@@ -247,7 +247,7 @@ describe("task samples", () => {
 
 describe("calibration beyond chains (replayed over the taps)", () => {
   const releases = [0, 1, 2, 30, 31, 32].map((t, i) => ({ orderId: `o${i + 1}`, itemId: "x", t }));
-  const truth = fixedCalibration({ a: [2], b: [2], c: [2] }, DEFAULT_WALK_SPEED_MPS);
+  const truth = fixedCalibration({ a: [2], b: [2], c: [2], s: [2], t: [2] }, DEFAULT_WALK_SPEED_MPS);
   const roundTrip = (spec: KitSpec) => {
     const w = buildKitchen({ ...spec, orders: releases });
     const trace = runEngine(compileEngineModel(w, truth), releases, 1, 0, { bootstrap: false, trace: true }).trace!;
@@ -282,6 +282,13 @@ describe("calibration beyond chains (replayed over the taps)", () => {
     const c = calibrate(w, reconstructRun(w.setup, taps), []);
     allTwo(c);
     expect(Object.values(c.taskSamples).flat()).toHaveLength(3 * releases.length);
+  });
+
+  it("recovers every work time when a ready task waits for a place at a full station", () => {
+    const { w, taps } = roundTrip(coveringCapacityKitchen());
+    const c = calibrate(w, reconstructRun(w.setup, taps), []);
+    allTwo(c);
+    expect(Object.values(c.taskSamples).flat()).toHaveLength(2 * releases.length);
   });
 
   it("skips taps that do not say who did the step, with one warning", () => {
