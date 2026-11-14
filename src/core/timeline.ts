@@ -1,7 +1,8 @@
 /**
  * Queue timeline: which tickets sit at which station over time.
- * An item is at station k from when it arrived (release for step 0, else when
- * step k-1 was done) until step k is done.
+ * An item is at step k's station from when it arrived there (`arrivedAt`: release
+ * for a step that waits for nothing, else when its last input was done) until step k
+ * is done. A step whose arrival is unknown has no ticket.
  */
 import type { MenuItem } from "./types";
 import type { OrderTrace, QueueInterval, QueueTimeline } from "./trace";
@@ -16,14 +17,13 @@ export function menuStations(menu: readonly MenuItem[]): readonly string[] {
 export function buildQueueTimeline(orders: readonly OrderTrace[], stationIds: readonly string[], endT: number): QueueTimeline {
   const intervals: QueueInterval[] = [];
   for (const o of orders) {
-    let from: number | null = o.releasedAt;
     for (const s of o.steps) {
-      if (from === null) break;
+      const from = s.arrivedAt;
+      if (from === null) continue;
       const to = s.doneAt;
       if (to === null || to > from) {
         intervals.push({ stationId: s.stationId, orderId: o.orderId, step: s.step, from, to });
       }
-      from = to;
     }
   }
   return { stationIds, intervals, endT };

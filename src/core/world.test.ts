@@ -89,6 +89,32 @@ describe("resolveWorld", () => {
     expect(errorsOf(() => resolveWorld(kitScan(base), noSteps, kitLayout(base))).join()).toMatch(/no steps/);
   });
 
+  it("rejects a menu item whose tasks have a problem", () => {
+    const setup = kitSetup(base);
+    const menu = [{ id: "latte", name: "Latte", steps: [{ stationId: "A" }], tasks: [{ id: "p", stationId: "A", after: ["zz"] }] }];
+    expect(errorsOf(() => resolveWorld(kitScan(base), { ...setup, menu }, kitLayout(base))).join()).toMatch(/"zz"/);
+  });
+
+  it("rejects a worker who covers something that is not a station", () => {
+    const layout = { ...kitLayout(base), workers: [worker("w1", "A", ["F"])] };
+    expect(errorsOf(() => resolveWorld(kitScan(base), kitSetup(base), layout)).join()).toMatch(/Worker "w1" covers "F"/);
+  });
+
+  it.each([0, 1.5, -1])("rejects a capacity of %s", (capacity) => {
+    const spec = { ...base, boxes: base.boxes.map((b) => (b.id === "A" ? { ...b, capacity } : b)) };
+    expect(errorsOf(() => resolveWorld(kitScan(spec), kitSetup(spec), kitLayout(spec))).join()).toMatch(/capacity/);
+  });
+
+  it("accepts tasks, covers and a whole capacity", () => {
+    const spec: KitSpec = {
+      ...base,
+      boxes: [...base.boxes.map((b) => (b.id === "A" ? { ...b, capacity: 2 } : b)), { id: "B", x: 0, z: 3, role: "station" }],
+      menu: [{ id: "latte", name: "Latte", steps: [{ stationId: "A" }, { stationId: "B" }], tasks: [{ id: "p", stationId: "A" }, { id: "q", stationId: "B", after: ["p"] }] }],
+      workers: [worker("w1", "A", ["B"])],
+    };
+    expect(resolveWorld(kitScan(spec), kitSetup(spec), kitLayout(spec)).warnings).toEqual([]);
+  });
+
   it("itemOf gives a clear error for unknown ids", () => {
     const w = resolveWorld(kitScan(base), kitSetup(base), kitLayout(base));
     expect(() => itemOf(w, "noise")).toThrow(/No item "noise"/);

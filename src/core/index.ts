@@ -45,6 +45,8 @@ export * from "./types";
 // World
 export { resolveWorld, standPoint, itemOf, WorldError } from "./world";
 export type { World, WorldItem, WorldWall } from "./world";
+export { itemTasks, taskIssues, workerCovers, isChainKitchen } from "./tasks";
+export type { ResolvedTask } from "./tasks";
 
 // Geometry and walking (exact, from the layout alone)
 export type { OrientedRect } from "./geometry";

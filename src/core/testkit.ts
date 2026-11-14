@@ -17,6 +17,7 @@ export interface KitBox {
   readonly role: ItemRole;
   readonly standSide?: BoxSide;
   readonly locked?: boolean;
+  readonly capacity?: number;
 }
 
 export interface KitSpec {
@@ -57,6 +58,7 @@ export function kitSetup(spec: KitSpec): Setup {
       role: b.role,
       locked: b.locked ?? false,
       ...(b.standSide ? { standSide: b.standSide } : {}),
+      ...(b.capacity !== undefined ? { capacity: b.capacity } : {}),
     })),
     menu: spec.menu,
     pickupId: pickup,
@@ -68,8 +70,8 @@ export function kitLayout(spec: KitSpec): Layout {
   return { format: "dryrun.layout", version: 1, placements: {}, workers: spec.workers };
 }
 
-export function worker(id: string, stationId: string): WorkerDef {
-  return { id, name: id, color: "#ff0000", stationId };
+export function worker(id: string, stationId: string, covers?: readonly string[]): WorkerDef {
+  return { id, name: id, color: "#ff0000", stationId, ...(covers ? { covers } : {}) };
 }
 
 export function evenOrders(n: number, gap: number, itemId = "latte", start = 0): readonly { orderId: string; itemId: string; t: number }[] {

@@ -87,6 +87,40 @@ describe("reconstructRun", () => {
     expect(r.queue.intervals.find((i) => i.orderId === "o1" && i.step === 1)?.to).toBeNull();
   });
 
+  describe("a join", () => {
+    const joinSetup = kitSetup({
+      ...spec,
+      boxes: [...spec.boxes, { id: "C", x: 0, z: 3, role: "station" }],
+      menu: [{
+        id: "latte",
+        name: "Latte",
+        steps: [{ stationId: "A" }, { stationId: "B" }, { stationId: "C" }],
+        tasks: [{ id: "p", stationId: "A" }, { id: "q", stationId: "B" }, { id: "r", stationId: "C", after: ["p", "q"] }],
+      }],
+    });
+    const tap = (step: number, t: number): TapEvent => ({ type: "done", orderId: "o1", step, t, stationId: ["A", "B", "C"][step] ?? "A" });
+
+    it("starts a joined task when its last input is done", () => {
+      const r = reconstructRun(joinSetup, [order("o1", 0), tap(0, 3), tap(1, 5), tap(2, 9)]);
+      expect(r.warnings).toEqual([]);
+      expect(r.orders[0]?.steps.map((s) => [s.arrivedAt, s.doneAt])).toEqual([[0, 3], [0, 5], [5, 9]]);
+      expect(r.orders[0]?.orderTime).toBe(9);
+      expect(queueAt(r.queue, 4)).toEqual({ A: 0, B: 1, C: 0 });
+      expect(queueAt(r.queue, 6)).toEqual({ A: 0, B: 0, C: 1 });
+    });
+
+    it("lets the joined task's tap prove both inputs done", () => {
+      const r = reconstructRun(joinSetup, [order("o1", 0), tap(0, 3), tap(2, 9)]);
+      expect(r.orders[0]?.steps.map((s) => [s.arrivedAt, s.doneAt])).toEqual([[0, 3], [0, 9], [9, 9]]);
+    });
+
+    it("warns about a tap for a task that does not exist and does not throw", () => {
+      const r = reconstructRun(joinSetup, [order("o1", 0), tap(7, 2), tap(0, 3), tap(1, 5), tap(2, 9)]);
+      expect(r.warnings.join()).toMatch(/step 7/);
+      expect(r.orders[0]?.orderTime).toBe(9);
+    });
+  });
+
   it("falls back to the schedule for releases", () => {
     const noOrders = reconstructRun(setup, [done("o1", 0, 1), done("o1", 1, 2), { type: "end", t: 3 }]);
     expect(noOrders.orders.map((o) => o.orderId)).toEqual(["o1", "o2"]);

@@ -98,6 +98,8 @@ export interface ItemSetup {
   readonly locked: boolean;
   /** Side of the box where a person stands to use it. Default "front" (local +z). */
   readonly standSide?: BoxSide;
+  /** Stations only: how many people can work here at once, a whole number of at least 1. Default: no limit. */
+  readonly capacity?: number;
 }
 
 /** One step of making a menu item. */
@@ -108,11 +110,32 @@ export interface StepDef {
   readonly fetchFrom?: readonly string[];
 }
 
+/**
+ * One task of making a menu item, in an item's optional task graph.
+ * A task is ready when every task in `after` is done and its output has arrived here.
+ * A task may wait for several tasks (a join) but feeds at most one, so an output never splits.
+ */
+export interface TaskDef {
+  /** Unique within the menu item. */
+  readonly id: string;
+  /** boxId of the station where the task happens. */
+  readonly stationId: string;
+  /** boxIds of storage the worker walks to and back from, once each, before working. */
+  readonly fetchFrom?: readonly string[];
+  /** ids of tasks that must be done first; each must come earlier in the list. Empty: starts on release. */
+  readonly after?: readonly string[];
+}
+
 export interface MenuItem {
   readonly id: string;
   readonly name: string;
   /** Steps in order. After the last step the item is carried to the pickup. */
   readonly steps: readonly StepDef[];
+  /**
+   * Optional task graph. Without it, `steps` is a chain. With it, `steps[k]` names the same
+   * station and storage as `tasks[k]`, and a tap's `step` is the index in this list.
+   */
+  readonly tasks?: readonly TaskDef[];
 }
 
 export interface WorkerDef {
@@ -122,6 +145,8 @@ export interface WorkerDef {
   readonly color: string;
   /** boxId of the station this worker stands at. Several workers may share a station. */
   readonly stationId: string;
+  /** Stations this worker may work at. `stationId` (home) is always one of them. Default: only `stationId`. */
+  readonly covers?: readonly string[];
 }
 
 /** When orders are released during a run. The product generates this; it is known in advance. */
@@ -230,12 +255,84 @@ export interface PositionSample {
 export type PositionsLine = PositionsHeader | PositionSample;
 
 // ---------------------------------------------------------------------------
+// Optional: what each worker was doing (actions.jsonl, one JSON object per line)
+// Written by the video pipeline from the positions; a run folder may leave it out.
+// ---------------------------------------------------------------------------
+
+export const ACTIONS_FORMAT = "dryrun.actions" as const;
+
+/** "zones": inferred from positions only. "zones+model": an ML model added labels. */
+export type ActionsSource = "zones" | "zones+model";
+
+export interface ActionsHeader {
+  readonly type: "header";
+  readonly format: typeof ACTIONS_FORMAT;
+  readonly version: typeof FORMAT_VERSION;
+  readonly startedAt: string;
+  readonly source: ActionsSource;
+  /** Names the labeller, if a model added labels. */
+  readonly model?: string;
+}
+
+/** Kinds that name a box: work at a station, fetch from storage, carry to the pickup or a station. */
+export const BOXED_ACTION_KINDS = ["work", "fetch", "carry"] as const;
+/** Kinds with no box: moving on no known trip, or standing away from any stand point. */
+export const UNBOXED_ACTION_KINDS = ["walk", "idle"] as const;
+
+export type BoxedActionKind = (typeof BOXED_ACTION_KINDS)[number];
+export type UnboxedActionKind = (typeof UNBOXED_ACTION_KINDS)[number];
+export type ActionKind = BoxedActionKind | UnboxedActionKind;
+
+/** Box roles each boxed kind may name. */
+export const ACTION_BOX_ROLES: Readonly<Record<BoxedActionKind, readonly ItemRole[]>> = {
+  work: ["station"],
+  fetch: ["storage"],
+  carry: ["pickup", "station"],
+};
+
+interface ActionBase {
+  readonly type: "action";
+  readonly workerId: string;
+  /** Start, seconds since the run started. */
+  readonly t0: number;
+  /** End, seconds since the run started; later than t0. */
+  readonly t1: number;
+  /** Free text from the ML labeller. Written together with confidence. */
+  readonly label?: string;
+  /** 0 to 1, from the ML labeller. */
+  readonly confidence?: number;
+}
+
+export interface BoxedAction extends ActionBase {
+  readonly kind: BoxedActionKind;
+  /** work: the station. fetch: the storage box. carry: the destination. */
+  readonly boxId: string;
+}
+
+export interface UnboxedAction extends ActionBase {
+  readonly kind: UnboxedActionKind;
+}
+
+/** One stretch of time in which one worker did one thing. */
+export type ActionSegment = BoxedAction | UnboxedAction;
+export type ActionsLine = ActionsHeader | ActionSegment;
+
+/** actions.jsonl as loaded: the header (source, model) and the segments sorted by t0. */
+export interface RunActions {
+  readonly header: ActionsHeader;
+  readonly segments: readonly ActionSegment[];
+}
+
+// ---------------------------------------------------------------------------
 // A recorded run: one folder holding everything above
 // ---------------------------------------------------------------------------
 
 export const RUN_FORMAT = "dryrun.run" as const;
 
-/** run.json: describes a run folder. The folder also holds scan.json, setup.json, layout.json, taps.jsonl, positions.jsonl. */
+/**
+ * run.json: describes a run folder. The folder also holds scan.json, setup.json, layout.json, taps.jsonl,
+ * positions.jsonl and, optionally, actions.jsonl.
+ */
 export interface RunMeta {
   readonly format: typeof RUN_FORMAT;
   readonly version: typeof FORMAT_VERSION;
@@ -256,6 +353,8 @@ export interface RunBundle {
   readonly layout: Layout;
   readonly taps: readonly TapEvent[];
   readonly positions: readonly PositionSample[];
+  /** actions.jsonl, if the folder has one. Absent for most runs. */
+  readonly actions?: RunActions;
 }
 
 // ---------------------------------------------------------------------------
