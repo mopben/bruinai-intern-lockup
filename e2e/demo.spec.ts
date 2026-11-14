@@ -2,7 +2,7 @@
  * Definition of done: the whole demo, steps 1 to 3, from fixtures, with the
  * keyboard only (the runbook's keys), at an accelerated replay speed.
  */
-import { BOX, STATIONS, clockSeconds, expectStep, mainDebug, openStage, startQueueSampler, stopQueueSampler, text, waitForSession } from "./support/stage";
+import { BOX, STATIONS, clockSeconds, editNumbers, expectStep, mainDebug, openStage, startQueueSampler, stopQueueSampler, text, waitForSession } from "./support/stage";
 import { expect, test } from "./support/fixtures";
 
 const SPEED = 16;
@@ -46,17 +46,22 @@ test("definition of done: full demo, replay, keyboard only (acceptance steps 1-3
   const alerted = new Set(samples.flatMap((s) => s.a));
   expect([...alerted]).toEqual([BOX.make]);
 
-  // Edit: the rehearsed move changes both numbers; a range with its assumption.
+  // Edit: the rehearsed move changes what the kitchen can make (and the model's walking and time); a range with its assumption.
   await kb.press("2");
   await expectStep(page, "play");
-  const walkBefore = await text(page, "walking-per-order");
-  const timeBefore = await text(page, "time-per-order");
-  expect(walkBefore).toMatch(/^\d+\.\d m$/);
+  const profitBefore = await text(page, "profit-per-hour");
+  const basisBefore = await text(page, "profit-basis");
+  const before = await editNumbers(page);
+  expect(before.walking).toMatch(/^\d+\.\d m$/);
   await kb.press("m");
-  await expect(page.getByTestId("walking-per-order")).not.toHaveText(walkBefore);
-  await expect(page.getByTestId("time-per-order")).not.toHaveText(timeBefore);
-  await expect(page.getByTestId("walking-per-order-before")).toHaveText(walkBefore);
-  const range = await text(page, "prediction-range");
+  await expect(page.getByTestId("profit-basis")).not.toHaveText(basisBefore);
+  await expect(page.getByTestId("profit-per-hour")).not.toHaveText(profitBefore);
+  await expect(page.getByTestId("profit-per-hour-before")).toHaveText(profitBefore);
+  await expect(page.getByTestId("btn-rehearsed-m")).toHaveAttribute("aria-pressed", "true");
+  const after = await editNumbers(page);
+  expect(after.walking).not.toBe(before.walking);
+  expect(after.time).not.toBe(before.time);
+  const range = after.time!;
   expect(range).toMatch(/^(\d+–\d+ s|about \d+ s)$/);
 
   // After the change: the recorded second run plays with an honest verdict.

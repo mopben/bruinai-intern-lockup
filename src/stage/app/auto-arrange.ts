@@ -38,6 +38,7 @@ import {
   profitFromCapacity,
   resolveWorld,
   walkingPerOrder,
+  withRealWork,
   type Calibration,
   type Economics,
   type Layout,
@@ -231,8 +232,11 @@ class Evaluator {
   evaluated = 0;
   private readonly cache = new Map<string, ArrangeScore | null>();
   private readonly allowed: ReadonlySet<string>;
+  /** The calibration with real work times, for capacity (core/profit.ts). */
+  private readonly realWork: Calibration;
 
   constructor(private readonly input: ArrangeInput) {
+    this.realWork = withRealWork(input.calibration, input.economics);
     let start: World | null = null;
     try {
       start = resolveWorld(input.scan, input.setup, input.start);
@@ -275,7 +279,7 @@ class Evaluator {
       try {
         const table = buildPathTable(w);
         const p = predict(w, this.input.calibration, { table, reps, seed });
-        const cap = capacityPerHour(w, this.input.calibration, { table, reps, seed });
+        const cap = capacityPerHour(w, this.realWork, { table, reps, seed });
         const money = profitFromCapacity(w, this.input.economics, cap);
         if (!p.anyBlocked) out = { profitPerHour: money.profitPerHour.p50, runTimeS: p.lastFinish.p50, orderTimeS: p.meanOrderTime.p50, walkingM: p.walkingPerOrderM };
       } catch {

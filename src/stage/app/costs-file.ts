@@ -5,7 +5,8 @@
  *
  * Menu prices are keyed by menu item id and also carry the item's name, so a
  * file made for one kitchen still lands on another kitchen whose menu has the
- * same names but different ids. Worker wages are keyed by worker id only.
+ * same names but different ids. Worker wages and station work times are keyed
+ * by id only.
  */
 import { z } from "zod";
 import type { Economics, MenuPrice, Setup } from "../../core";
@@ -23,6 +24,8 @@ export interface CostsFile {
   readonly electricityPerHour: number;
   readonly otherPerHour: number;
   readonly demandPerHour: number;
+  /** Real work time per order at each station, seconds, keyed by station id. Optional in files made before it existed. */
+  readonly workS: Readonly<Record<string, number>>;
 }
 
 const money = z.number().refine(Number.isFinite, "must be a number").min(0, "must not be negative");
@@ -37,6 +40,7 @@ const costsFileSchema = z.object({
   electricityPerHour: money,
   otherPerHour: money,
   demandPerHour: money,
+  workS: z.record(z.string(), z.number().refine(Number.isFinite, "must be a number").positive("must be more than 0")).optional(),
 });
 
 /** The numbers in use, as a file. Menu entries carry the item's name from the setup. */
@@ -57,6 +61,7 @@ export function costsFileOf(econ: Economics, setup: Setup, savedAt = new Date())
     electricityPerHour: econ.electricityPerHour,
     otherPerHour: econ.otherPerHour,
     demandPerHour: econ.demandPerHour,
+    workS: { ...(econ.workS ?? {}) },
   };
 }
 
@@ -90,6 +95,7 @@ export function parseCosts(text: string): ParsedCosts {
       electricityPerHour: d.electricityPerHour,
       otherPerHour: d.otherPerHour,
       demandPerHour: Math.round(d.demandPerHour),
+      workS: d.workS ?? {},
     },
   };
 }
@@ -123,6 +129,7 @@ export function applyCosts(file: CostsFile, setup: Setup): AppliedCosts {
       electricityPerHour: file.electricityPerHour,
       otherPerHour: file.otherPerHour,
       demandPerHour: file.demandPerHour,
+      workS: { ...file.workS },
     },
     matched: setup.menu.length - missing.length,
     missing,

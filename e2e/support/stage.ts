@@ -135,6 +135,11 @@ export async function hook<T>(page: Page, name: string): Promise<T> {
   }, name)) as T;
 }
 
+/** Walking and time per order for the layout in Edit (the model's numbers; Edit's panel shows profit). */
+export async function editNumbers(page: Page): Promise<{ walking: string | null; time: string | null }> {
+  return hook(page, "editNumbers");
+}
+
 export interface RangeV {
   readonly p10: number;
   readonly p50: number;

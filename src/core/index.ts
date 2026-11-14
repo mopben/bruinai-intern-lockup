@@ -111,6 +111,10 @@ export { mulberry32, streamFor } from "./rng";
 // Profit per hour, from the owner's prices and costs
 export {
   capacityPerHour,
+  EXAMPLE_DEMAND_PER_HOUR,
+  EXAMPLE_WORK_S,
+  workSOf,
+  withRealWork,
   exampleEconomics,
   formatMoney,
   formatMoneyRange,

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildPathTable, calibrate, exampleEconomics, predict, profitOf, reconstructRun, resolveWorld, walkingPerOrder, type Layout, type PositionSample, type Scan, type Setup, type TapEvent } from "../../core";
+import { buildPathTable, calibrate, exampleEconomics, predict, scheduleRatePerHour, profitOf, reconstructRun, resolveWorld, walkingPerOrder, type Layout, type PositionSample, type Scan, type Setup, type TapEvent } from "../../core";
 import { CONTACT_GAP_M, overlaps } from "../scene/collision";
 import { dragArea, footprintRect } from "../scene/model";
 import { arrange, arrangeSteps, compareScores, movableIds, standProblems, type ArrangeInput } from "./auto-arrange";
@@ -21,7 +21,8 @@ const setup = read<Setup>("setup.json");
 const layout = read<Layout>("layout.json");
 const calibration = calibrate(resolveWorld(scan, setup, layout), reconstructRun(setup, lines<TapEvent>("taps.jsonl")), lines<PositionSample>("positions.jsonl"));
 const area = dragArea({ scan, setup });
-const economics = exampleEconomics(setup);
+// A rush at the recorded pace (about 600 orders an hour): more than the kitchen can make, so time saved is sales.
+const economics = { ...exampleEconomics(setup), demandPerHour: scheduleRatePerHour(setup) };
 const input: ArrangeInput = Object.freeze({ scan, setup, start: layout, area, calibration, economics });
 
 const ids = {

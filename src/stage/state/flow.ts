@@ -191,7 +191,6 @@ export function applyRehearsed(key: "m" | "w"): void {
   const k = kitchen.value;
   const original = originalLayout.value;
   if (!k || !original) return;
-  cancelSuggest();
   const want = key === "m" ? "move" : "staff";
   const c = candidates.value.find((x) => changeKind(k.scan, k.setup, original, x.layout) === want);
   if (c) playLayout.value = c.layout;

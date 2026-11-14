@@ -145,7 +145,7 @@ test("live path: tablet taps and camera positions drive the run, saved as a vali
 
     // Edit uses what the room just did.
     await goView(page, "play");
-    await expect(page.getByTestId("time-per-order").or(page.locator(".st-card .st-warn"))).toBeVisible();
+    await expect(page.getByTestId("profit-per-hour").or(page.locator(".st-card .st-warn"))).toBeVisible();
   } finally {
     camera.close();
     await tabletContext.close();

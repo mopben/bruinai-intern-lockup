@@ -1,6 +1,7 @@
 /**
  * Rule 4, one change by hand with an instant answer: a real pointer drag of
- * the Milk fridge changes walking per order during the drag, each update
+ * the Milk fridge changes what the kitchen can make an hour during the drag,
+ * each update
  * within a frame or two of the pointer move; locked equipment does not move;
  * a fourth worker by button and by W; reset restores.
  */
@@ -13,10 +14,10 @@ const MAX_LATENCY_MS = 100;
 test("rule 4: dragging the fridge answers during the drag, within a frame or two", async ({ page }) => {
   await openStage(page, { step: 2 });
   await expectStep(page, "play");
-  const walk0 = await text(page, "walking-per-order");
-  const time0 = await text(page, "time-per-order");
+  const profit0 = await text(page, "profit-per-hour");
+  const basis0 = await text(page, "profit-basis");
 
-  // Record pointer moves and every change of the walking number, with page timestamps.
+  // Record pointer moves and every change of the profit line (its "could make" count), with page timestamps.
   await page.evaluate(() => {
     const g = globalThis as unknown as { __moves: number[]; __changes: { t: number; v: string }[] };
     g.__moves = [];
@@ -26,9 +27,9 @@ test("rule 4: dragging the fridge answers during the drag, within a frame or two
       if (document.querySelector(".dr-hint.show")) (globalThis as unknown as { __hintSeen: boolean }).__hintSeen = true;
     }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"] });
     window.addEventListener("pointermove", () => g.__moves.push(performance.now()), { capture: true });
-    const target = document.querySelector('[data-testid="walking-per-order"]')?.closest(".st-num") as Element;
+    const target = document.querySelector('[data-testid="profit-per-hour"]')?.closest(".st-num") as Element;
     new MutationObserver(() => {
-      const v = document.querySelector('[data-testid="walking-per-order"]')?.textContent ?? "";
+      const v = document.querySelector('[data-testid="profit-basis"]')?.textContent ?? "";
       const last = g.__changes.at(-1)?.v;
       if (v !== last) g.__changes.push({ t: performance.now(), v });
     }).observe(target, { subtree: true, childList: true, characterData: true });
@@ -49,8 +50,8 @@ test("rule 4: dragging the fridge answers during the drag, within a frame or two
   // Still holding the mouse button: the number has already answered.
   const during = await page.evaluate(() => (globalThis as unknown as { __changes: { t: number; v: string }[] }).__changes);
   const moves = await page.evaluate(() => (globalThis as unknown as { __moves: number[] }).__moves);
-  expect(during.length, "walking per order changed while dragging").toBeGreaterThan(0);
-  expect(during.at(-1)!.v).not.toBe(walk0);
+  expect(during.length, "what it can make an hour changed while dragging").toBeGreaterThan(0);
+  expect(during.at(-1)!.v).not.toBe(basis0);
   for (const c of during) {
     const cause = moves.filter((m) => m <= c.t).at(-1);
     expect(cause, "a pointer move came before each change").toBeDefined();
@@ -61,11 +62,12 @@ test("rule 4: dragging the fridge answers during the drag, within a frame or two
   await page.mouse.up();
   const moved = (await mainDebug(page)).items.find((i) => i.id === BOX.fridge)!;
   expect(Math.hypot(moved.x - fridgeAt.x, moved.z - fridgeAt.z)).toBeGreaterThan(0.3);
-  await expect(page.getByTestId("walking-per-order-before")).toHaveText(walk0);
+  // It could not keep up with the orders coming in, so a faster kitchen makes more.
+  await expect(page.getByTestId("profit-per-hour-before")).toHaveText(profit0);
 
   // Locked equipment does not move, and says why.
   await page.keyboard.press("Backspace");
-  await expect(page.getByTestId("walking-per-order")).toHaveText(walk0);
+  await expect(page.getByTestId("profit-basis")).toHaveText(basis0);
   const d2 = await mainDebug(page);
   const espresso = d2.items.find((i) => i.id === BOX.make)!;
   expect(espresso.locked).toBe(true);
@@ -78,24 +80,23 @@ test("rule 4: dragging the fridge answers during the drag, within a frame or two
   expect([after.x, after.z]).toEqual([espresso.x, espresso.z]);
   await expect.poll(() => page.evaluate(() => (globalThis as unknown as { __hintSeen?: boolean }).__hintSeen === true)).toBe(true);
   await expect(page.locator(".dr-hint")).toContainText(/fixed|power|plumb|locked/i);
-  await expect(page.getByTestId("walking-per-order")).toHaveText(walk0);
+  await expect(page.getByTestId("profit-per-hour")).toHaveText(profit0);
 
-  // A fourth worker with the button: time changes, walking does not.
+  // A fourth worker with the button: profit changes, and goes back when taken away.
   await page.getByTestId(`btn-add-worker-${BOX.make}`).click();
-  await expect(page.getByTestId("time-per-order")).not.toHaveText(time0);
+  await expect(page.getByTestId("profit-per-hour")).not.toHaveText(profit0);
   await expect(page.getByTestId("staffing").locator(".st-hat")).toHaveCount(4);
   await page.getByTestId(`btn-remove-worker-${BOX.make}`).click();
   await expect(page.getByTestId("staffing").locator(".st-hat")).toHaveCount(3);
-  await expect(page.getByTestId("time-per-order")).toHaveText(time0);
+  await expect(page.getByTestId("profit-per-hour")).toHaveText(profit0);
 
   // And with W.
   await page.keyboard.press("w");
   await expect(page.getByTestId("staffing").locator(".st-hat")).toHaveCount(4);
-  await expect(page.getByTestId("time-per-order")).not.toHaveText(time0);
+  await expect(page.getByTestId("profit-per-hour")).not.toHaveText(profit0);
 
-  // Reset restores both numbers.
+  // Reset restores the number and the staffing.
   await page.getByTestId("btn-reset").click();
-  await expect(page.getByTestId("walking-per-order")).toHaveText(walk0);
-  await expect(page.getByTestId("time-per-order")).toHaveText(time0);
+  await expect(page.getByTestId("profit-per-hour")).toHaveText(profit0);
   await expect(page.getByTestId("staffing").locator(".st-hat")).toHaveCount(3);
 });

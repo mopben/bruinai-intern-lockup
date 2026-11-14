@@ -14,7 +14,7 @@
  */
 import { compareScores, arrangeSteps, ARRANGE_REPS, ARRANGE_SEED, ARRANGE_TIE_PROFIT, type ArrangeInput, type ArrangeProgress, type ArrangeScore } from "./auto-arrange";
 import { addWorker, removeWorker, workersAt } from "./kitchen-edit";
-import { buildPathTable, capacityPerHour, predict, profitFromCapacity, resolveWorld, type Layout } from "../../core";
+import { buildPathTable, capacityPerHour, predict, profitFromCapacity, resolveWorld, withRealWork, type Layout } from "../../core";
 
 export interface StaffChange {
   readonly stationId: string;
@@ -49,7 +49,7 @@ export function scoreLayout(input: ArrangeInput, layout: Layout): ArrangeScore |
     const table = buildPathTable(w);
     const p = predict(w, input.calibration, { table, reps: ARRANGE_REPS, seed: ARRANGE_SEED });
     if (p.anyBlocked) return null;
-    const cap = capacityPerHour(w, input.calibration, { table, reps: ARRANGE_REPS, seed: ARRANGE_SEED });
+    const cap = capacityPerHour(w, withRealWork(input.calibration, input.economics), { table, reps: ARRANGE_REPS, seed: ARRANGE_SEED });
     return {
       profitPerHour: profitFromCapacity(w, input.economics, cap).profitPerHour.p50,
       runTimeS: p.lastFinish.p50,

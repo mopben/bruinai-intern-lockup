@@ -120,14 +120,8 @@ export function keyHints(view: ViewId, live: boolean): readonly { readonly keys:
         ? [...nav, { keys: "P", does: `start ${view === "run" ? "Original run" : "After the change"}` }, { keys: "E", does: "end run" }]
         : [...nav, { keys: "P", does: `replay ${view === "run" ? "Original run" : "After the change"}` }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }];
     case "play":
-      return [
-        ...nav,
-        { keys: "M", does: "rehearsed move" },
-        { keys: "W", does: "rehearsed worker" },
-        { keys: "A", does: "suggest" },
-        { keys: "C", does: "costs" },
-        { keys: "⌫", does: "reset" },
-      ];
+      // The other keys (M, W, A, C, ⌫) are shown on their buttons in the panel.
+      return nav;
     case "compare":
       return [...nav, { keys: "P", does: "replay Before vs after" }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }];
     default:

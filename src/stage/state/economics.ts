@@ -10,12 +10,24 @@ import { explainError } from "../app/numbers";
 import { calibration, originalLayout } from "./derive";
 import { kitchen, playLayout } from "./store";
 
-const STORAGE_KEY = "dryrun.economics.v1";
+const STORAGE_KEY = "dryrun.economics.v2";
+/**
+ * Before v2 the example demand was the rehearsal's pace (about 600 an hour),
+ * and any edit saved it along with the rest. Those numbers are kept, but the
+ * demand goes back to the example.
+ */
+const OLD_STORAGE_KEY = "dryrun.economics.v1";
 
 function load(): Partial<Economics> | null {
   try {
     const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Partial<Economics>) : null;
+    if (raw) return JSON.parse(raw) as Partial<Economics>;
+    const old = globalThis.localStorage?.getItem(OLD_STORAGE_KEY);
+    if (!old) return null;
+    const { demandPerHour: _, ...rest } = JSON.parse(old) as Partial<Economics>;
+    globalThis.localStorage?.removeItem(OLD_STORAGE_KEY);
+    save(rest);
+    return rest;
   } catch {
     return null;
   }
@@ -51,6 +63,8 @@ export const economics = computed<Economics | null>(() => {
   }
   const wageByWorker: Record<string, number> = {};
   for (const [id, v] of Object.entries(s.wageByWorker ?? {})) if (typeof v === "number" && Number.isFinite(v) && v >= 0) wageByWorker[id] = v;
+  const workS: Record<string, number> = {};
+  for (const [id, v] of Object.entries(s.workS ?? {})) if (typeof v === "number" && Number.isFinite(v) && v > 0) workS[id] = v;
   return {
     currency: typeof s.currency === "string" && s.currency.length <= 4 ? s.currency : ex.currency,
     menu,
@@ -59,13 +73,14 @@ export const economics = computed<Economics | null>(() => {
     electricityPerHour: num(s.electricityPerHour, ex.electricityPerHour),
     otherPerHour: num(s.otherPerHour, ex.otherPerHour),
     demandPerHour: num(s.demandPerHour, ex.demandPerHour),
+    workS,
   };
 });
 
 /** True while every number is still an example. */
 export const economicsAreExamples = computed(() => storedEconomics.value === null);
 
-/** Changes some of the numbers; `wageByWorker`, when given, replaces the whole map. Anything that depends on them (suggestions) is told by the caller. */
+/** Changes some of the numbers; `wageByWorker` or `workS`, when given, replaces the whole map. Anything that depends on them (suggestions) is told by the caller. */
 export function setEconomics(change: Partial<Economics>): void {
   const cur = economics.value;
   if (!cur) return;
@@ -85,7 +100,8 @@ export function useExampleEconomics(): void {
   save(null);
 }
 
-function profitFor(layout: ReturnType<typeof originalLayout.peek>): Computed<ProfitEstimate> | null {
+/** Profit per hour of any layout of this kitchen, with the numbers in use. */
+export function profitFor(layout: ReturnType<typeof originalLayout.peek>): Computed<ProfitEstimate> | null {
   const k = kitchen.value;
   const econ = economics.value;
   const c = calibration.value;

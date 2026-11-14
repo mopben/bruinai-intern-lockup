@@ -29,7 +29,7 @@ Live path first; **from recordings** in brackets. Numbers shown are the recordin
 | --- | --- | --- | --- | --- |
 | 0:00 | 1 Build | Sweep the phone, press Send. (Recordings: the scan replays by itself.) | **P** replays the scan | Plain boxes rise, then get names |
 | 0:30 | 3 Original run | Start the room. (Recordings: it plays on arrival.) | **3**, then select Original run and **P** (live); **F** (recordings) | Dots move and tickets pile up. Ends by itself, or **E** |
-| 1:45 | 2 Edit | Hand the mouse to a judge: drag the fridge, add a worker, or change the simulated order count. **A** suggests changes; **C** opens the prices and costs section | **2**, **A**, **C** | Walking, simulated time and profit per hour update during the edit |
+| 1:45 | 2 Edit | Hand the mouse to a judge: drag the fridge, add a worker, or change the simulated order count. **A** suggests changes; **C** opens the prices and costs section | **2**, **A**, **C** | Walking, simulated time, what the kitchen can make an hour and profit per hour update during the edit (with the example numbers, moving the fridge is worth a few dollars an hour) |
 | 2:15 | 3 After the change | Make the same change in the room, then run again. (Recordings: the matching run plays.) | **3**, select After the change, then **P** (live); **F** or **E** (recordings) | Predicted range, measured mean, and a plain verdict; the real run keeps its own orders |
 | 2:45 | 3 Before vs after | "Same orders, same luck, before and after." | **3** (P plays again) | Two simulated kitchens side by side |
 

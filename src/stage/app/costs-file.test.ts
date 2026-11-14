@@ -17,6 +17,7 @@ const econ: Economics = {
   electricityPerHour: 2,
   otherPerHour: 15,
   demandPerHour: 80,
+  workS: { "station-1": 25 },
 };
 
 describe("prices-and-costs file", () => {
@@ -36,7 +37,16 @@ describe("prices-and-costs file", () => {
       electricityPerHour: 2,
       otherPerHour: 15,
       demandPerHour: 80,
+      workS: { "station-1": 25 },
     });
+  });
+
+  it("loads a file made before work times existed", () => {
+    const { workS: _, ...old } = costsFileOf(econ, setup);
+    const parsed = parseCosts(JSON.stringify(old));
+    if (!parsed.ok) throw new Error(parsed.error);
+    expect(applyCosts(parsed.value, setup).economics.workS).toEqual({});
+    expect(parseCosts(JSON.stringify({ ...old, workS: { a: 0 } }))).toMatchObject({ ok: false, error: expect.stringContaining("workS") });
   });
 
   it("matches menu items by name when the ids differ, and lists the ones it cannot find", () => {

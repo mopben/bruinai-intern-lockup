@@ -6,8 +6,21 @@
  * as many as it can make: the smaller of that demand and its capacity. Capacity
  * comes from the simulation: a long queue of orders is released at once and the
  * rate at which the kitchen finishes them (first finish to last) is how many it
- * can make in an hour. So the time to make an order, walking included, sets
- * the sales, and wages are paid for every worker whether busy or not.
+ * can make in an hour.
+ *
+ * The rehearsal is acted out fast: a tap at a station stands for the work done
+ * there, so the measured work times are a couple of seconds where the real
+ * work (pulling a shot, steaming milk) takes far longer. Capacity is worked out
+ * with each station's work stretched to how long it really takes (`workS`,
+ * owner's numbers, EXAMPLE_WORK_S by default), keeping the rehearsal's spread.
+ * Walking is real walking in the rehearsal and is kept as measured. The
+ * predicted run times elsewhere stay in rehearsal time, because they are
+ * checked against a recorded rehearsal.
+ *
+ * So when the kitchen cannot keep up, the time to make an
+ * order, walking included, sets the sales; when it can, a faster layout sells
+ * no more (it only shortens waits). Wages are paid for every worker whether
+ * busy or not.
  *
  *   profit per hour = sales x (price - ingredients)  (by the menu mix)
  *                   - each worker's wage - electricity - other costs
@@ -19,7 +32,7 @@ import type { Calibration } from "./calibrate";
 import { compileModel } from "./model";
 import { mixSeed } from "./rng";
 import { runReplication, type Releases } from "./sim";
-import { rangeOf, type Range } from "./stats";
+import { median, rangeOf, type Range } from "./stats";
 import type { Setup } from "./types";
 import { buildPathTable, type PathTable } from "./walking";
 import type { World } from "./world";
@@ -48,6 +61,12 @@ export interface Economics {
   readonly otherPerHour: number;
   /** Orders that come in during a busy hour. */
   readonly demandPerHour: number;
+  /**
+   * How long the work at a station really takes, per order step (seconds,
+   * walking not included), keyed by station id. A station left out takes
+   * EXAMPLE_WORK_S.
+   */
+  readonly workS?: Readonly<Record<string, number>>;
 }
 
 export interface ProfitEstimate {
@@ -71,11 +90,52 @@ export const CAPACITY_ORDERS = 30;
 export const PROFIT_REPS = 100;
 export const PROFIT_SEED = 1;
 
-/** Example numbers for a small café, to be edited. The demand is the rate of the recorded run's orders. */
+/**
+ * Example orders in a busy hour for a small café: more than one a minute.
+ *
+ * Not the pace of the recorded run. A dry run is a rehearsal squeezed into a
+ * minute or so (the example fixtures release a latte every 6 s, about 600 an
+ * hour), and an hour at that pace would be far busier than any small café. With
+ * that as demand the kitchen could never keep up, so every second saved at the
+ * slowest station turned straight into sales and a closer fridge showed
+ * hundreds of dollars an hour.
+ */
+export const EXAMPLE_DEMAND_PER_HOUR = 80;
+
+/**
+ * Example real work time per station per order (seconds), the same for every
+ * station until the owner sets each one: roughly a shot and steamed milk.
+ * Ringing up an order or finishing a cup is usually quicker, so set those.
+ */
+export const EXAMPLE_WORK_S = 40;
+
+/** Example numbers for a small café, to be edited. */
 export function exampleEconomics(setup: Setup): Economics {
   const menu: Record<string, MenuPrice> = {};
   for (const m of setup.menu) menu[m.id] = { price: 4.5, ingredients: 1.2 };
-  return { currency: "$", menu, wagePerHour: 18, electricityPerHour: 1.5, otherPerHour: 12, demandPerHour: scheduleRatePerHour(setup) };
+  return { currency: "$", menu, wagePerHour: 18, electricityPerHour: 1.5, otherPerHour: 12, demandPerHour: EXAMPLE_DEMAND_PER_HOUR };
+}
+
+/** How long the work at a station really takes per order: the owner's number, or the example. */
+export function workSOf(econ: Economics, stationId: string): number {
+  const own = econ.workS?.[stationId];
+  return typeof own === "number" && Number.isFinite(own) && own > 0 ? own : EXAMPLE_WORK_S;
+}
+
+/**
+ * The calibration with each station's work samples stretched so their median
+ * is the real work time (`workSOf`). The spread keeps its shape: a station that
+ * varied by a quarter in the rehearsal varies by a quarter for real. Walking
+ * pace is unchanged.
+ */
+export function withRealWork(calibration: Calibration, econ: Economics): Calibration {
+  const workSamples: Record<string, readonly number[]> = {};
+  for (const [id, samples] of Object.entries(calibration.workSamples)) {
+    const m = samples.length > 0 ? median(samples) : 0;
+    const k = m > 0 ? workSOf(econ, id) / m : 1;
+    workSamples[id] = samples.map((v) => v * k);
+  }
+  return { ...calibration, workSamples };
 }
 
 /** What one worker is paid per hour: their own wage if set, the usual one otherwise. */
@@ -84,7 +144,11 @@ export function wageOf(econ: Economics, workerId: string): number {
   return typeof own === "number" && Number.isFinite(own) ? own : econ.wagePerHour;
 }
 
-/** Orders per hour in the setup's schedule (first to last release), or 60 when it cannot tell. */
+/**
+ * Orders per hour in the setup's schedule (first to last release), or 60 when
+ * it cannot tell. The pace of the rehearsal, not of a real hour: see
+ * EXAMPLE_DEMAND_PER_HOUR.
+ */
 export function scheduleRatePerHour(setup: Setup): number {
   const ts = setup.schedule.orders.map((o) => o.t).sort((a, b) => a - b);
   if (ts.length < 2) return 60;
@@ -113,7 +177,7 @@ export interface CapacityOptions {
   readonly table?: PathTable;
 }
 
-/** Orders per hour the kitchen finishes when it never runs out of orders. */
+/** Orders per hour the kitchen finishes when it never runs out of orders, at the calibration's work times. */
 export function capacityPerHour(world: World, calibration: Calibration, opts: CapacityOptions = {}): Range {
   const reps = Math.max(1, Math.floor(opts.reps ?? PROFIT_REPS));
   const seed = mixSeed(opts.seed ?? PROFIT_SEED, 0xca9);
@@ -163,9 +227,9 @@ export function profitFromCapacity(world: World, econ: Economics, capacity: Rang
   };
 }
 
-/** Profit per hour of this world. */
+/** Profit per hour of this world, with the work at each station taking its real time (`withRealWork`). */
 export function profitOf(world: World, calibration: Calibration, econ: Economics, opts: CapacityOptions = {}): ProfitEstimate {
-  return profitFromCapacity(world, econ, capacityPerHour(world, calibration, opts));
+  return profitFromCapacity(world, econ, capacityPerHour(world, withRealWork(calibration, econ), opts));
 }
 
 /**

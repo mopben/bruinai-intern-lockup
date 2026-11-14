@@ -58,7 +58,7 @@ for (const step of VIEW_IDS) {
     const want: Record<string, string> = {
       scan: "step-strip",
       run: "run-clock",
-      play: "walking-per-order",
+      play: "profit-per-hour",
       test: "prediction-range",
       compare: "compare-after-walking",
     };
@@ -71,7 +71,7 @@ for (const step of VIEW_IDS) {
 test("rule 9: switching an input in Inputs keeps the change", async ({ page }) => {
   await openStage(page, { speed: 32, step: 2 });
   await page.keyboard.press("m");
-  const walk = await text(page, "walking-per-order");
+  const walk = await text(page, "profit-basis");
   await page.keyboard.press("1");
   await expect(page.getByTestId("inputs-section")).toBeVisible();
   for (const input of ["positions", "taps"]) {
@@ -82,7 +82,7 @@ test("rule 9: switching an input in Inputs keeps the change", async ({ page }) =
   }
   await page.keyboard.press("2");
   await expectStep(page, "play");
-  await expect(page.getByTestId("walking-per-order")).toHaveText(walk);
+  await expect(page.getByTestId("profit-basis")).toHaveText(walk);
 });
 
 test("keys that do nothing here say so, and steps entered early explain themselves", async ({ page }) => {

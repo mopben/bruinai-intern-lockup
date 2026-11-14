@@ -22,12 +22,12 @@ const SIZES = [
 const ESSENTIAL: Record<string, readonly string[]> = {
   scan: [],
   run: ["run-clock", "orders-done", "btn-play", "btn-faster", "btn-skip", "run-story"],
-  play: ["walking-per-order", "time-per-order", "prediction-range", "btn-rehearsed-m", "btn-rehearsed-w", "btn-reset", `btn-add-worker-${BOX.make}`],
+  play: ["profit-per-hour", "btn-suggest", "btn-rehearsed-m", "btn-rehearsed-w", "btn-reset", `btn-add-worker-${BOX.make}`],
   test: ["prediction-range", "run-clock", "btn-play", "measured-result", "verdict"],
   compare: ["compare-before-walking", "compare-before-time", "compare-after-walking", "compare-after-time", "compare-clock", "btn-play", "btn-faster"],
 };
 /** Numbers that must sit on one line. */
-const ONE_LINE = ["walking-per-order", "time-per-order", "run-clock", "compare-before-time", "compare-after-time", "compare-before-walking", "compare-after-walking"];
+const ONE_LINE = ["profit-per-hour", "run-clock", "compare-before-time", "compare-after-time", "compare-before-walking", "compare-after-walking"];
 
 async function checkStep(page: Page, step: string, size: string): Promise<string[]> {
   const problems: string[] = [];
@@ -89,7 +89,7 @@ for (const vp of SIZES) {
     await page.keyboard.press("2");
     await expectStep(page, "play");
     await page.keyboard.press("m");
-    await expect(page.getByTestId("walking-per-order-before")).toBeVisible();
+    await expect(page.getByTestId("btn-rehearsed-m")).toHaveAttribute("aria-pressed", "true");
     await settled(page, "play", size, problems);
     await shot("2-edit");
 

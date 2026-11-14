@@ -1,104 +1,46 @@
 /**
- * Step 2, Edit. The judge changes one thing; the two numbers answer during the drag,
- * and so does profit per hour. Suggestions rank changes by that profit.
+ * Step 2, Edit. Profit per hour on top; under it, ideas that would raise it
+ * (the rehearsed changes, then whatever Find more turns up), each one click to
+ * try. Workers per station and prices and costs sit below for fine-tuning.
  */
-import { formatMetres, formatMoney, formatMoneyRange, formatRange, formatSeconds } from "../../core";
+import { formatMoney, formatMoneyRange, type Layout } from "../../core";
 import type { Suggestion } from "../app/suggest";
 import { addWorker, removeWorker, workersAt } from "../app/kitchen-edit";
-import { changeKind } from "../app/layout-match";
-import { clampOrders, MAX_ORDERS, MIN_ORDERS } from "../app/orders";
-import { changeDirection } from "../app/words";
-import { baselineNumbers, calibration, firstRunProblem, originalLayout, playNumbers } from "../state/derive";
-import { baselineProfit, costsOpen, economics, playProfit } from "../state/economics";
+import { changeKind, layoutsMatch } from "../app/layout-match";
+import { calibration, firstRunProblem, originalLayout, playNumbers } from "../state/derive";
+import { baselineProfit, costsOpen, economics, playProfit, profitFor } from "../state/economics";
 import { applySuggestion, startSuggest, suggestState, undoSuggestion } from "../state/suggest";
 import { applyRehearsed, resetPlay } from "../state/flow";
-import { candidates, kitchen, orderCount, playLayout } from "../state/store";
-import { BigNum, Btn } from "./bits";
+import { candidates, kitchen, playLayout } from "../state/store";
+import { BigNum, Btn, Key } from "./bits";
 import { CostsSection } from "./CostsSection";
-import { ExtrapolationNote } from "./Basis";
 
-function Staffing() {
-  const k = kitchen.value;
-  const layout = playLayout.value;
-  if (!k || !layout) return null;
-  const route = k.setup.menu.flatMap((m) => m.steps.map((s) => s.stationId));
-  const stations = [...new Set(route)];
-  const name = (id: string) => k.setup.items.find((i) => i.boxId === id)?.name ?? id;
-  return (
-    <div class="st-staff" data-testid="staffing">
-      {stations.map((id) => (
-        <div class="line" key={id}>
-          <span>{name(id)}</span>
-          <span class="st-hats">
-            {layout.workers
-              .filter((w) => w.stationId === id)
-              .map((w) => (
-                <span key={w.id} class="st-hat" style={{ background: w.color }} title={w.name} />
-              ))}
-          </span>
-          <Btn small label="−" onClick={() => (playLayout.value = removeWorker(layout, id))} disabled={workersAt(layout, id) === 0} testId={`btn-remove-worker-${id}`} title={`Take a worker away from ${name(id)}`} />
-          <Btn small label="+ worker" onClick={() => (playLayout.value = addWorker(layout, id))} testId={`btn-add-worker-${id}`} />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/** Lists changes ranked by profit; pressing again while it searches stops it. */
-function SuggestButton() {
-  const st = suggestState.value;
-  const cal = calibration.value;
-  const running = st.kind === "running";
-  return (
-    <Btn
-      small
-      kind={running ? "on" : "plain"}
-      label={running ? `Stop (${Math.round(st.fraction * 100)}%)` : "Suggest"}
-      k="A"
-      onClick={startSuggest}
-      disabled={!(cal && cal.ok) && !running}
-      testId="btn-suggest"
-      title="Try more or fewer workers and moving the unlocked boxes, ranked by profit per hour"
-    />
-  );
-}
-
-/** The quick changes: the rehearsed ones, suggestions, costs and reset. */
-function Rehearsed() {
-  const k = kitchen.value;
-  const original = originalLayout.value;
-  if (!k || !original) return null;
-  const list = candidates.value.map((c) => ({ c, kind: changeKind(k.scan, k.setup, original, c.layout) }));
-  const move = list.find((x) => x.kind === "move");
-  const staff = list.find((x) => x.kind === "staff");
-  return (
-    <div class="st-row">
-      {move ? <Btn small label="Move fridge" title={move.c.meta.title} k="M" onClick={() => applyRehearsed("m")} testId="btn-rehearsed-m" /> : null}
-      {staff ? <Btn small label="Add worker" title={staff.c.meta.title} k="W" onClick={() => applyRehearsed("w")} testId="btn-rehearsed-w" /> : null}
-      <SuggestButton />
-      <Btn small label="Costs" title="Prices and costs" k="C" onClick={() => (costsOpen.value = !costsOpen.value)} testId="btn-costs" />
-      <Btn small label="Reset" k="⌫" onClick={resetPlay} testId="btn-reset" />
-    </div>
-  );
+function itemName(id: string): string {
+  return kitchen.value?.setup.items.find((i) => i.boxId === id)?.name ?? id;
 }
 
 function names(ids: readonly string[]): string {
-  const k = kitchen.value;
-  const list = ids.map((id) => k?.setup.items.find((i) => i.boxId === id)?.name ?? id);
+  const list = ids.map(itemName);
   if (list.length <= 1) return list.join("");
   return `${list.slice(0, -1).join(", ")} and ${list[list.length - 1]}`;
 }
 
 /** A suggestion in words: "Add a worker at Espresso machine and move Finish". */
 function describe(s: Suggestion): string {
-  const k = kitchen.value;
-  const name = (id: string) => k?.setup.items.find((i) => i.boxId === id)?.name ?? id;
-  const staff = s.staff ? (s.staff.delta > 0 ? `Add a worker at ${name(s.staff.stationId)}` : `Take a worker off ${name(s.staff.stationId)}`) : "";
+  const staff = s.staff ? (s.staff.delta > 0 ? `Add a worker at ${itemName(s.staff.stationId)}` : `Take a worker off ${itemName(s.staff.stationId)}`) : "";
   const move = s.moved.length > 0 ? `${staff ? "move" : "Move"} ${names(s.moved)}` : "";
   return [staff, move].filter(Boolean).join(" and ");
 }
 
-/** The headline: profit per hour, what it is made of, and the buttons that change it. */
+/** "+$479 an hour", or "same profit" when it hardly moves. */
+function gainText(gain: number | null, sameNote: string): string {
+  const cur = economics.value?.currency ?? "$";
+  if (gain === null) return "";
+  if (Math.abs(gain) < 1) return sameNote;
+  return `${gain > 0 ? "+" : "−"}${formatMoney(Math.abs(gain), cur)}/h`;
+}
+
+/** The headline: profit per hour and what it is made of. */
 function Money() {
   const p = playProfit.value;
   const before = baselineProfit.value;
@@ -135,116 +77,177 @@ function Money() {
   );
 }
 
-function Suggestions() {
-  const st = suggestState.value;
-  const econ = economics.value;
-  if (!econ) return null;
-  if (st.kind === "running") return null;
-  if (st.kind === "failed") return <p class="st-note" data-testid="suggest-result">{st.reason}</p>;
-  if (st.kind !== "done") return null;
-  if (st.list.length === 0) {
-    return (
-      <p class="st-small" data-testid="suggest-result">
-        No better change found.
-      </p>
-    );
-  }
-  const onBoard = playLayout.value;
+/** One idea: the whole row is the button; the one on the board is marked. */
+function Idea(props: { readonly text: string; readonly gain: string; readonly on: boolean; readonly k?: string; readonly onClick: () => void; readonly testId: string; readonly rowTestId?: string; readonly title?: string }) {
   return (
-    <div class="st-suggestions" data-testid="suggest-result">
-      {st.list.map((x, i) => {
-        const on = onBoard === x.s.layout;
-        const gain = Math.abs(x.gainPerHour) < 1
-          ? `same profit, orders ${formatSeconds(x.waitAfterS)} not ${formatSeconds(x.waitBeforeS)}`
-          : `${x.gainPerHour > 0 ? "+" : ""}${formatMoney(x.gainPerHour, econ.currency)} an hour`;
-        return (
-          <div class={`st-suggestion${on ? " on" : ""}`} key={x.s.id} data-testid={`suggestion-${i}`}>
-            <Btn small kind={on ? "on" : "plain"} label={on ? "Showing" : "Try"} onClick={() => applySuggestion(x.s)} testId={`btn-try-suggestion-${i}`} />
-            <span class="text">{describe(x.s)}</span>
-            <span class="gain">{gain}</span>
-          </div>
-        );
-      })}
-      {st.list.some((x) => x.s.layout === onBoard) ? (
-        <p class="st-small">
-          <button type="button" class="st-link" onClick={undoSuggestion} data-testid="btn-undo-suggestion">
-            Back to before
-          </button>
-        </p>
-      ) : null}
-    </div>
+    <button
+      type="button"
+      class={`st-idea${props.on ? " on" : ""}`}
+      aria-pressed={props.on}
+      onClick={props.onClick}
+      data-testid={props.testId}
+      title={props.title}
+    >
+      <span class="mark" aria-hidden="true" />
+      <span class="text" data-testid={props.rowTestId}>{props.text}</span>
+      <span class="gain">{props.gain}</span>
+      {props.k ? <Key k={props.k} /> : null}
+    </button>
   );
 }
 
-function Orders() {
-  const schedule = kitchen.value?.setup.schedule.orders;
-  if (!schedule) return null;
-  const count = orderCount.value ?? schedule.length;
-  const setCount = (n: number) => {
-    const next = clampOrders(n);
-    orderCount.value = next === schedule.length ? null : next;
-  };
+/** The rehearsed changes (keys M and W), each with what it would do to profit. */
+function rehearsedIdeas(): { readonly key: "m" | "w"; readonly title: string; readonly layout: Layout; readonly gain: number | null; readonly faster: boolean }[] {
+  const k = kitchen.value;
+  const original = originalLayout.value;
+  const before = baselineProfit.value;
+  if (!k || !original) return [];
+  const out: { key: "m" | "w"; title: string; layout: Layout; gain: number | null; faster: boolean }[] = [];
+  for (const key of ["m", "w"] as const) {
+    const want = key === "m" ? "move" : "staff";
+    const c = candidates.value.find((x) => changeKind(k.scan, k.setup, original, x.layout) === want);
+    if (!c) continue;
+    const p = profitFor(c.layout);
+    const gain = p && p.ok && before && before.ok ? p.value.profitPerHour.p50 - before.value.profitPerHour.p50 : null;
+    // When the kitchen already keeps up with demand, a faster layout sells no more; say it is faster.
+    const faster = !!(p && p.ok && before && before.ok && p.value.capacityPerHour.p50 > before.value.capacityPerHour.p50 + 1);
+    out.push({ key, title: c.meta.title, layout: c.layout, gain, faster });
+  }
+  return out;
+}
+
+function Ideas() {
+  const st = suggestState.value;
+  const cal = calibration.value;
+  const onBoard = playLayout.value;
+  const running = st.kind === "running";
+  const rehearsed = rehearsedIdeas();
+  const k = kitchen.value;
+  // A found idea that is the same as a rehearsed one is shown once, as the rehearsed one.
+  const found = st.kind === "done" && k ? st.list.filter((x) => !rehearsed.some((r) => layoutsMatch(k.scan, k.setup, r.layout, x.s.layout))) : [];
+  const showingFound = found.some((x) => x.s.layout === onBoard);
   return (
-    <div class="st-row" aria-label="Orders in the rush">
-      <span>Orders in the rush</span>
-      <Btn small label="−" onClick={() => setCount(count - 1)} disabled={count <= MIN_ORDERS} testId="btn-orders-less" />
-      <span data-testid="orders-count">{count}</span>
-      <Btn small label="+" onClick={() => setCount(count + 1)} disabled={count >= MAX_ORDERS} testId="btn-orders-more" />
-      {count !== schedule.length ? <Btn small label="Reset" onClick={() => (orderCount.value = null)} testId="btn-orders-reset" /> : null}
-    </div>
+    <section class="st-ideas" aria-label="Ideas">
+      <div class="st-ideas-head">
+        <h2>Ideas</h2>
+        <Btn
+          small
+          kind={running ? "on" : "primary"}
+          label={running ? `Stop (${Math.round(st.fraction * 100)}%)` : st.kind === "done" ? "Search again" : "Find more"}
+          k="A"
+          onClick={startSuggest}
+          disabled={!(cal && cal.ok) && !running}
+          testId="btn-suggest"
+          title="Try more or fewer workers and moving the unlocked boxes, ranked by profit per hour"
+        />
+      </div>
+      <div class="st-idea-list">
+        {rehearsed.map((r) => (
+          <Idea
+            key={r.key}
+            text={r.title}
+            gain={gainText(r.gain, r.faster ? "same profit, faster" : "same profit")}
+            on={onBoard === r.layout}
+            k={r.key.toUpperCase()}
+            onClick={() => applyRehearsed(r.key)}
+            testId={`btn-rehearsed-${r.key}`}
+            title="The change rehearsed for the demo: there is a recorded run of it"
+          />
+        ))}
+        {st.kind === "done" ? (
+          <div class="st-suggestions" data-testid="suggest-result">
+            {found.length === 0 ? <p class="st-small">{rehearsed.length > 0 ? "Nothing better than these found." : "No better change found."}</p> : null}
+            {found.map((x, i) => (
+              <div key={x.s.id} data-testid={`suggestion-${i}`}>
+                <Idea
+                  text={describe(x.s)}
+                  gain={gainText(x.gainPerHour, "same profit, shorter waits")}
+                  on={onBoard === x.s.layout}
+                  onClick={() => applySuggestion(x.s)}
+                  testId={`btn-try-suggestion-${i}`}
+                />
+              </div>
+            ))}
+          </div>
+        ) : null}
+        {st.kind === "failed" ? (
+          <p class="st-note" data-testid="suggest-result">
+            {st.reason}
+          </p>
+        ) : null}
+        {running ? <p class="st-small">Trying staffing changes and new spots for the unlocked boxes…</p> : null}
+        {st.kind === "idle" && rehearsed.length === 0 ? <p class="st-small">Press Find more to search for changes that make more profit.</p> : null}
+      </div>
+      {showingFound ? (
+        <button type="button" class="st-link st-small" onClick={undoSuggestion} data-testid="btn-undo-suggestion">
+          Back to before
+        </button>
+      ) : null}
+    </section>
+  );
+}
+
+/** Workers per station: a − / + stepper, the hats show who is there. */
+function Staffing() {
+  const k = kitchen.value;
+  const layout = playLayout.value;
+  if (!k || !layout) return null;
+  const stations = [...new Set(k.setup.menu.flatMap((m) => m.steps.map((s) => s.stationId)))];
+  return (
+    <section class="st-staff" data-testid="staffing" aria-label="Workers">
+      <h2>Workers</h2>
+      {stations.map((id) => (
+        <div class="line" key={id}>
+          <span class="name">{itemName(id)}</span>
+          <span class="st-hats">
+            {layout.workers
+              .filter((w) => w.stationId === id)
+              .map((w) => (
+                <span key={w.id} class="st-hat" style={{ background: w.color }} title={w.name} />
+              ))}
+          </span>
+          <span class="st-stepper">
+            <button
+              type="button"
+              onClick={() => (playLayout.value = removeWorker(layout, id))}
+              disabled={workersAt(layout, id) === 0}
+              data-testid={`btn-remove-worker-${id}`}
+              title={`Take a worker away from ${itemName(id)}`}
+              aria-label={`Take a worker away from ${itemName(id)}`}
+            >
+              −
+            </button>
+            <button
+              type="button"
+              onClick={() => (playLayout.value = addWorker(layout, id))}
+              data-testid={`btn-add-worker-${id}`}
+              title={`Add a worker at ${itemName(id)}`}
+              aria-label={`Add a worker at ${itemName(id)}`}
+            >
+              +
+            </button>
+          </span>
+        </div>
+      ))}
+    </section>
   );
 }
 
 export function PlayRail() {
   const n = playNumbers.value;
-  const before = baselineNumbers.value;
   const problem = firstRunProblem.value;
   if (!n) return <div class="st-card"><h1>Change one thing</h1><p class="st-note">{problem}</p></div>;
-  const walk = n.walking.ok ? n.walking.value.perOrderM : null;
-  const walkBefore = before?.walking.ok ? before.walking.value.perOrderM : null;
-  const time = n.time.ok ? n.time.value : null;
-  const originalCount = kitchen.value?.setup.schedule.orders.length ?? 0;
-  const count = orderCount.value ?? originalCount;
-  const countChanged = count !== originalCount;
-  const timeBefore = before?.time.ok ? before.time.value : null;
-  const walkChanged = walk !== null && walkBefore !== null && formatMetres(walk) !== formatMetres(walkBefore);
-  const timeChanged = time && timeBefore && formatRange(time.meanOrderTime) !== formatRange(timeBefore.meanOrderTime);
-  const dir = time && timeBefore && timeChanged ? changeDirection(timeBefore.meanOrderTime.p50, time.meanOrderTime.p50) : null;
   return (
     <div class="st-card play">
       <Money />
-      <Rehearsed />
-      <CostsSection />
-      <div class="st-nums pair">
-        <BigNum
-          what="Walking per order"
-          value={walk === null ? null : formatMetres(walk)}
-          cannot={n.walking.ok ? null : n.walking.message}
-          was={walkChanged && walkBefore !== null ? formatMetres(walkBefore) : null}
-          dir={walkChanged && walk !== null && walkBefore !== null ? (walk < walkBefore ? "less walking" : "more walking") : null}
-          how=""
-          testId="walking-per-order"
-        />
-        <BigNum
-          what="Time per order"
-          value={time ? formatRange(time.meanOrderTime) : null}
-          cannot={n.time.ok ? null : n.time.message}
-          was={timeChanged && timeBefore ? formatRange(timeBefore.meanOrderTime) : null}
-          dir={dir}
-          how=""
-          testId="time-per-order"
-        />
-      </div>
       {problem ? <p class="st-note">{problem}</p> : null}
-      {time ? (
-        <p class="st-say st-predict">
-          Prediction{countChanged ? ` (${count} orders)` : ""}: <span data-testid="prediction-range">{formatRange(time.meanOrderTime)}</span>
-        </p>
-      ) : null}
+      <Ideas />
       <Staffing />
-      <Orders />
-      <Suggestions />
-      <ExtrapolationNote prediction={time} />
+      <div class="st-row st-play-foot">
+        <Btn small label={costsOpen.value ? "Hide prices and costs" : "Prices and costs"} k="C" onClick={() => (costsOpen.value = !costsOpen.value)} testId="btn-costs" />
+        <Btn small label="Reset" k="⌫" onClick={resetPlay} testId="btn-reset" title="Put everything back as it was in the first run" />
+      </div>
+      <CostsSection />
     </div>
   );
 }

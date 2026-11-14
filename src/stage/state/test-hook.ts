@@ -6,6 +6,8 @@
  */
 import type { SceneDebug } from "../scene";
 import type { StepId, ViewId } from "../app/steps";
+import { formatMetres, formatRange } from "../../core";
+import { playNumbers } from "./derive";
 import { mainScene, namedScenes } from "./scene-ref";
 import { currentStep, firstRun, frozen, outcome, playLayout, session, sources, view, testPlan } from "./store";
 
@@ -20,6 +22,8 @@ export interface DryRunTestHook {
   readonly outcome: () => unknown;
   readonly firstRun: () => unknown;
   readonly playLayout: () => unknown;
+  /** Walking and time per order for the layout in Edit, formatted as Compare shows them (Edit itself shows profit). */
+  readonly editNumbers: () => { readonly walking: string | null; readonly time: string | null };
   readonly main: () => SceneDebug | null;
   readonly scene: (name: string) => SceneDebug | null;
   readonly sceneNames: () => readonly string[];
@@ -48,6 +52,13 @@ export function installTestHook(): void {
       return r ? { label: r.label, origin: r.origin, replaced: r.replaced, savedId: r.savedId ?? null, taps: r.taps.length, positions: r.positions.length } : null;
     },
     playLayout: () => playLayout.value,
+    editNumbers: () => {
+      const n = playNumbers.value;
+      return {
+        walking: n?.walking.ok ? formatMetres(n.walking.value.perOrderM) : null,
+        time: n?.time.ok ? formatRange(n.time.value.meanOrderTime) : null,
+      };
+    },
     main: () => mainScene()?.debug() ?? null,
     scene: (name: string) => namedScenes().get(name)?.debug() ?? null,
     sceneNames: () => [...namedScenes().keys()],

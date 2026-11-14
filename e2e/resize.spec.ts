@@ -80,9 +80,9 @@ test("rule 9: fullscreen, a hidden tab and a lost WebGL context all redraw", asy
   await expect.poll(async () => (await page.evaluate(() => (globalThis as unknown as { __dryrun: { main(): { contextRestored: number } } }).__dryrun.main().contextRestored))).toBe(1);
   await expectDrawn(page, '[data-testid="kitchen-scene"] canvas');
   // Still interactive: the rehearsed change still answers.
-  const walk = await page.getByTestId("walking-per-order").innerText();
+  const basis = await page.getByTestId("profit-basis").innerText();
   await page.keyboard.press("m");
-  await expect(page.getByTestId("walking-per-order")).not.toHaveText(walk);
+  await expect(page.getByTestId("profit-basis")).not.toHaveText(basis);
 
   // Fullscreen key (Shift+F): the page goes full screen (or says why not) and the scene still draws.
   await page.keyboard.press("Shift+F");

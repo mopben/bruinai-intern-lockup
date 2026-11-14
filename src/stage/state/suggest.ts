@@ -33,12 +33,35 @@ export type SuggestState =
 export const suggestState = signal<SuggestState>({ kind: "idle" });
 
 let cancelJob: (() => void) | null = null;
+/** The layout the last search started from, to search again from when the prices or costs change. */
+let lastStart: Layout | null = null;
+
+/** Pause after the last change to a price or cost before searching again, so typing a number runs one search. */
+export const REFRESH_DELAY_MS = 400;
 
 /** Stops a search in progress and clears the list. Nothing on the board changes. */
 export function cancelSuggest(): void {
   cancelJob?.();
   cancelJob = null;
   if (suggestState.value.kind !== "idle") suggestState.value = { kind: "idle" };
+}
+
+/**
+ * The prices or costs changed, so the suggestions are out of date: search
+ * again from the same layout as before (not one tried from the list since),
+ * once the changes pause. Nothing is started when there were no suggestions.
+ */
+export function refreshSuggest(): void {
+  const st = suggestState.value;
+  const start = st.kind === "done" ? st.start : lastStart;
+  if (st.kind === "idle" || !start) return;
+  cancelJob?.();
+  const timer = setTimeout(() => {
+    cancelJob = null;
+    runSuggest(start);
+  }, REFRESH_DELAY_MS);
+  cancelJob = () => clearTimeout(timer);
+  suggestState.value = { kind: "running", fraction: 0 };
 }
 
 /** Puts a suggestion on the board. The list stays so another can be tried. */
@@ -58,11 +81,18 @@ export function startSuggest(): void {
     cancelSuggest();
     return;
   }
-  const k = kitchen.value;
   const start = playLayout.value ?? originalLayout.value;
+  if (start) runSuggest(start);
+}
+
+/** Searches from `start`; the board stays as it is. */
+function runSuggest(start: Layout): void {
+  lastStart = start;
+  const board = playLayout.value ?? originalLayout.value;
+  const k = kitchen.value;
   const cal = calibration.value;
   const econ = economics.value;
-  if (!k || !start || !cal || !cal.ok || !econ) {
+  if (!k || !cal || !cal.ok || !econ) {
     suggestState.value = { kind: "failed", reason: firstRunProblem.value ?? (cal && !cal.ok ? cal.message : "The model has nothing to learn from yet.") };
     return;
   }
@@ -87,7 +117,7 @@ export function startSuggest(): void {
     }
     cancelJob = null;
     // The judge changed the board (or left Play) while it searched: their change wins.
-    if (view.value !== "play" || (playLayout.value ?? originalLayout.value) !== start) {
+    if (view.value !== "play" || (playLayout.value ?? originalLayout.value) !== board) {
       suggestState.value = { kind: "idle" };
       return;
     }

@@ -6,7 +6,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { computeTruth } from "./support/truth";
-import { expectStep, openStage, text, waitForSession } from "./support/stage";
+import { editNumbers, expectStep, openStage, text, waitForSession } from "./support/stage";
 import { expect, test } from "./support/fixtures";
 
 const truth = computeTruth();
@@ -14,19 +14,16 @@ const truth = computeTruth();
 test("rule 6: walking, prediction and measured result equal src/core on the fixtures", async ({ page }) => {
   await openStage(page, { speed: 32, step: 2 });
   await expectStep(page, "play");
-  await expect(page.getByTestId("walking-per-order")).toHaveText(truth.walkA);
-  await expect(page.getByTestId("time-per-order")).toHaveText(truth.timeA);
+  await expect.poll(() => editNumbers(page)).toEqual({ walking: truth.walkA, time: truth.timeA });
 
   // The fridge move: B's layout, predicted from A only.
   await page.keyboard.press("m");
-  await expect(page.getByTestId("walking-per-order")).toHaveText(truth.walkB);
-  await expect(page.getByTestId("time-per-order")).toHaveText(truth.timeB);
-  await expect(page.getByTestId("prediction-range")).toHaveText(truth.timeB);
+  await expect.poll(() => editNumbers(page)).toEqual({ walking: truth.walkB, time: truth.timeB });
 
   // The fourth worker: walking does not change with staffing.
   await page.keyboard.press("Backspace");
   await page.keyboard.press("w");
-  await expect(page.getByTestId("walking-per-order")).toHaveText(truth.walkC);
+  await expect.poll(async () => (await editNumbers(page)).walking).toBe(truth.walkC);
   await page.keyboard.press("Backspace");
   await page.keyboard.press("m");
 

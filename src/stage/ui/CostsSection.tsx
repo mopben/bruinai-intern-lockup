@@ -1,14 +1,17 @@
 /**
  * The Prices and costs section of the Edit panel (key C): what each menu item
  * sells for and costs to make, wages, electricity, other running costs, and
- * how many orders come in a busy hour. Each worker can have their own wage;
+ * how many orders come in a busy hour, and how long the work at each station
+ * really takes (the rehearsal is acted out much faster). Each worker can have their own wage;
  * the rest get the usual one. Profit per hour and the suggestions use these.
  * Export saves them as a JSON file; Import loads one back (see app/costs-file.ts).
  */
 import { signal } from "@preact/signals";
-import { formatMoney, wageOf, type Economics } from "../../core";
+import { useState } from "preact/hooks";
+import { EXAMPLE_WORK_S, formatMoney, median, wageOf, workSOf, type Economics } from "../../core";
 import { applyCosts, costsFileOf, parseCosts, serialiseCosts } from "../app/costs-file";
-import { cancelSuggest } from "../state/suggest";
+import { calibration } from "../state/derive";
+import { refreshSuggest } from "../state/suggest";
 import { costsOpen, economics, economicsAreExamples, replaceEconomics, setEconomics, useExampleEconomics } from "../state/economics";
 import { kitchen, playLayout } from "../state/store";
 import { Btn } from "./bits";
@@ -50,21 +53,23 @@ async function importCosts(e: Event): Promise<void> {
     return;
   }
   const applied = applyCosts(parsed.value, k.setup);
-  cancelSuggest();
   replaceEconomics(applied.economics);
+  refreshSuggest();
   fileMessage.value =
     applied.missing.length === 0
       ? { text: `Loaded ${file.name}.`, tone: "calm" }
       : { text: `Loaded ${file.name}. It has no price for ${applied.missing.join(", ")}, so ${applied.missing.length === 1 ? "that item keeps its" : "those keep their"} example price.`, tone: "warn" };
 }
 
-/** Changing a number makes any suggestions out of date. */
+/** Changing a number: profit follows at once (it is computed from these), and any suggestions are searched again. */
 function change(c: Partial<Economics>): void {
-  cancelSuggest();
   setEconomics(c);
+  refreshSuggest();
 }
 
+/** A number field that applies each keystroke that makes a valid number; what is typed stays as typed until the field is left. */
 function Money(props: { readonly label: string; readonly value: number; readonly unit?: string; readonly step?: number; readonly testId: string; readonly onChange: (v: number) => void }) {
+  const [draft, setDraft] = useState<string | null>(null);
   return (
     <label class="st-field st-cost">
       <span>{props.label}</span>
@@ -74,12 +79,16 @@ function Money(props: { readonly label: string; readonly value: number; readonly
           class="st-input"
           min={0}
           step={props.step ?? 0.1}
-          value={Number(props.value.toFixed(2))}
+          value={draft ?? String(Number(props.value.toFixed(2)))}
           data-testid={props.testId}
-          onChange={(e) => {
-            const v = Number((e.target as HTMLInputElement).value);
+          onInput={(e) => {
+            const raw = (e.target as HTMLInputElement).value;
+            setDraft(raw);
+            if (raw.trim() === "") return;
+            const v = Number(raw);
             if (Number.isFinite(v) && v >= 0) props.onChange(v);
           }}
+          onBlur={() => setDraft(null)}
         />
         {props.unit ? <span class="unit">{props.unit}</span> : null}
       </span>
@@ -126,6 +135,46 @@ function WorkerWages(props: { readonly econ: Economics }) {
   );
 }
 
+/**
+ * Real work time per order at each station on the route. The rehearsal's own
+ * time is shown beside it: a tap there stands for work that takes far longer.
+ */
+function WorkTimes(props: { readonly econ: Economics }) {
+  const k = kitchen.value;
+  if (!k) return null;
+  const { econ } = props;
+  const own = econ.workS ?? {};
+  const cal = calibration.value;
+  const stations = [...new Set(k.setup.menu.flatMap((m) => m.steps.map((s) => s.stationId)))];
+  const name = (id: string) => k.setup.items.find((i) => i.boxId === id)?.name ?? id;
+  const setOwn = (id: string, v: number | null) => {
+    const next = { ...own };
+    if (v === null) delete next[id];
+    else next[id] = v;
+    change({ workS: next });
+  };
+  return (
+    <>
+      <h3>Work per order, for real</h3>
+      <p class="st-small">The run is a rehearsal: a tap stands for the work. These are how long it really takes at each station, walking not included.</p>
+      {stations.map((id) => {
+        const samples = cal && cal.ok ? cal.value.workSamples[id] : undefined;
+        const rehearsed = samples && samples.length > 0 ? median(samples) : null;
+        return (
+          <div class="st-cost-row st-wage-row" key={id} data-testid={`work-row-${id}`}>
+            <span class="name">{name(id)}</span>
+            <Money label="Work" value={workSOf(econ, id)} unit="s" step={5} testId={`cost-work-${id}`} onChange={(v) => setOwn(id, v > 0 ? v : null)} />
+            <span class="st-small">
+              {own[id] === undefined ? `example (${EXAMPLE_WORK_S} s)` : "set"}
+              {rehearsed !== null ? `; ${rehearsed.toFixed(1)} s in the rehearsal` : ""}
+            </span>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 export function CostsSection() {
   if (!costsOpen.value) return null;
   const econ = economics.value;
@@ -157,6 +206,7 @@ export function CostsSection() {
         <Money label="Rent and other" value={econ.otherPerHour} unit={`${cur}/h`} step={0.5} testId="cost-other" onChange={(v) => change({ otherPerHour: v })} />
       </div>
       <WorkerWages econ={econ} />
+      <WorkTimes econ={econ} />
       <h3>A busy hour</h3>
       <div class="st-cost-grid">
         <Money label="Orders that come in" value={econ.demandPerHour} unit="per hour" step={5} testId="cost-demand" onChange={(v) => change({ demandPerHour: Math.round(v) })} />
@@ -182,8 +232,8 @@ export function CostsSection() {
           small
           label="Use the example numbers"
           onClick={() => {
-            cancelSuggest();
             useExampleEconomics();
+            refreshSuggest();
             fileMessage.value = null;
           }}
           disabled={economicsAreExamples.value}

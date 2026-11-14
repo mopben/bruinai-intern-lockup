@@ -6,8 +6,7 @@
  * another layout; Compare always shows the layout in Play now.
  */
 import { formatRange } from "../src/core";
-import { BOX, expectStep, hook, openStage, text, waitForSession, type RangeV } from "./support/stage";
-import { computeTruth } from "./support/truth";
+import { BOX, editNumbers, expectStep, hook, openStage, waitForSession, type RangeV } from "./support/stage";
 import { expect, test } from "./support/fixtures";
 
 interface Frozen {
@@ -24,7 +23,8 @@ interface Plan {
 test("rule 5: the prediction frozen on leaving Play is the one tested, and it never moves", async ({ page }) => {
   await openStage(page, { speed: 16, step: 2 });
   await page.keyboard.press("m");
-  const shown = await text(page, "prediction-range");
+  await expect(page.getByTestId("btn-rehearsed-m")).toHaveAttribute("aria-pressed", "true");
+  const shown = (await editNumbers(page)).time!;
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
@@ -69,7 +69,8 @@ test("rule 5: a change with no recording says so and compares like with like", a
 test("Compare shows the layout in Edit now, not an earlier test's", async ({ page }) => {
   await openStage(page, { speed: 32, step: 2 });
   await page.keyboard.press("m");
-  const walkM = await text(page, "walking-per-order");
+  await expect(page.getByTestId("btn-rehearsed-m")).toHaveAttribute("aria-pressed", "true");
+  const walkM = (await editNumbers(page)).walking;
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
@@ -78,31 +79,11 @@ test("Compare shows the layout in Edit now, not an earlier test's", async ({ pag
   await expectStep(page, "play");
   await page.keyboard.press("Backspace");
   await page.keyboard.press("w");
-  const walkW = await text(page, "walking-per-order");
-  const timeW = await text(page, "time-per-order");
+  await expect(page.getByTestId("btn-rehearsed-w")).toHaveAttribute("aria-pressed", "true");
+  const { walking: walkW, time: timeW } = await editNumbers(page);
   expect(walkW).not.toBe(walkM);
   await page.keyboard.press("3");
   await expectStep(page, "compare");
-  await expect(page.getByTestId("compare-after-walking")).toHaveText(walkW);
-  await expect(page.getByTestId("compare-after-time")).toHaveText(timeW);
-});
-
-test("order count changes simulated Edit and compare numbers, not the real test prediction", async ({ page }) => {
-  await openStage(page, { speed: 32, step: 2 });
-  const originalCount = Number(await text(page, "orders-count"));
-  const originalTime = await text(page, "time-per-order");
-  await page.getByTestId("btn-orders-more").click();
-  await expect(page.getByTestId("orders-count")).toHaveText(String(originalCount + 1));
-  await expect(page.getByTestId("time-per-order")).not.toHaveText(originalTime);
-  const simulated = await text(page, "time-per-order");
-  await expect(page.getByText(`The real run in step 3 keeps its own ${originalCount} orders.`)).toBeVisible();
-  await page.keyboard.press("3");
-  await expect(page.getByTestId("compare-before-time")).toHaveText(simulated);
-  await expect(page.getByTestId("compare-before-done")).toContainText(`of ${originalCount + 1}`);
-  await page.keyboard.press("2");
-  await page.keyboard.press("m");
-  await page.keyboard.press("3");
-  await page.getByTestId("view-test").click();
-  await expect(page.getByTestId("prediction-range")).toHaveText(computeTruth().timeB);
-  await expect(page.getByText(`This check uses the run's own ${originalCount} orders, not the ${originalCount + 1} set in Edit.`)).toBeVisible();
+  await expect(page.getByTestId("compare-after-walking")).toHaveText(walkW!);
+  await expect(page.getByTestId("compare-after-time")).toHaveText(timeW!);
 });
