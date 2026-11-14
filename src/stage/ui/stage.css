@@ -1226,3 +1226,21 @@
 .st-profit-results .st-compare-bar { margin-top: 20px; padding-bottom: 20px; }
 .st-profit-results .st-compare-rail .st-num .value { font-size: 28px; }
 @media (max-width: 1100px) { .st-profit-grid { grid-template-columns: minmax(0, 1fr); } .st-profit-results { padding: 16px; } }
+.st-profit-results .st-financial { margin-top: 24px; padding-top: 20px; border-top: 2px dashed var(--dr-board-edge); }
+.st-profit-results .st-profit-summary { margin-top: 20px; }
+
+/* Give the simulation the available space; keep only four compact totals below. */
+.st-profit-results { display: flex; flex-direction: column; box-sizing: border-box; padding: 12px; gap: 12px; }
+.st-profit-results .st-compare-bar { flex: 0 0 auto; margin: 0; padding: 0; gap: 12px; }
+.st-profit-results .st-profit-grid { flex: 1; min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.st-profit-results .st-half { display: grid; grid-template-rows: minmax(0, 1fr) auto; padding: 0; overflow: hidden; }
+.st-profit-results .scene { height: auto; min-height: 0; margin: 0; }
+.st-profit-results .st-financial { margin: 0; padding: 12px 16px; border-top: 2px dashed var(--dr-board-edge); }
+.st-profit-results .st-financial dl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; margin: 0; }
+.st-profit-results .st-financial dl div { display: block; padding: 0; border: 0; min-width: 0; }
+.st-profit-results .st-financial dt { font-size: 13px; font-weight: 700; }
+.st-profit-results .st-financial dd { font-size: clamp(18px, 1.8vw, 28px); line-height: 1.2; overflow-wrap: anywhere; }
+@media (max-width: 700px) {
+  .st-profit-results .st-profit-grid { flex: 0 0 auto; grid-template-columns: minmax(0, 1fr); }
+  .st-profit-results .scene { height: 65dvh; }
+}

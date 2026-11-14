@@ -8,6 +8,7 @@ import { calibration } from "../state/derive";
 import { editKitchen } from "../state/kitchen-actions";
 import { activeShiftId, kitchen, orderCount } from "../state/store";
 import { ShiftControls } from "./LibraryControls";
+import { MAX_RECIPE_QUANTITY } from "../app/demo-shift";
 
 function RecipeCard({ recipe, initiallyOpen }: { recipe: MenuItem; initiallyOpen: boolean }) {
   const k = kitchen.value!;
@@ -30,7 +31,7 @@ function RecipeCard({ recipe, initiallyOpen }: { recipe: MenuItem; initiallyOpen
       <summary><span>{recipe.name || "Untitled order"}</span><small>{recipe.steps.length} steps · {total.toFixed(0)}s · {count} orders</small></summary>
       <div class="st-recipe-body">
         <label class="st-field">Order name<input aria-label="Order name" autoFocus={initiallyOpen} maxLength={60} value={recipe.name} onInput={(e) => change({ name: e.currentTarget.value })} /></label>
-        <label class="st-field">Quantity in simulation<input type="number" min="0" max="30" step="1" value={count} onChange={(e) => {
+        <label class="st-field">Quantity in simulation<input type="number" min="0" max={MAX_RECIPE_QUANTITY} step="1" value={count} onChange={(e) => {
           const value = e.currentTarget.valueAsNumber;
           if (!Number.isFinite(value)) return;
           editKitchen((x) => setRecipeQuantity(x, recipe.id, value));

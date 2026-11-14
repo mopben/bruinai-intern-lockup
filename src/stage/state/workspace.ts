@@ -6,6 +6,7 @@ import type { Kitchen } from "../app/kitchen-edit";
 import type { Candidate } from "../app/layout-match";
 import { kitchenForShift, shiftOrders, type ShiftOrders } from "../app/scenarios";
 import { withDemoRecipes } from "../app/recipes";
+import { demoShift } from "../app/demo-shift";
 import { calibration } from "./derive";
 import { storedEconomics, workersOpen, costsOpen } from "./economics";
 import { stopAllPlayback } from "./runs";
@@ -166,6 +167,16 @@ export function createShift(duplicate = false): void {
 
 export function renameShift(name: string): void {
   savedShifts.value = savedShifts.peek().map((entry) => entry.id === activeShiftId.peek() ? { ...entry, name } : entry);
+}
+
+/** Create a separate demo so loading it preserves every existing shift. */
+export function loadDemoShift(): void {
+  const k = kitchen.peek();
+  if (!k || !activeSetupId.peek()) return;
+  snapshotShift();
+  const shift: SavedShift = { ...demoShift(k.setup), id: crypto.randomUUID(), name: "Café morning · 6 hours" };
+  savedShifts.value = [...savedShifts.peek(), shift];
+  selectShift(shift.id);
 }
 
 export function chooseScenario(index: number, change: Partial<ScenarioChoice>): void {

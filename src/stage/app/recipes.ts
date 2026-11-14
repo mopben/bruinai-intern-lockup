@@ -1,6 +1,7 @@
 import type { MenuItem, Setup, StepDef } from "../../core";
 import type { Kitchen } from "./kitchen-edit";
 import { addWorker } from "./kitchen-edit";
+import { MAX_RECIPE_QUANTITY } from "./demo-shift";
 
 /** Keep the recorded Latte and its schedule intact; offer two more demo recipes. */
 export function withDemoRecipes(setup: Setup): Setup {
@@ -31,7 +32,7 @@ export function createRecipe(k: Kitchen): { kitchen: Kitchen; id: string } {
 
 export function setRecipeQuantity(k: Kitchen, id: string, quantity: number): Kitchen {
   if (!Number.isFinite(quantity)) return k;
-  const count = Math.max(0, Math.min(30, Math.floor(quantity)));
+  const count = Math.max(0, Math.min(MAX_RECIPE_QUANTITY, Math.floor(quantity)));
   const orders = k.setup.schedule.orders;
   const current = orders.filter((o) => o.itemId === id);
   let next = orders.filter((o) => o.itemId !== id || current.indexOf(o) < count);

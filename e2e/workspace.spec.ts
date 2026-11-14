@@ -136,6 +136,6 @@ test("compares independent shift/setup pairs and preserves them after reload", a
   await expect(page.getByTestId("scenario-0-setup")).toHaveValue(setupA);
   await expect(page.getByTestId("scenario-1-shift")).toHaveValue(shiftB);
   await expect(page.getByTestId("compare-before-profit")).toBeVisible();
-  await expect(page.getByTestId("compare-before-done")).toHaveCount(0);
+  await expect(page.getByTestId("compare-before-done")).toHaveText("0 of 2");
   await expect(page.getByTestId("compare-after-profit")).toBeVisible();
 });

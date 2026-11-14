@@ -6,7 +6,7 @@ import { setRecipeQuantity, updateRecipe } from "../app/recipes";
 import { editKitchen } from "./kitchen-actions";
 import { storedEconomics } from "./economics";
 import { activeSetupId, activeShiftId, base, candidates, firstRun, kitchen, kitchenOrigin, playLayout, workspaceReady } from "./store";
-import { createSetup, createShift, initializeWorkspace, renameSetup, renameShift, saveWorkspace, savedSetups, savedShifts, selectSetup, selectShift, setShiftFinance } from "./workspace";
+import { createSetup, createShift, initializeWorkspace, loadDemoShift, renameSetup, renameShift, saveWorkspace, savedSetups, savedShifts, selectSetup, selectShift, setShiftFinance } from "./workspace";
 
 let cleanup: (() => void) | undefined;
 beforeEach(() => {
@@ -23,6 +23,21 @@ beforeEach(() => {
 afterEach(() => { cleanup?.(); cleanup = undefined; });
 
 describe("saved setups and shifts", () => {
+  it("loads and persists a six-hour demo without replacing an existing shift", () => {
+    createSetup(); createShift();
+    const originalId = activeShiftId.value!;
+    loadDemoShift();
+    expect(savedShifts.value.find(shift => shift.id === originalId)!.schedule.orders).toHaveLength(0);
+    const demoId = activeShiftId.value!;
+    expect(kitchen.value!.setup.schedule.orders).toHaveLength(360);
+    saveWorkspace(); cleanup?.();
+    activeSetupId.value = null; activeShiftId.value = null;
+    savedSetups.value = []; savedShifts.value = [];
+    cleanup = initializeWorkspace();
+    expect(activeShiftId.value).toBe(demoId);
+    expect(savedShifts.value.find(shift => shift.id === demoId)!.durationSeconds).toBe(21600);
+    expect(kitchen.value!.setup.schedule.orders).toHaveLength(360);
+  });
   it("keeps staffing and wages independent when switching setups", () => {
     expect(activeSetupId.value).toBeNull();
     createSetup(); renameSetup({ name: "Baseline" });
