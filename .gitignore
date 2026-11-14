@@ -1,0 +1,11 @@
+node_modules/
+dist/
+recordings/
+coverage/
+test-results/
+playwright-report/
+.DS_Store
+*.xcuserstate
+xcuserdata/
+DerivedData/
+ios/build/
