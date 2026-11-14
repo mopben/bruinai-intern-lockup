@@ -57,7 +57,11 @@ export interface Replication {
 
 /** Per-run counts for the metrics. Collected without random numbers; they change no time. */
 export interface ReplicationStats {
-  /** Per worker, layout order: seconds walking (to stations, fetch, carry, back, home) plus working. */
+  /**
+   * Per worker, layout order: seconds walking (to a station, fetch round trips, carry, the walk
+   * back, the walk home) plus working, counted only inside the run, [0, lastFinish]. A carry or
+   * walk that crosses `lastFinish` counts up to it. Resting and waiting are not counted.
+   */
   readonly busyS: readonly number[];
   /** Per station, model order: sum over its tasks of (assigned − ready). */
   readonly waitS: readonly number[];
@@ -106,7 +110,8 @@ interface Loop {
   readonly lastJob: number[];
   readonly occupied: Int32Array;
   readonly moves: MovementSegment[] | null;
-  readonly busy: Float64Array;
+  /** Busy stretches, flat: worker, start, end. Clipped to the run when it ends. */
+  readonly busyIv: number[];
   readonly waitSum: Float64Array;
   readonly waitN: Int32Array;
   readonly queued: Int32Array;
@@ -185,7 +190,7 @@ function newLoop(model: EngineModel, releases: Releases, seed: number, rep: numb
     lastJob: model.workers.map(() => -1),
     occupied: new Int32Array(model.stationIds.length),
     moves: (opts.trace ?? false) ? [] : null,
-    busy: new Float64Array(model.workers.length),
+    busyIv: [],
     waitSum: new Float64Array(model.stationIds.length),
     waitN: new Int32Array(model.stationIds.length),
     queued: new Int32Array(model.stationIds.length),
@@ -260,7 +265,7 @@ function take(L: Loop, w: number, job: number, now: number): void {
   L.queued[s] = (L.queued[s] as number) - 1;
   L.waitSum[s] = (L.waitSum[s] as number) + (now - (L.readyAt[job] as number));
   L.waitN[s] = (L.waitN[s] as number) + 1;
-  L.busy[w] = (L.busy[w] as number) + walkSec + task.fetchSeconds + work + (ew.roams ? c : 2 * c);
+  L.busyIv.push(w, now, ew.roams ? t + c : t + 2 * c);
   L.betweenM += walk ? walk.oneWayM : 0;
   if (Number.isFinite(L.model.capacity[s])) push(L, t, FREE, s);
   if (task.next !== null) push(L, t + c, ARRIVE, i * L.S + task.next);
@@ -297,7 +302,7 @@ function sendHome(L: Loop, now: number): void {
     const leg = walkLeg(L, at, ew.homeId) as EngineLeg;
     const sec = walkSeconds(L.pace, leg.oneWayM);
     const t1 = now + sec;
-    L.busy[w] = (L.busy[w] as number) + sec;
+    L.busyIv.push(w, now, t1);
     L.betweenM += leg.oneWayM;
     L.resting[w] = false;
     L.atId[w] = ew.homeId;
@@ -320,6 +325,17 @@ function notePeaks(L: Loop): void {
   for (let s = 0; s < L.queued.length; s += 1) if ((L.queued[s] as number) > (L.peak[s] as number)) L.peak[s] = L.queued[s] as number;
 }
 
+/** Each worker's busy seconds inside [0, end]. A worker's stretches never overlap. */
+function busyInside(L: Loop, end: number): number[] {
+  const out = L.model.workers.map(() => 0);
+  const iv = L.busyIv;
+  for (let k = 0; k < iv.length; k += 3) {
+    const w = iv[k] as number;
+    out[w] = (out[w] as number) + Math.max(0, Math.min(iv[k + 2] as number, end) - Math.min(iv[k + 1] as number, end));
+  }
+  return out;
+}
+
 /** Run one replication. Deterministic in (model, releases, seed, rep, rule). */
 export function runEngine(model: EngineModel, releases: Releases, seed: number, rep: number, opts: EngineOptions = {}): Replication {
   const L = newLoop(model, releases, seed, rep, opts);
@@ -337,6 +353,6 @@ export function runEngine(model: EngineModel, releases: Releases, seed: number, 
   const orderTimes = releases.map((r, i) => (finishedAt[i] as number) - r.t);
   const lastFinish = releases.length > 0 ? Math.max(...finishedAt) : 0;
   const trace = L.moves ? buildTrace(model, releases, L.plans, L, L.moves, L.S) : null;
-  const stats = { busyS: Array.from(L.busy), waitS: Array.from(L.waitSum), waits: Array.from(L.waitN), peakQueue: Array.from(L.peak), betweenM: L.betweenM };
+  const stats = { busyS: busyInside(L, lastFinish), waitS: Array.from(L.waitSum), waits: Array.from(L.waitN), peakQueue: Array.from(L.peak), betweenM: L.betweenM };
   return { orderTimes, finishedAt, lastFinish, trace, stats };
 }

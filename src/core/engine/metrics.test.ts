@@ -27,20 +27,24 @@ describe("replication stats", () => {
     expect(r.stats.betweenM).toBe(0);
   });
 
-  it("a fixed worker is busy for work, carry and the walk back; carry is not between-station walking", () => {
-    // Per order: work 2 + carry 3 m at 1 m/s (3 s) + walk back 3 s = 8 s; three orders = 24 s.
+  it("a fixed worker is busy for work, carry and the walk back, only inside the run; carry is not between-station walking", () => {
+    // Per order: work 2 + carry 3 m at 1 m/s (3 s) + walk back 3 s = 8 s, from release to release + 8.
+    // The run ends at the last tap, 20 + 2 = 22. Orders 1 and 2: 8 s each (0-8, 10-18).
+    // Order 3 is busy 20-28 but only 20-22 is inside the run: 2 s. Total 8 + 8 + 2 = 18 s.
     const r = runOn(oneWorkerChainKitchen(), exactCalibration({ s: 2 }), evenOrders(3, 10, "x"));
-    expect(r.stats.busyS).toEqual([24]);
+    expect(r.lastFinish).toBe(22);
+    expect(r.stats.busyS).toEqual([18]);
     expect(r.stats.betweenM).toBe(0);
     expect(r.stats.waitS).toEqual([0]);
     expect(r.stats.peakQueue).toEqual([0]);
   });
 
-  it("a covering worker's walk home counts as busy and as between-station walking", () => {
-    // a 0-1 (work 1), carry 4 m 1-5 (4 s), work at b 5-6 (1 s), walk home 6-10 (4 s): busy 10 s.
+  it("a covering worker's walk home is between-station walking, and not busy once the run is over", () => {
+    // a 0-1 (work 1), carry 4 m 1-5 (4 s), work at b 5-6 (1 s), walk home 6-10 (4 s).
+    // The run ends at the last tap, 6, so the walk home is outside it: busy 1 + 4 + 1 = 6 s.
     // Only the walk home is between stations: 4 m. b's task is ready at 5 and taken at 5.
     const r = runOn(coveringKitchen(), exactCalibration({ a: 1, b: 1 }));
-    expect(r.stats.busyS).toEqual([10]);
+    expect(r.stats.busyS).toEqual([6]);
     expect(r.stats.betweenM).toBe(4);
     expect(r.stats.waitS).toEqual([0, 0]);
     expect(r.stats.waits).toEqual([1, 1]);
@@ -51,12 +55,13 @@ describe("replication stats", () => {
   it("a covering worker's walk to a station counts as between-station walking", () => {
     // Same as the engine test: o1 a 0-1, carry 1-5, walk b->a 5-9 (4 m), o2/s0 9-10, carry 10-14,
     // o1/s1 14-15, o2/s1 15-16, walk home 16-20 (4 m). betweenM = 8.
-    // Busy: work 1+1+1+1 = 4, carries 4+4 = 8, walks 4+4 = 8: 20 s.
+    // Busy: work 1+1+1+1 = 4, carries 4+4 = 8, walk b->a 4 = 16 s up to the last tap at 16;
+    // the walk home 16-20 is outside the run.
     // Waits at a: o1/s0 0, o2/s0 ready 0.5 taken 5 -> 4.5. At b: o1/s1 ready 5 taken 14 -> 9; o2/s1 ready 14 taken 15 -> 1.
     const spec: KitSpec = { ...coveringKitchen(), orders: [{ orderId: "o1", itemId: "x", t: 0 }, { orderId: "o2", itemId: "x", t: 0.5 }] };
     const r = runOn(spec, exactCalibration({ a: 1, b: 1 }));
     expect(r.stats.betweenM).toBe(8);
-    expect(r.stats.busyS).toEqual([20]);
+    expect(r.stats.busyS).toEqual([16]);
     expect(r.stats.waitS).toEqual([4.5, 10]);
     expect(r.stats.waits).toEqual([2, 2]);
   });
@@ -84,6 +89,13 @@ describe("prediction metrics", () => {
     expect(p.workers).toHaveLength(1);
     expect(p.workers[0]!.workerId).toBe("w1");
     expect(p.workers[0]!.busyShare).toBeCloseTo(6 / 22, 12);
+  });
+
+  it("a carry past the last tap counts only up to it: busy share 18 / 22, not 24 / 22", () => {
+    // Same kitchen as the fixed-worker stats test: busy 8 + 8 + 2 = 18 s inside a 22 s run.
+    const p = predictOn(oneWorkerChainKitchen(), exactCalibration({ s: 2 }), evenOrders(3, 10, "x"));
+    expect(p.workers[0]!.busyShare).toBeCloseTo(18 / 22, 12);
+    expect(p.workers[0]!.busyShare).toBeLessThanOrEqual(1);
   });
 
   it("slow orders: the 0.9 quantile of a run's order times", () => {

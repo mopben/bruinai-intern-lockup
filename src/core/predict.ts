@@ -43,7 +43,7 @@ export interface Prediction {
   readonly walkingPerOrderM: number;
   /** True when some worker covers several stations, so `walkingPerOrderM` is a mean over runs. */
   readonly walkingIsAverage: boolean;
-  /** Per worker, layout order: busy seconds (walking + working) over the run's last finish, mean over runs. */
+  /** Per worker, layout order: busy seconds (walking + working) inside the run, over its last finish; mean over runs. */
   readonly workers: readonly WorkerMetric[];
   /** Per station, in the order the menu first uses them: mean wait and peak queue, mean over runs. */
   readonly stations: readonly StationMetric[];

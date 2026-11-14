@@ -15,7 +15,7 @@ export const BOTTLENECK_MIN_WAIT_S = 0.5;
 
 export interface WorkerMetric {
   readonly workerId: string;
-  /** Busy seconds (walking + working) over the run's last finish, mean over runs. */
+  /** Busy seconds (walking + working) inside the run, over the run's last finish; mean over runs. At most 1. */
   readonly busyShare: number;
 }
 
