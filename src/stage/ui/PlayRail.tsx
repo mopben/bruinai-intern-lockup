@@ -1,6 +1,5 @@
 /**
- * Step 2, Edit. The judge changes one thing; the two numbers answer during the drag,
- * and so does profit per hour. Suggestions rank changes by that profit.
+ * Step 2, Edit. Adjust the layout and staffing, then compare walking and order time.
  */
 import { formatMetres, formatRange, formatSeconds } from "../../core";
 import type { Suggestion } from "../app/suggest";

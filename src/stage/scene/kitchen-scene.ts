@@ -196,6 +196,7 @@ export function createKitchenScene(container: HTMLElement, options: KitchenScene
       return (vp.pick(cx, cy, targets)?.object.userData.boxId as string | undefined) ?? null;
     },
     floorPoint: (cx, cy) => vp.floorPoint(cx, cy),
+    floorContextMenu: (point, client) => options.onFloorContextMenu?.(point, client),
     itemInfo: (id) => { const it = itemById(id); return it ? { x: it.x, z: it.z, locked: it.locked } : null; },
     isEditable: () => editable,
     cameraControls: () => !!options.cameraControls,

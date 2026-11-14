@@ -3,16 +3,19 @@
  * layout it shows, who stands where, the walking paths, the ghost, dragging.
  */
 import { computed, effect } from "@preact/signals";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import { formatMetres, type Layout } from "../../core";
 import type { WalkLeg } from "../../core";
+import { addComponent, COMPONENTS } from "../app/components";
+import { roomBounds } from "../scene/model";
+import { openPanel } from "../state/panel-actions";
 import { standingWorkers } from "../app/playback";
 import { tryWorld } from "../app/numbers";
 import { originalLayout, playNumbers } from "../state/derive";
 import { editKitchen } from "../state/kitchen-actions";
 import { currentPlayer } from "../state/runs";
 import { mainScene, setMainScene } from "../state/scene-ref";
-import { kitchen, moveInScan, playLayout, scanState, selectedId, session, view, testPlan } from "../state/store";
+import { addNotice, kitchen, moveInScan, playLayout, scanState, selectedId, session, view, testPlan } from "../state/store";
 import { createKitchenScene, type KitchenSceneHandle, type PathInput } from "../scene";
 
 /** The layout each step shows. */
@@ -96,6 +99,19 @@ function syncScene(scene: KitchenSceneHandle): () => void {
 export function SceneHost(props: { readonly hidden: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [moved, setMoved] = useState(false);
+  const [menu, setMenu] = useState<{ x: number; z: number; left: number; top: number } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const here = view.value;
+  useEffect(() => setMenu(null), [here]);
+  useLayoutEffect(() => {
+    if (!menu) return;
+    menuRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    const outside = (e: PointerEvent) => { if (!menuRef.current?.contains(e.target as Node)) setMenu(null); };
+    const escape = (e: KeyboardEvent) => { if (e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); setMenu(null); } };
+    document.addEventListener("pointerdown", outside);
+    window.addEventListener("keydown", escape, true);
+    return () => { document.removeEventListener("pointerdown", outside); window.removeEventListener("keydown", escape, true); };
+  }, [menu]);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -103,6 +119,13 @@ export function SceneHost(props: { readonly hidden: boolean }) {
       initialLabels: "scan",
       cameraControls: true,
       onCameraChange: setMoved,
+      onFloorContextMenu: (point, client) => {
+        const k = kitchen.value;
+        if (view.value !== "play" || !k) return;
+        const room = roomBounds(k);
+        if (point.x < room.minX || point.x > room.maxX || point.z < room.minZ || point.z > room.maxZ) return;
+        setMenu({ ...point, left: Math.max(8, Math.min(client.x, window.innerWidth - 246)), top: Math.max(8, Math.min(client.y, window.innerHeight - 352)) });
+      },
       onLayoutChange: (layout) => {
         if (view.value === "play") playLayout.value = layout;
       },
@@ -125,6 +148,27 @@ export function SceneHost(props: { readonly hidden: boolean }) {
   const k = kitchen.value;
   return (
     <div ref={ref} class={`st-scene${props.hidden || !k ? " dim" : ""}`} data-testid="kitchen-scene">
+      {menu && here === "play" ? <div ref={menuRef} class="st-component-menu" role="menu" aria-label="Add a component" style={{ left: `${menu.left}px`, top: `${menu.top}px` }} onContextMenu={(e) => e.preventDefault()} onKeyDown={(e) => {
+        if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+        e.preventDefault(); e.stopPropagation();
+        const buttons = [...(menuRef.current?.querySelectorAll<HTMLButtonElement>("button") ?? [])];
+        const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
+        buttons[(index + (e.key === "ArrowDown" ? 1 : -1) + buttons.length) % buttons.length]?.focus();
+      }}>
+        <strong>Add a component</strong>
+        {COMPONENTS.map((component) => <button type="button" role="menuitem" key={component.id} onClick={() => {
+          let added: string | null = null;
+          editKitchen((current) => {
+            const result = addComponent(current, component.id, menu, playLayout.value ?? current.layout);
+            if (!result) return current;
+            added = result.id;
+            return result.kitchen;
+          });
+          setMenu(null);
+          if (added) { selectedId.value = added; openPanel(); }
+          else addNotice({ id: "component-space", text: "This component needs more room. Right-click a clear square inside the kitchen.", tone: "warn" });
+        }}>{component.name}</button>)}
+      </div> : null}
       {moved && (
         <button type="button" class="st-chip st-reset-view" data-testid="reset-view" onClick={() => mainScene()?.reframe()}>
           Reset view

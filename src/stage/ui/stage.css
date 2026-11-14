@@ -23,6 +23,10 @@
 .st-add-recipe { display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; margin: 16px 0; padding: 12px; border: 2px dashed var(--dr-ink); border-radius: 12px; background: transparent; color: var(--dr-ink); font: inherit; font-weight: 800; cursor: pointer; }
 .st-add-recipe span { font-size: 1.6em; }
 .st-add-recipe:disabled { opacity: .4; cursor: default; }
+.st-component-menu { position: fixed; z-index: 100; width: 230px; padding: 8px; border: 2px solid var(--dr-ink); border-radius: 12px; background: var(--dr-paper); color: var(--dr-ink); box-shadow: 0 8px 24px #0003; cursor: default; }
+.st-component-menu strong { display: block; padding: 8px 10px; }
+.st-component-menu button { display: block; width: 100%; text-align: left; padding: 10px; border: 0; border-radius: 6px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.st-component-menu button:hover, .st-component-menu button:focus-visible { background: var(--dr-ink); color: var(--dr-paper); outline: none; }
 .st-root {
   position: fixed;
   inset: 0;
