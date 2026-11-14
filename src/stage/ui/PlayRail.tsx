@@ -1,9 +1,8 @@
 /**
  * Setup controls for the kitchen layout, workers, and costs.
  */
-import { formatSeconds } from "../../core";
 import type { Suggestion } from "../app/suggest";
-import { calibration, firstRunProblem } from "../state/derive";
+import { calibration } from "../state/derive";
 import { costsOpen, economics, workersOpen } from "../state/economics";
 import { applySuggestion, startSuggest, suggestState, undoSuggestion } from "../state/suggest";
 import { resetPlay } from "../state/flow";
@@ -80,12 +79,10 @@ function Suggestions() {
     <div class="st-suggestions" data-testid="suggest-result">
       {st.list.map((x, i) => {
         const on = onBoard === x.s.layout;
-        const gain = `Orders ${formatSeconds(x.waitBeforeS)} ? ${formatSeconds(x.waitAfterS)}`;
         return (
           <div class={`st-suggestion${on ? " on" : ""}`} key={x.s.id} data-testid={`suggestion-${i}`}>
             <Btn small kind={on ? "on" : "plain"} label={on ? "Showing" : "Try"} onClick={() => applySuggestion(x.s)} testId={`btn-try-suggestion-${i}`} />
             <span class="text">{describe(x.s)}</span>
-            <span class="gain">{gain}</span>
           </div>
         );
       })}
@@ -101,14 +98,12 @@ function Suggestions() {
 }
 
 export function PlayRail() {
-  const problem = firstRunProblem.value;
   const id = selectedId.value;
   if (id && kitchen.value) return <ItemPanel boxId={id} />;
   return (
     <div class="st-card play">
       <Rehearsed />
       <CostsSection />
-      {problem ? <p class="st-note">{problem}</p> : null}
       <Suggestions />
     </div>
   );

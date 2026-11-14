@@ -4,7 +4,8 @@ import { createRecipe, setRecipeQuantity, updateRecipe } from "../app/recipes";
 import { addWorker } from "../app/kitchen-edit";
 import { calibration } from "../state/derive";
 import { editKitchen } from "../state/kitchen-actions";
-import { kitchen, orderCount } from "../state/store";
+import { activeShiftId, kitchen, orderCount } from "../state/store";
+import { ShiftControls } from "./LibraryControls";
 
 function RecipeCard({ recipe, initiallyOpen }: { recipe: MenuItem; initiallyOpen: boolean }) {
   const k = kitchen.value!;
@@ -74,7 +75,9 @@ export function OrdersRail() {
   if (!k) return <div class="st-card"><h1>Orders</h1><p>Import a kitchen to create orders.</p></div>;
   const hasStations = k.setup.items.some((s) => s.role === "station");
   return <div class="st-card" data-testid="orders-rail">
-    <h1>Orders</h1>
+    <ShiftControls />
+    {activeShiftId.value ? <>
+    <h2>Orders</h2>
     <div class="st-recipes">{k.setup.menu.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} initiallyOpen={created === recipe.id} />)}</div>
     <button type="button" class="st-add-recipe" aria-label="Create new order" disabled={!hasStations} onClick={() => {
       let id = "";
@@ -82,5 +85,21 @@ export function OrdersRail() {
       setCreated(id);
     }}><span aria-hidden="true">+</span> New order</button>
     {!hasStations ? <p class="st-note">Mark a kitchen item as a station in Edit to start making orders.</p> : null}
+    {k.setup.schedule.orders.length ? <details class="st-recipe" data-testid="shift-arrivals">
+      <summary>Order arrivals · {k.setup.schedule.orders.length} orders</summary>
+      <div class="st-recipe-body">
+        {k.setup.schedule.orders.map((order) => <label class="st-field" key={order.orderId}>
+          <span>{k.setup.menu.find((recipe) => recipe.id === order.itemId)?.name ?? order.itemId} · {order.orderId} · arrival (seconds)</span>
+          <input type="number" min="0" step="1" aria-label={`Arrival for ${order.orderId}`} value={order.t} onChange={(event) => {
+            const t = event.currentTarget.valueAsNumber;
+            if (!Number.isFinite(t) || t < 0) return;
+            editKitchen((current) => ({ ...current, setup: { ...current.setup, schedule: {
+              orders: current.setup.schedule.orders.map((entry) => entry.orderId === order.orderId ? { ...entry, t } : entry).sort((a, b) => a.t - b.t),
+            } } }));
+          }} />
+        </label>)}
+      </div>
+    </details> : null}
+    </> : null}
   </div>;
 }

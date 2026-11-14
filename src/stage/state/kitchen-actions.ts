@@ -9,6 +9,9 @@ import { buildStarterKitchen } from "../app/starter-setup";
 import { withDemoRecipes } from "../app/recipes";
 import { withScene } from "./scene-ref";
 import {
+  activeSetupId,
+  activeShiftId,
+  workspaceReady,
   base,
   frozen,
   kitchen,
@@ -63,6 +66,7 @@ export function useRecordedKitchen(animate: boolean): void {
   const b = base.value;
   if (!b) return;
   batch(() => {
+    activeShiftId.value = null;
     kitchen.value = { scan: b.scan, setup: withDemoRecipes(b.setup), layout: b.layout };
     kitchenOrigin.value = "recorded";
     playLayout.value = b.layout;
@@ -85,8 +89,10 @@ export function useRecordedKitchen(animate: boolean): void {
 
 /** A scan from the phone or a dropped file: build a starter setup and reveal it. */
 export function acceptLiveScan(scan: Scan): void {
+  if (workspaceReady.value && !activeSetupId.value) { latestLiveScan.value = scan; return; }
   const starter = buildStarterKitchen(scan);
   batch(() => {
+    activeShiftId.value = null;
     latestLiveScan.value = scan;
     kitchen.value = { scan, setup: starter.setup, layout: starter.layout };
     kitchenOrigin.value = "live";

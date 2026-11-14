@@ -34,7 +34,7 @@ describe("steps and views", () => {
     expect(defaultView("build")).toBe("play");
     expect(keyHints("run", true).some((h) => h.does.includes("Original run"))).toBe(true);
     expect(keyHints("test", false).some((h) => h.does.includes("After the change"))).toBe(true);
-    expect(keyHints("compare", false).some((h) => h.does.includes("Before vs after"))).toBe(true);
+    expect(keyHints("compare", false).some((h) => h.does.includes("scenarios"))).toBe(true);
   });
   it("has no inputs key: i does nothing, no hint mentions I, step 3 is Run", () => {
     expect(keyAction("i")).toBeNull();

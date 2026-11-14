@@ -804,6 +804,17 @@
   font-size: var(--dr-size-display);
 }
 
+.st-library { display: grid; gap: 14px; }
+.st-library select, .st-library input { width: 100%; min-width: 0; }
+.st-scenario { display: grid; gap: 14px; min-width: 0; border: var(--st-line); border-radius: 12px; padding: 16px; }
+.st-scenario legend { padding: 0 6px; font-weight: 800; }
+.st-half .under { flex-wrap: wrap; }
+.st-scenario-stats { display: flex; flex-wrap: wrap; gap: 8px 18px; flex-basis: 100%; font-size: var(--dr-size-small); }
+.st-scenario-stats strong { display: block; font-variant-numeric: tabular-nums; }
+.st-scenario-problem { flex-basis: 100%; }
+.st-half .label { max-width: calc(100% - 16px); overflow-wrap: anywhere; font-size: clamp(18px, 1.6vw, 30px); }
+.st-compare-bar { flex-wrap: wrap; }
+
 @media (prefers-reduced-motion: reduce) {
   .st-pulse {
     animation: none;

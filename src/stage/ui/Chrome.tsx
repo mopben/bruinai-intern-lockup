@@ -67,7 +67,7 @@ export function Sash() {
 export function ResultsSwitch() {
   if (currentStep.value !== "results") return null;
   const choices = [
-    { id: "compare", label: "Before vs after" },
+    { id: "compare", label: "Compare scenarios" },
     { id: "run", label: "Original run" },
     { id: "test", label: "After the change" },
   ] as const;

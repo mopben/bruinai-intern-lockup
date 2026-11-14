@@ -8,7 +8,7 @@ import { acceptLiveScan, useRecordedKitchen, waitForLiveScan } from "./kitchen-a
 import { liveScanFeed } from "./link";
 import { reprepareIdleRun } from "./flow";
 import { currentPlayer, liveSwitchable, standbyUsable } from "./runs";
-import { addNotice, dropNotice, latestLiveScan, sources, view, type InputKind, type Source } from "./store";
+import { activeSetupId, workspaceReady, addNotice, dropNotice, latestLiveScan, sources, view, type InputKind, type Source } from "./store";
 
 export function setSource(input: InputKind, source: Source): void {
   if (sources.value[input] === source) return;
@@ -42,6 +42,10 @@ export function setSource(input: InputKind, source: Source): void {
 
 /** A scan.json dropped anywhere on the stage. */
 export function acceptDroppedScan(text: string, fileName: string): void {
+  if (workspaceReady.value && !activeSetupId.value) {
+    addNotice({ id: "drop", text: "Create a new setup before importing a kitchen.", tone: "calm" });
+    return;
+  }
   const parsed = parseScan(text, fileName);
   if (!parsed.ok) {
     addNotice({ id: "drop", text: `That file is not a scan we can read. ${parsed.error}`, tone: "warn" });

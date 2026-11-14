@@ -1,15 +1,16 @@
 /**
- * Step 3, Before vs after. The original and changed kitchens run the same
- * orders with the same luck (same seed and replication), clocks in sync.
+ * Two independent shift/setup scenarios, with synchronized playback clocks.
  */
-import { effect } from "@preact/signals";
+import { computed, effect } from "@preact/signals";
 import { useEffect, useRef, useState } from "preact/hooks";
-import { DEFAULT_SEED, formatMetres, formatRange, simulateRun, type Layout, type RunTrace, type World } from "../../core";
+import { DEFAULT_SEED, calibrate, reconstructRun, formatMetres, formatRange, simulateRun, type Layout, type RunTrace, type World } from "../../core";
+import { runFitsKitchen, type Kitchen } from "../app/kitchen-edit";
+import { ASSUMED_CALIBRATION, kitchenForShift } from "../app/scenarios";
 import { explainError, layoutNumbers, tryWorld, type LayoutNumbers } from "../app/numbers";
 import { indexMovements, ordersDoneBy, simulatedWorkers, ticketsAtTime } from "../app/playback";
-import { calibration, firstRunProblem, originalLayout, simReleases, usableFirstRun } from "../state/derive";
 import { registerScene } from "../state/scene-ref";
-import { compareCommand, kitchen, params, playLayout, testPlan } from "../state/store";
+import { compareCommand, params } from "../state/store";
+import { resolvedChoice, savedSetups, savedShifts } from "../state/workspace";
 import { createKitchenScene, type KitchenSceneHandle } from "../scene";
 import { BigNum, Btn, clock } from "./bits";
 
@@ -20,6 +21,10 @@ const SIDE_VIEW = { azimuth: 0.14, elevation: 1.06 };
 
 interface Side {
   readonly label: "Before" | "After";
+  readonly title: string;
+  readonly kitchen: Kitchen;
+  readonly assumption: string | null;
+  readonly laborPerHour: number;
   readonly layout: Layout;
   readonly world: World | null;
   readonly trace: RunTrace | null;
@@ -27,48 +32,56 @@ interface Side {
   readonly problem: string | null;
 }
 
-function buildSide(label: Side["label"], layout: Layout): Side | null {
-  const k = kitchen.value;
-  const cal = calibration.value;
-  if (!k) return null;
-  const releases = simReleases.value;
-  const numbers = layoutNumbers(k.scan, k.setup, layout, cal && cal.ok ? cal.value : null, releases);
+function buildSide(index: number): Side | null {
+  const choice = resolvedChoice(index);
+  const saved = savedSetups.value.find((entry) => entry.id === choice.setupId);
+  const shift = savedShifts.value.find((entry) => entry.id === choice.shiftId);
+  if (!saved || !shift) return null;
+  const label: Side["label"] = index === 0 ? "Before" : "After";
+  let k = saved.kitchen;
+  let bindingProblem: string | null = null;
+  try { k = kitchenForShift(k, shift); }
+  catch (error) { bindingProblem = (error as Error).message; }
+  const layout = k.layout;
+  let cal = ASSUMED_CALIBRATION;
+  const measured = saved.measured;
+  if (measured && runFitsKitchen(measured.kitchen, k)) {
+    const world = tryWorld(measured.kitchen.scan, measured.kitchen.setup, measured.kitchen.layout);
+    if (world.ok) {
+      try { cal = calibrate(world.value, reconstructRun(measured.kitchen.setup, measured.taps), measured.positions); }
+      catch { /* Explicit preparation times can still simulate with assumed walking pace. */ }
+    }
+  }
+  const numbers: LayoutNumbers = bindingProblem ? {
+    walking: { ok: false, message: bindingProblem }, time: { ok: false, message: bindingProblem }, world: null,
+  } : layoutNumbers(k.scan, k.setup, layout, cal);
   const w = tryWorld(k.scan, k.setup, layout);
-  if (!w.ok) return { label, layout, world: null, trace: null, numbers, problem: w.message };
-  if (!cal || !cal.ok) return { label, layout, world: w.value, trace: null, numbers, problem: cal?.ok === false ? cal.message : firstRunProblem.value };
+  const econ = saved.economics;
+  const common = {
+    label, title: `${shift.name} + ${saved.name}`, kitchen: k, layout, numbers,
+    assumption: cal.walkSpeedAssumed ? "Walking pace assumed at 1.2 m/s." : null,
+    laborPerHour: layout.workers.reduce((sum, worker) => sum + (econ?.workerWages?.[worker.id] ?? econ?.wagePerHour ?? 18), 0),
+  };
+  if (bindingProblem) return { ...common, world: null, trace: null, problem: bindingProblem };
+  if (!w.ok) return { ...common, world: null, trace: null, problem: w.message };
+  if (!shift.schedule.orders.length) return { ...common, world: w.value, trace: null, problem: "This shift has no orders. Set its quantities in Orders." };
   try {
-    const trace = simulateRun(w.value, cal.value, { seed: DEFAULT_SEED, rep: 0, releases });
-    return { label, layout, world: w.value, trace, numbers, problem: null };
+    const trace = simulateRun(w.value, cal, { seed: DEFAULT_SEED, rep: 0 });
+    return { ...common, world: w.value, trace, problem: null };
   } catch (error) {
-    return { label, layout, world: w.value, trace: null, numbers, problem: explainError(error) };
+    return { ...common, world: w.value, trace: null, problem: explainError(error) };
   }
 }
 
-/**
- * The "after" kitchen: the layout in Play now. The Test step's layout is used
- * only when that Test was made for this same Play layout (it may be the
- * nearest recorded run's layout when nothing matched).
- */
-function sidesKey(before: Layout | null, after: Layout | null): string {
-  const run = usableFirstRun.value;
-  const k = kitchen.value;
-  const cal = calibration.value;
-  return JSON.stringify([before, after, k?.scan.capturedAt, k?.setup, simReleases.value, run?.label, run?.origin, run?.taps.length, run?.positions.length, cal?.ok]);
-}
-
-export function currentAfterLayout(): Layout | null {
-  const plan = testPlan.value;
-  const judge = playLayout.value;
-  return plan && plan.judgeLayout === judge ? plan.layout : judge;
-}
+const scenariosKey = computed(() => JSON.stringify([resolvedChoice(0), resolvedChoice(1), savedSetups.value, savedShifts.value]));
 
 function Half(props: { readonly side: Side; readonly t: number; readonly onScene: (h: KitchenSceneHandle | null) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const { side } = props;
   useEffect(() => {
     const el = ref.current;
-    const k = kitchen.value;
-    if (!el || !k) return;
+    const k = side.kitchen;
+    if (!el) return;
     const label = el.querySelector<HTMLElement>(".label");
     const keepOut = () => {
       if (!label) return [];
@@ -88,13 +101,15 @@ function Half(props: { readonly side: Side; readonly t: number; readonly onScene
   }, [side]);
   const n = side.numbers;
   const done = side.trace ? ordersDoneBy(side.trace, props.t) : 0;
+  const lastFinish = side.trace ? Math.max(0, ...side.trace.orders.map((order) => order.finishedAt ?? 0)) : null;
   const id = side.label.toLowerCase();
   return (
     <div class={`st-half ${id}`} data-testid={`compare-${id}`}>
       <div class="scene" ref={ref}>
-        <span class="label">{side.label}</span>
+        <span class="label">{side.title}</span>
       </div>
       <div class="under st-compare-rail">
+        {side.problem ? <p class="st-note st-scenario-problem" role="status">{side.problem}</p> : null}
         <BigNum mid what="Walking per order" value={n.walking.ok ? formatMetres(n.walking.value.perOrderM) : null} cannot={n.walking.ok ? null : n.walking.message} how="Exact" testId={`compare-${id}-walking`} />
         <BigNum mid what="Time per order" value={n.time.ok ? formatRange(n.time.value.meanOrderTime) : null} cannot={n.time.ok ? null : n.time.message} how="Simulated range" testId={`compare-${id}-time`} />
         <div class="st-num">
@@ -104,14 +119,19 @@ function Half(props: { readonly side: Side; readonly t: number; readonly onScene
           </span>
           <span class="how">{side.problem ?? "orders done"}</span>
         </div>
+        <div class="st-scenario-stats">
+          <span>Workers <strong>{side.layout.workers.length}</strong></span>
+          <span>Finish all orders <strong data-testid={`compare-${id}-duration`}>{lastFinish !== null ? clock(lastFinish) : "—"}</strong></span>
+          <span>Labor / hour <strong>${side.laborPerHour.toFixed(2)}</strong></span>
+        </div>
+        {side.assumption ? <p class="st-small">{side.assumption}</p> : null}
       </div>
     </div>
   );
 }
 
 export function CompareView() {
-  const before = originalLayout.value;
-  const after = currentAfterLayout();
+  const key = scenariosKey.value;
   const [sides, setSides] = useState<readonly Side[]>([]);
   const [t, setT] = useState(0);
   const [speed, setSpeed] = useState(params.value.speed);
@@ -119,13 +139,13 @@ export function CompareView() {
   const clockRef = useRef({ t: 0, speed: params.value.speed, end: 0 });
 
   useEffect(() => {
-    if (!before || !after) return;
-    const list = [buildSide("Before", before), buildSide("After", after)].filter((s): s is Side => s !== null);
+    const list = [buildSide(0), buildSide(1)].filter((s): s is Side => s !== null);
     setSides(list);
+    setT(0);
     clockRef.current = { ...clockRef.current, t: 0, end: Math.max(0, ...list.map((s) => s.trace?.endT ?? 0)) + TAIL_S };
     // Keyed on content, not object identity: the first run finishing again in the background (same
     // recording, new objects) must not rebuild both scenes mid-Compare.
-  }, [sidesKey(before, after)]);
+  }, [key]);
 
   useEffect(() => {
     let raf = 0;
@@ -173,12 +193,12 @@ export function CompareView() {
     [],
   );
 
-  if (!before || !after || sides.length < 2) {
+  if (sides.length < 2) {
     return (
       <div class="st-center">
         <div class="st-center-card">
-          <h2>Before and after</h2>
-          <p>{firstRunProblem.value ?? "Make a change in Edit (step 2) first."}</p>
+          <h2>Compare shifts and setups</h2>
+          <p>Create a shift in Orders, then choose a shift and setup for each side.</p>
         </div>
       </div>
     );
@@ -192,8 +212,9 @@ export function CompareView() {
         <span class="st-say" data-testid="compare-clock">
           {clock(t)}
         </span>
-        <span class="st-small">The same orders in both kitchens, one simulated run each, same luck.</span>
+        <span class="st-small">{resolvedChoice(0).shiftId === resolvedChoice(1).shiftId ? "Same shift, matched simulation seed." : "Different shifts: results reflect both order demand and setup."}</span>
         <Btn small label="Play again" k="P" onClick={() => (clockRef.current = { ...clockRef.current, t: 0 })} testId="btn-play" />
+        <Btn small label="Skip to end" k="E" onClick={() => (clockRef.current = { ...clockRef.current, t: clockRef.current.end })} testId="btn-skip" />
         <Btn small label={speed > 1 ? "Normal speed" : "Faster"} k="F" kind={speed > 1 ? "on" : "plain"} onClick={() => compareCommand.value = { kind: "faster", n: (compareCommand.value?.n ?? 0) + 1 }} testId="btn-faster" />
       </div>
     </div>

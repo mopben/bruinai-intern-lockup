@@ -7,7 +7,8 @@ import { WorkersSection } from "./WorkersSection";
 import { useEffect } from "preact/hooks";
 import { acceptDroppedScan } from "../state/input-actions";
 import { installKeys } from "../state/keys";
-import { addNotice, bootError, currentStep, importOpen, loading, panel, view } from "../state/store";
+import { activeSetupId, addNotice, bootError, currentStep, importOpen, loading, panel, view, workspaceReady } from "../state/store";
+import { ScenarioControls, SetupControls } from "./LibraryControls";
 import { STEPS, stepIndex } from "../app/steps";
 import { ActivityBar, KeyHints, Notices, ResultsSwitch, Sash } from "./Chrome";
 import { CompareView } from "./CompareView";
@@ -21,14 +22,18 @@ import { TestRail } from "./TestRail";
 
 function BuildRail() {
   return <>
+    <SetupControls />
+    {activeSetupId.value ? <>
     <div class="st-row st-panel-actions st-build-import">
       <button type="button" class="st-btn" onClick={() => (importOpen.value = true)} data-testid="btn-import"><UploadIcon />Import</button>
     </div>
     <PlayRail />
+    </> : null}
   </>;
 }
 
 function Rail() {
+  if (!activeSetupId.value) return <SetupControls />;
   switch (view.value) {
     case "scan":
       return <BuildRail />;
@@ -41,7 +46,7 @@ function Rail() {
     case "test":
       return <TestRail />;
     case "compare":
-      return null;
+      return <ScenarioControls />;
     default:
       return null;
   }
@@ -96,8 +101,10 @@ export function App() {
         </aside>
       ) : null}
       <main class="st-stage">
-        <SceneHost hidden={comparing} />
-        {comparing ? <CompareView /> : null}
+        {activeSetupId.value ? <>
+          <SceneHost hidden={comparing} />
+          {comparing ? <CompareView /> : null}
+        </> : workspaceReady.value ? <div class="st-center"><div class="st-center-card"><h2>Create your first setup</h2><p>Start in Setup to configure your kitchen.</p></div></div> : null}
         <Notices />
         {bootError.value ? (
           <div class="st-center">

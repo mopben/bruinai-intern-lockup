@@ -9,7 +9,7 @@ import { cancelSuggest, startSuggest } from "./suggest";
 import { goTo, resetPlay, startOrReplay } from "./flow";
 import { editKitchen, reveal } from "./kitchen-actions";
 import { retrySave, skipToEnd, toggleFaster } from "./runs";
-import { addNotice, dropNotice, importOpen, selectedId, sendCompare, session, view } from "./store";
+import { activeSetupId, workspaceReady, addNotice, dropNotice, importOpen, selectedId, sendCompare, session, view } from "./store";
 import { openPanel } from "./panel-actions";
 
 const HINT_MS = 3500;
@@ -56,12 +56,13 @@ function play(): void {
       sendCompare("replay");
       return;
     default:
-      keyHint("P plays Original run, After the change, and Before vs after in step 3.");
+      keyHint("P plays Original run, After the change, and Compare scenarios in step 3.");
       return;
   }
 }
 
 export function perform(action: KeyAction): void {
+  if (workspaceReady.value && !activeSetupId.value && !["next", "back", "jump", "escape"].includes(action.type)) return;
   const here = view.value;
   switch (action.type) {
     case "delete": {
@@ -90,7 +91,7 @@ export function perform(action: KeyAction): void {
       return;
     case "skip":
       if (here === "compare") sendCompare("skip");
-      else if (here !== "run" && here !== "test") keyHint("E skips to the end in Original run, After the change, and Before vs after.");
+      else if (here !== "run" && here !== "test") keyHint("E skips to the end in Original run, After the change, and Compare scenarios.");
       else if (!skipToEnd()) keyHint("No run is playing. Press P to start one.");
       return;
     case "escape":
@@ -130,7 +131,7 @@ export function perform(action: KeyAction): void {
 }
 
 function fasterWhyNot(here: string): string {
-  if (here !== "run" && here !== "test") return "F plays faster in Original run, After the change, and Before vs after.";
+  if (here !== "run" && here !== "test") return "F plays faster in Original run, After the change, and Compare scenarios.";
   const s = session.value;
   if (s && !s.replay) return "A live run plays at real speed.";
   if (s?.status === "ended") return "The run is over. Press P to play it again.";

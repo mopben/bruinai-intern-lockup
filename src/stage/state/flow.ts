@@ -16,6 +16,8 @@ import { settleReveal } from "./kitchen-actions";
 import { preloadedBundle } from "./preload";
 import { beginRun, currentPlayer, nextRunIsLive, startLive } from "./runs";
 import {
+  activeSetupId,
+  workspaceReady,
   base,
   candidates,
   firstRun,
@@ -237,6 +239,7 @@ function rememberStep(next: ViewId): void {
 
 /** What a step does on arrival (also used when the page opens on a step). */
 export function enterStep(next: ViewId): void {
+  if (workspaceReady.value && !activeSetupId.value) return;
   if (next === "run") {
     const s = session.value;
     if (!s || s.purpose !== "first") beginFirstRun();

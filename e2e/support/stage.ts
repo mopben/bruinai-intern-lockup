@@ -19,6 +19,7 @@ export const BOX = {
 export const STATIONS = [BOX.order, BOX.make, BOX.finish] as const;
 
 export interface OpenOptions {
+  readonly emptyWorkspace?: boolean;
   readonly port?: number;
   readonly speed?: number;
   readonly step?: number;
@@ -38,6 +39,9 @@ export async function openStage(page: Page, o: OpenOptions = {}): Promise<void> 
   await page.waitForFunction(() => "__dryrun" in globalThis);
   await expect(page.getByTestId("step-strip")).toBeVisible();
   await expect(page.getByText("Loading the kitchen…")).toHaveCount(0);
+  if (!o.emptyWorkspace && await page.getByTestId("active-setup").count() && !await page.getByTestId("active-setup").inputValue()) {
+    await page.getByTestId("active-setup").selectOption("__create_setup__");
+  }
 }
 
 export async function currentStep(page: Page): Promise<string> {
