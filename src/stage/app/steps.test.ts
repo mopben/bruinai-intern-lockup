@@ -13,6 +13,7 @@ describe("steps and views", () => {
     expect(viewAt(99)).toBe("test");
   });
   it("maps keys to step jumps and view navigation", () => {
+    expect(keyAction("Delete")).toEqual({ type: "delete" });
     expect(keyAction("ArrowRight")).toEqual({ type: "next" });
     expect(keyAction(" ")).toEqual({ type: "next" });
     expect(keyAction("PageDown")).toEqual({ type: "next" });

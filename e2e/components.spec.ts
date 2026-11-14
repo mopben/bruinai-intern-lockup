@@ -1,5 +1,5 @@
 import { expect, test } from "./support/fixtures";
-import { goView, mainDebug, openStage } from "./support/stage";
+import { BOX, goView, mainDebug, openStage } from "./support/stage";
 
 test("right-click a floor square in Edit to add and customize a component", async ({ page }) => {
   await openStage(page, { step: 2 });
@@ -27,4 +27,26 @@ test("right-click a floor square in Edit to add and customize a component", asyn
   await goView(page, "scan");
   await page.mouse.click(x, y, { button: "right" });
   await expect(menu).toHaveCount(0);
+});
+
+test("Delete removes the selected component in Edit but respects text fields", async ({ page }) => {
+  await openStage(page, { step: 2 });
+  const before = await mainDebug(page);
+  const point = before.screen[BOX.make]!;
+  await page.mouse.click(point.x, point.y);
+  const name = page.getByTestId("item-name");
+  await expect(name).toHaveValue("Espresso machine");
+  await name.focus();
+  await page.keyboard.press("Delete");
+  expect((await mainDebug(page)).items.some((item) => item.id === BOX.make)).toBe(true);
+  await name.blur();
+  await page.keyboard.press("Delete");
+  await expect(page.getByTestId("item-panel")).toHaveCount(0);
+  await expect.poll(async () => (await mainDebug(page)).items.some((item) => item.id === BOX.make)).toBe(false);
+  await page.keyboard.press("Delete");
+  expect((await mainDebug(page)).items).toHaveLength(before.items.length - 1);
+  await goView(page, "orders");
+  await page.locator(".st-recipe summary").first().click();
+  await expect(page.locator(".st-recipe").first().locator(".st-recipe-steps li")).toHaveCount(2);
+  await expect(page.getByLabel("Add a preparation step").first().getByRole("option", { name: "Espresso machine", exact: true })).toHaveCount(0);
 });

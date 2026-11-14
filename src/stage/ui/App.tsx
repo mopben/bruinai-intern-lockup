@@ -2,6 +2,8 @@
  * The stage app, VS Code style: an activity bar on the far left, a side
  * panel beside it, and the kitchen filling the rest.
  */
+import { workersOpen } from "../state/economics";
+import { WorkersSection } from "./WorkersSection";
 import { useEffect } from "preact/hooks";
 import { acceptDroppedScan } from "../state/input-actions";
 import { installKeys } from "../state/keys";
@@ -101,6 +103,7 @@ export function App() {
           </div>
         ) : null}
       </main>
+      {workersOpen.value ? <WorkersSection /> : null}
     </div>
   );
 }

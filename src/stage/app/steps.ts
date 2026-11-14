@@ -38,6 +38,7 @@ export function viewAt(index: number): ViewId {
 
 /** What a key press means. Step-specific actions are interpreted by the step itself. */
 export type KeyAction =
+  | { readonly type: "delete" }
   | { readonly type: "next" }
   | { readonly type: "back" }
   | { readonly type: "jump"; readonly step: StepId }
@@ -54,6 +55,8 @@ export type KeyAction =
 /** Maps a KeyboardEvent.key (with no modifiers) to an action, or null. */
 export function keyAction(key: string): KeyAction | null {
   switch (key) {
+    case "Delete":
+      return { type: "delete" };
     case "ArrowRight":
     case " ":
     case "PageDown":
@@ -123,6 +126,7 @@ export function keyHints(view: ViewId, live: boolean): readonly { readonly keys:
     case "play":
       return [
         ...nav,
+        { keys: "Del", does: "delete selected component" },
         { keys: "M", does: "rehearsed move" },
         { keys: "W", does: "rehearsed worker" },
         { keys: "A", does: "suggest" },

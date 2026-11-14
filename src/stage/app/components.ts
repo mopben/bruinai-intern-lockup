@@ -12,6 +12,24 @@ export const COMPONENTS: readonly { id: string; name: string; role: ItemRole; ca
   { id: "sink", name: "Sink", role: "fixture", category: "sink", size: { w: .6, h: .9, d: .6 } },
 ];
 
+/** Remove the object and its references, keeping recipe names and remaining steps. */
+export function deleteComponent(k: Kitchen, id: string): Kitchen {
+  if (!k.scan.boxes.some((box) => box.id === id)) return k;
+  const { [id]: _placement, ...placements } = k.layout.placements;
+  return {
+    scan: { ...k.scan, boxes: k.scan.boxes.filter((box) => box.id !== id) },
+    setup: {
+      ...k.setup,
+      items: k.setup.items.filter((item) => item.boxId !== id),
+      pickupId: k.setup.pickupId === id ? "" : k.setup.pickupId,
+      menu: k.setup.menu.map((recipe) => ({ ...recipe, steps: recipe.steps
+        .filter((step) => step.stationId !== id)
+        .map((step) => step.fetchFrom?.includes(id) ? { ...step, fetchFrom: step.fetchFrom.filter((storageId) => storageId !== id) } : step) })),
+    },
+    layout: { ...k.layout, placements, workers: k.layout.workers.filter((worker) => worker.stationId !== id) },
+  };
+}
+
 export function addComponent(k: Kitchen, componentId: string, point: Vec2, collisionLayout: Layout = k.layout): { kitchen: Kitchen; id: string } | null {
   const component = COMPONENTS.find((c) => c.id === componentId);
   if (!component || !Number.isFinite(point.x) || !Number.isFinite(point.z)) return null;
