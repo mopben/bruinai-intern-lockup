@@ -6,8 +6,9 @@ import { HANDOFF_REACH_M, type Vec2 } from "./types";
 import { distance } from "./geometry";
 import { shortestPath, type WalkPath } from "./path";
 import { itemOf, WorldError, type World } from "./world";
+import { itemTasks, workerCovers, type ResolvedTask } from "./tasks";
 
-/** Shortest paths between the stand points the menu uses, keyed by pair. */
+/** Shortest paths between the stand points the menu and covering workers use, keyed by pair. */
 export interface PathTable {
   readonly paths: ReadonlyMap<string, WalkPath>;
 }
@@ -18,14 +19,40 @@ function reversed(p: WalkPath): WalkPath {
   return { ...p, points: [...p.points].reverse() };
 }
 
-/** Every (from, to) pair of item ids a worker may walk between for this menu. */
+/** Where task k's output goes: the station of the task it feeds, or the pickup. */
+function carryTarget(world: World, tasks: readonly ResolvedTask[], t: ResolvedTask): string {
+  return t.next === null ? world.pickupId : (tasks[t.next]?.stationId ?? world.pickupId);
+}
+
+/** Every (from, to) pair of item ids a fetch or carry walks between for this menu. */
 function menuPairs(world: World): readonly (readonly [string, string])[] {
   const pairs: [string, string][] = [];
   for (const m of world.menu) {
-    m.steps.forEach((s, k) => {
-      for (const f of s.fetchFrom ?? []) pairs.push([s.stationId, f]);
-      const next = m.steps[k + 1]?.stationId ?? world.pickupId;
-      pairs.push([s.stationId, next]);
+    const tasks = itemTasks(m);
+    for (const t of tasks) {
+      for (const f of t.fetchFrom) pairs.push([t.stationId, f]);
+      pairs.push([t.stationId, carryTarget(world, tasks, t)]);
+    }
+  }
+  return pairs;
+}
+
+/**
+ * For each worker covering several stations: every pair among those stations and the
+ * places tasks at them carry to. The engine walks these between tasks.
+ */
+function coverPairs(world: World): readonly (readonly [string, string])[] {
+  const pairs: [string, string][] = [];
+  for (const w of world.workers) {
+    const covers = workerCovers(w);
+    if (covers.length < 2) continue;
+    const drops = world.menu.flatMap((m) => {
+      const tasks = itemTasks(m);
+      return tasks.filter((t) => covers.includes(t.stationId)).map((t) => carryTarget(world, tasks, t));
+    });
+    const spots = [...new Set([...covers, ...drops])];
+    spots.forEach((a, i) => {
+      for (const b of spots.slice(i + 1)) pairs.push([a, b]);
     });
   }
   return pairs;
@@ -34,7 +61,7 @@ function menuPairs(world: World): readonly (readonly [string, string])[] {
 /** Compute all paths the menu needs. Call once per layout; the simulator reuses it. */
 export function buildPathTable(world: World): PathTable {
   const paths = new Map<string, WalkPath>();
-  for (const [a, b] of menuPairs(world)) {
+  for (const [a, b] of [...menuPairs(world), ...coverPairs(world)]) {
     if (paths.has(pairKey(a, b))) continue;
     const p = shortestPath(world.obstacles, itemOf(world, a).stand, itemOf(world, b).stand);
     paths.set(pairKey(a, b), p);
@@ -54,7 +81,7 @@ export type LegKind = "fetch" | "carry";
 
 export interface WalkLeg {
   readonly kind: LegKind;
-  /** Step index the leg belongs to. */
+  /** Index of the task the leg belongs to (the step index for a chain). */
   readonly step: number;
   readonly fromId: string;
   readonly toId: string;
@@ -90,11 +117,11 @@ export function walkingForItem(world: World, itemId: string, table?: PathTable):
   const item = world.menuById.get(itemId);
   if (!item) throw new WorldError([`Menu item "${itemId}" does not exist.`]);
   const legs: WalkLeg[] = [];
-  item.steps.forEach((s, k) => {
-    for (const f of s.fetchFrom ?? []) legs.push(leg(world, table, "fetch", k, s.stationId, f));
-    const next = item.steps[k + 1]?.stationId ?? world.pickupId;
-    legs.push(leg(world, table, "carry", k, s.stationId, next));
-  });
+  const tasks = itemTasks(item);
+  for (const t of tasks) {
+    for (const f of t.fetchFrom) legs.push(leg(world, table, "fetch", t.index, t.stationId, f));
+    legs.push(leg(world, table, "carry", t.index, t.stationId, carryTarget(world, tasks, t)));
+  }
   const totalM = legs.reduce((sum, l) => sum + l.roundTripM, 0);
   return { itemId, totalM, legs, anyBlocked: legs.some((l) => l.blocked) };
 }
