@@ -39,8 +39,8 @@ export async function openStage(page: Page, o: OpenOptions = {}): Promise<void> 
   await page.waitForFunction(() => "__dryrun" in globalThis);
   await expect(page.getByTestId("step-strip")).toBeVisible();
   await expect(page.getByText("Loading the kitchen…")).toHaveCount(0);
-  if (!o.emptyWorkspace && await page.getByTestId("active-setup").count() && !await page.getByTestId("active-setup").inputValue()) {
-    await page.getByTestId("active-setup").selectOption("__create_setup__");
+  if (!o.emptyWorkspace && await page.getByTestId("active-setup").count() && !await page.getByTestId("active-setup").getAttribute("data-value")) {
+    await chooseLibraryEntry(page, "setup", "__create_setup__");
   }
 }
 
@@ -143,4 +143,18 @@ export interface RangeV {
   readonly p10: number;
   readonly p50: number;
   readonly p90: number;
+}
+
+/** Choose an existing library entry or the create action in its dropdown. */
+export async function chooseLibraryEntry(page: Page, kind: "setup" | "shift", id: string | null): Promise<void> {
+  const trigger = page.getByTestId(`active-${kind}`);
+  if (await trigger.getAttribute("aria-expanded") !== "true") await trigger.click();
+  await page.getByTestId(id === `__create_${kind}__` ? `create-${kind}-option` : `${kind}-option-${id}`).click();
+}
+
+export async function renameLibraryEntry(page: Page, kind: "setup" | "shift", name: string): Promise<void> {
+  const trigger = page.getByTestId(`active-${kind}`);
+  if (await trigger.getAttribute("aria-expanded") !== "true") await trigger.click();
+  await page.getByTestId(`${kind}-name`).fill(name);
+  await page.getByTestId(`save-${kind}-name`).click();
 }

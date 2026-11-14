@@ -4,13 +4,13 @@ import { parseParams } from "./params";
 
 describe("steps and views", () => {
   it("navigates through views and clamps at both ends", () => {
-    expect(VIEW_ORDER).toEqual(["play", "orders", "compare", "run", "test"]);
+    expect(VIEW_ORDER).toEqual(["play", "orders", "compare", "run"]);
     for (let i = 0; i < VIEW_ORDER.length; i++) {
       expect(navigate(VIEW_ORDER[i]!, { type: "next" })).toBe(viewAt(i + 1));
       expect(navigate(VIEW_ORDER[i]!, { type: "back" })).toBe(viewAt(i - 1));
     }
     expect(viewAt(-3)).toBe("play");
-    expect(viewAt(99)).toBe("test");
+    expect(viewAt(99)).toBe("run");
   });
   it("maps keys to step jumps and view navigation", () => {
     expect(keyAction("Delete")).toEqual({ type: "delete" });
@@ -32,8 +32,8 @@ describe("steps and views", () => {
     expect(stepOf("run")).toBe("results");
     expect(stepIndex("build")).toBe(0);
     expect(defaultView("build")).toBe("play");
-    expect(keyHints("run", true).some((h) => h.does.includes("Original run"))).toBe(true);
-    expect(keyHints("test", false).some((h) => h.does.includes("After the change"))).toBe(true);
+    expect(keyHints("run", true).some((h) => h.does.includes("scenarios"))).toBe(true);
+    expect(STEPS[2].views).toEqual(["compare", "run"]);
     expect(keyHints("compare", false).some((h) => h.does.includes("scenarios"))).toBe(true);
   });
   it("has no inputs key: i does nothing, no hint mentions I, step 3 is Run", () => {
@@ -56,7 +56,7 @@ describe("params", () => {
     expect(parseParams("?step=2").view).toBe("orders");
     expect(parseParams("?step=3").view).toBe("compare");
     expect(parseParams("?step=3&view=run").view).toBe("run");
-    expect(parseParams("?step=3&view=test").view).toBe("test");
+    expect(parseParams("?step=3&view=test").view).toBe("run");
     expect(parseParams("?step=3&view=play").view).toBe("compare");
     expect(parseParams("?step=6").view).toBe("compare");
     expect(parseParams("?step=2.5").view).toBe("play");

@@ -5,15 +5,16 @@
 export const STEPS = [
   { id: "build", name: "Setup", views: ["play", "scan"] },
   { id: "orders", name: "Orders", views: ["orders"] },
-  { id: "results", name: "Run", views: ["compare", "run", "test"] },
+  { id: "results", name: "Run", views: ["compare", "run"] },
 ] as const;
 
 export type StepId = (typeof STEPS)[number]["id"];
-export type ViewId = (typeof STEPS)[number]["views"][number];
+export type ViewId = (typeof STEPS)[number]["views"][number] | "test";
 export const STEP_IDS: readonly StepId[] = STEPS.map((s) => s.id);
-export const VIEW_ORDER: readonly ViewId[] = ["play", "orders", "compare", "run", "test"];
+export const VIEW_ORDER: readonly ViewId[] = ["play", "orders", "compare", "run"];
 
 export function stepOf(view: ViewId): StepId {
+  if (view === "test") return "results";
   return STEPS.find((s) => (s.views as readonly ViewId[]).includes(view))!.id;
 }
 
@@ -117,11 +118,6 @@ export function keyHints(view: ViewId, live: boolean): readonly { readonly keys:
   switch (view) {
     case "scan":
       return [...nav, { keys: "P", does: "replay the scan" }, { keys: "⇧F", does: "full screen" }];
-    case "run":
-    case "test":
-      return live
-        ? [...nav, { keys: "P", does: `start ${view === "run" ? "Original run" : "After the change"}` }, { keys: "E", does: "end run" }]
-        : [...nav, { keys: "P", does: `replay ${view === "run" ? "Original run" : "After the change"}` }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }];
     case "play":
       return [
         ...nav,
@@ -131,6 +127,7 @@ export function keyHints(view: ViewId, live: boolean): readonly { readonly keys:
         { keys: "C", does: "costs" },
         { keys: "⌫", does: "reset" },
       ];
+    case "run":
     case "compare":
       return [...nav, { keys: "P", does: "replay scenarios" }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }];
     default:

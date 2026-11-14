@@ -814,6 +814,7 @@
 .st-scenario-problem { flex-basis: 100%; }
 .st-half .label { max-width: calc(100% - 16px); overflow-wrap: anywhere; font-size: clamp(18px, 1.6vw, 30px); }
 .st-compare-bar { flex-wrap: wrap; }
+.st-compare.single { grid-template-columns: minmax(0, 1fr); }
 
 @media (prefers-reduced-motion: reduce) {
   .st-pulse {
@@ -1188,3 +1189,18 @@
 @media (max-width: 750px) {
   .st-import-body .st-inputs, .st-import-body .st-inputs > .st-field { grid-template-columns: 1fr; }
 }
+
+.st-library-dropdown { position: relative; min-width: 0; }
+.st-library-label { display: block; margin-bottom: 6px; font-weight: 800; }
+.st-library-trigger { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 10px 12px; border: 2px solid var(--dr-ink); border-radius: 8px; background: var(--dr-paper); color: var(--dr-ink); font: inherit; text-align: left; cursor: pointer; }
+.st-library-trigger span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-library-trigger:disabled { opacity: .5; cursor: default; }
+.st-library-menu { position: absolute; top: 100%; left: 0; right: 0; z-index: 120; margin-top: 6px; padding: 8px; border: 2px solid var(--dr-ink); border-radius: 12px; background: var(--dr-paper); color: var(--dr-ink); box-shadow: 0 8px 24px #0003; max-height: 65dvh; overflow-y: auto; }
+.st-library-choices { display: grid; max-height: 25dvh; overflow-y: auto; }
+.st-library-choice, .st-library-create { display: flex; justify-content: space-between; gap: 8px; width: 100%; border: 0; border-radius: 6px; padding: 10px; text-align: left; font: inherit; background: transparent; color: inherit; cursor: pointer; overflow-wrap: anywhere; }
+.st-library-choice:hover, .st-library-choice:focus-visible, .st-library-create:hover, .st-library-create:focus-visible { background: var(--dr-table); }
+.st-library-choice.selected { font-weight: 800; }
+.st-library-rename { display: grid; gap: 10px; padding: 14px 10px; margin: 6px 0; border-top: 1px dashed var(--dr-board-edge); border-bottom: 1px dashed var(--dr-board-edge); }
+.st-library-rename input { box-sizing: border-box; }
+.st-library-rename .st-btn { justify-self: start; }
+.st-library-create { font-weight: 800; }

@@ -130,7 +130,7 @@ function Half(props: { readonly side: Side; readonly t: number; readonly onScene
   );
 }
 
-export function CompareView() {
+export function CompareView({ single = false }: { single?: boolean }) {
   const key = scenariosKey.value;
   const [sides, setSides] = useState<readonly Side[]>([]);
   const [t, setT] = useState(0);
@@ -139,13 +139,13 @@ export function CompareView() {
   const clockRef = useRef({ t: 0, speed: params.value.speed, end: 0 });
 
   useEffect(() => {
-    const list = [buildSide(0), buildSide(1)].filter((s): s is Side => s !== null);
+    const list = (single ? [buildSide(0)] : [buildSide(0), buildSide(1)]).filter((s): s is Side => s !== null);
     setSides(list);
     setT(0);
     clockRef.current = { ...clockRef.current, t: 0, end: Math.max(0, ...list.map((s) => s.trace?.endT ?? 0)) + TAIL_S };
     // Keyed on content, not object identity: the first run finishing again in the background (same
     // recording, new objects) must not rebuild both scenes mid-Compare.
-  }, [key]);
+  }, [key, single]);
 
   useEffect(() => {
     let raf = 0;
@@ -193,18 +193,18 @@ export function CompareView() {
     [],
   );
 
-  if (sides.length < 2) {
+  if (sides.length < (single ? 1 : 2)) {
     return (
       <div class="st-center">
         <div class="st-center-card">
-          <h2>Compare shifts and setups</h2>
-          <p>Create a shift in Orders, then choose a shift and setup for each side.</p>
+          <h2>{single ? "Run a scenario" : "Compare shifts and setups"}</h2>
+          <p>{single ? "Create a shift in Orders, then choose a shift and setup to run." : "Create a shift in Orders, then choose a shift and setup for each side."}</p>
         </div>
       </div>
     );
   }
   return (
-    <div class="st-compare">
+    <div class={`st-compare${single ? " single" : ""}`} data-testid={single ? "run-scenario" : "compare-scenarios"}>
       {sides.map((s, i) => (
         <Half key={s.label} side={s} t={t} onScene={(h) => (scenes.current[i] = h)} />
       ))}
@@ -212,7 +212,7 @@ export function CompareView() {
         <span class="st-say" data-testid="compare-clock">
           {clock(t)}
         </span>
-        <span class="st-small">{resolvedChoice(0).shiftId === resolvedChoice(1).shiftId ? "Same shift, matched simulation seed." : "Different shifts: results reflect both order demand and setup."}</span>
+        <span class="st-small">{single ? "Simulated scenario" : resolvedChoice(0).shiftId === resolvedChoice(1).shiftId ? "Same shift, matched simulation seed." : "Different shifts: results reflect both order demand and setup."}</span>
         <Btn small label="Play again" k="P" onClick={() => (clockRef.current = { ...clockRef.current, t: 0 })} testId="btn-play" />
         <Btn small label="Skip to end" k="E" onClick={() => (clockRef.current = { ...clockRef.current, t: clockRef.current.end })} testId="btn-skip" />
         <Btn small label={speed > 1 ? "Normal speed" : "Faster"} k="F" kind={speed > 1 ? "on" : "plain"} onClick={() => compareCommand.value = { kind: "faster", n: (compareCommand.value?.n ?? 0) + 1 }} testId="btn-faster" />

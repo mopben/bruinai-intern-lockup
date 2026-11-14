@@ -6,7 +6,7 @@
  *                       live: scan, taps and positions start on live.
  *   &speed=4            replay speed for every playback (default 1, 0.25 to 64).
  *   &step=1..3          step to open on (default 1).
- *   &view=compare|run|test  view within step 3.
+ *   &view=compare|run  view within step 3.
  */
 import { defaultView, stepAt, type ViewId } from "./steps";
 
@@ -35,6 +35,6 @@ export function parseParams(search: string): StageParams {
     runId: SAFE_ID.test(run) ? run : DEFAULT_RUN_ID,
     mode: q.get("mode") === "live" ? "live" : "replay",
     speed: Number.isFinite(speed) && speed >= MIN_SPEED && speed <= MAX_SPEED ? speed : 1,
-    view: chosen === "results" && (requested === "compare" || requested === "run" || requested === "test") ? requested : defaultView(chosen),
+    view: chosen === "results" && requested === "test" ? "run" : chosen === "results" && (requested === "compare" || requested === "run") ? requested : defaultView(chosen),
   };
 }

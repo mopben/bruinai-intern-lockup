@@ -67,9 +67,8 @@ export function Sash() {
 export function ResultsSwitch() {
   if (currentStep.value !== "results") return null;
   const choices = [
-    { id: "compare", label: "Compare scenarios" },
-    { id: "run", label: "Original run" },
-    { id: "test", label: "After the change" },
+    { id: "compare", label: "Compare scenario" },
+    { id: "run", label: "Run scenario" },
   ] as const;
   return (
     <nav class="st-results-switch" aria-label="Results views">

@@ -14,11 +14,9 @@ import { ActivityBar, KeyHints, Notices, ResultsSwitch, Sash } from "./Chrome";
 import { CompareView } from "./CompareView";
 import { PlayRail } from "./PlayRail";
 import { OrdersRail } from "./OrdersRail";
-import { RunRail } from "./RunRail";
 import { ImportMenu } from "./ImportMenu";
 import { UploadIcon } from "./icons";
 import { SceneHost } from "./SceneHost";
-import { TestRail } from "./TestRail";
 
 function BuildRail() {
   return <>
@@ -38,13 +36,13 @@ function Rail() {
     case "scan":
       return <BuildRail />;
     case "run":
-      return <RunRail />;
+      return <ScenarioControls single />;
     case "play":
       return <BuildRail />;
     case "orders":
       return <OrdersRail />;
     case "test":
-      return <TestRail />;
+      return <ScenarioControls single />;
     case "compare":
       return <ScenarioControls />;
     default:
@@ -76,7 +74,7 @@ function useDropScan(): void {
 export function App() {
   useEffect(() => installKeys(), []);
   useDropScan();
-  const comparing = view.value === "compare";
+  const comparing = view.value === "compare" || view.value === "run";
   const p = panel.value;
   const step = STEPS[stepIndex(currentStep.value)]!;
   return (
@@ -103,7 +101,7 @@ export function App() {
       <main class="st-stage">
         {activeSetupId.value ? <>
           <SceneHost hidden={comparing} />
-          {comparing ? <CompareView /> : null}
+          {comparing ? <CompareView single={view.value === "run"} /> : null}
         </> : workspaceReady.value ? <div class="st-center"><div class="st-center-card"><h2>Create your first setup</h2><p>Start in Setup to configure your kitchen.</p></div></div> : null}
         <Notices />
         {bootError.value ? (

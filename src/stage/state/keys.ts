@@ -47,16 +47,14 @@ function play(): void {
       reveal();
       return;
     case "run":
-      startOrReplay("first");
+    case "compare":
+      sendCompare("replay");
       return;
     case "test":
       startOrReplay("second");
       return;
-    case "compare":
-      sendCompare("replay");
-      return;
     default:
-      keyHint("P plays Original run, After the change, and Compare scenarios in step 3.");
+      keyHint("P replays scenarios in Run (step 3).");
       return;
   }
 }
@@ -86,12 +84,12 @@ export function perform(action: KeyAction): void {
       play();
       return;
     case "faster":
-      if (here === "compare") sendCompare("faster");
+      if (here === "compare" || here === "run") sendCompare("faster");
       else if (!toggleFaster()) keyHint(fasterWhyNot(here));
       return;
     case "skip":
-      if (here === "compare") sendCompare("skip");
-      else if (here !== "run" && here !== "test") keyHint("E skips to the end in Original run, After the change, and Compare scenarios.");
+      if (here === "compare" || here === "run") sendCompare("skip");
+      else if (here !== "test") keyHint("E skips to the end in Run (step 3).");
       else if (!skipToEnd()) keyHint("No run is playing. Press P to start one.");
       return;
     case "escape":

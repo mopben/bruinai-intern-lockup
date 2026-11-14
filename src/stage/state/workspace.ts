@@ -21,7 +21,6 @@ import {
 export interface SavedSetup {
   readonly id: string;
   readonly name: string;
-  readonly type: string;
   readonly kitchen: Kitchen;
   readonly measured: MeasuredRun | null;
   readonly recording: RunBundle | null;
@@ -49,7 +48,7 @@ const measuredSchema = z.object({
 const workspaceSchema = z.object({
   version: z.literal(1), activeSetupId: z.string().nullable(), activeShiftId: z.string().nullable(),
   setups: z.array(z.object({
-    id: z.string(), name: z.string(), type: z.string(), kitchen: kitchenSchema,
+    id: z.string(), name: z.string(), kitchen: kitchenSchema,
     measured: measuredSchema.nullable(), recording: runBundleSchema.nullable(), origin: z.enum(["recorded", "live"]),
     candidates: z.array(z.object({ id: z.string(), meta: runMetaSchema, layout: layoutSchema, url: z.string().optional() })).default([]),
     economics: z.object({}).passthrough().nullable(),
@@ -124,7 +123,7 @@ export function createSetup(): void {
   if (!k) { addNotice({ id: "setup", text: "The starting kitchen is still loading.", tone: "warn" }); return; }
   const id = crypto.randomUUID();
   const saved: SavedSetup = {
-    id, name: `Setup ${savedSetups.peek().length + 1}`, type: "Baseline",
+    id, name: `Setup ${savedSetups.peek().length + 1}`,
     kitchen: structuredClone({ ...k, layout: playLayout.peek() ?? k.layout }),
     measured: firstRun.peek(), recording, economics: storedEconomics.peek(), origin: current ? kitchenOrigin.peek() : "recorded",
     candidates: candidates.peek(),
@@ -133,7 +132,7 @@ export function createSetup(): void {
   selectSetup(id);
 }
 
-export function renameSetup(change: Partial<Pick<SavedSetup, "name" | "type">>): void {
+export function renameSetup(change: Partial<Pick<SavedSetup, "name">>): void {
   const saved = savedSetups.peek().find((entry) => entry.id === activeSetupId.peek());
   if (saved) putSetup({ ...saved, ...change });
 }
