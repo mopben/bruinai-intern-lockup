@@ -107,3 +107,20 @@ export {
 export { rangeOf, mean, median, quantile } from "./stats";
 export type { Range } from "./stats";
 export { mulberry32, streamFor } from "./rng";
+
+// Profit per hour, from the owner's prices and costs
+export {
+  capacityPerHour,
+  exampleEconomics,
+  formatMoney,
+  formatMoneyRange,
+  marginPerOrder,
+  profitFromCapacity,
+  profitOf,
+  rushReleases,
+  scheduleRatePerHour,
+  CAPACITY_ORDERS,
+  PROFIT_REPS,
+  PROFIT_SEED,
+} from "./profit";
+export type { Economics, MenuPrice, ProfitEstimate, CapacityOptions } from "./profit";

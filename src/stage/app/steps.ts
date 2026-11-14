@@ -35,6 +35,8 @@ export type KeyAction =
   | { readonly type: "escape" }
   | { readonly type: "reset" }
   | { readonly type: "rehearsed"; readonly key: "m" | "w" }
+  | { readonly type: "suggest" }
+  | { readonly type: "costs" }
   | { readonly type: "retry-save" };
 
 /** Maps a KeyboardEvent.key (with no modifiers) to an action, or null. */
@@ -72,6 +74,12 @@ export function keyAction(key: string): KeyAction | null {
     case "s":
     case "S":
       return { type: "retry-save" };
+    case "a":
+    case "A":
+      return { type: "suggest" };
+    case "c":
+    case "C":
+      return { type: "costs" };
     default: {
       const n = Number(key);
       if (key.length === 1 && Number.isInteger(n) && n >= 1 && n <= STEP_IDS.length) return { type: "jump", step: stepAt(n - 1) };
@@ -107,7 +115,7 @@ export function keyHints(step: StepId, live: boolean): readonly { readonly keys:
     case "trust":
       return [...nav, ...common];
     case "play":
-      return [...nav, { keys: "M", does: "rehearsed move" }, { keys: "W", does: "rehearsed worker" }, { keys: "⌫", does: "reset" }, ...common];
+      return [...nav, { keys: "M", does: "rehearsed move" }, { keys: "W", does: "rehearsed worker" }, { keys: "A", does: "suggest" }, { keys: "C", does: "costs" }, { keys: "⌫", does: "reset" }, ...common];
     case "compare":
       return [{ keys: "←", does: "back" }, { keys: "P", does: "play again" }, { keys: "F", does: "faster" }, ...common];
     default:

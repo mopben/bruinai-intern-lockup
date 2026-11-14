@@ -917,3 +917,103 @@
 .st-runline .st-num .what {
   white-space: nowrap;
 }
+
+/* --- profit and suggestions (Play) ---------------------------------------- */
+.st-money {
+  display: grid;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 2px dashed var(--dr-board-edge);
+}
+.st-money-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+}
+.st-money-line .what {
+  font-weight: 800;
+  font-size: var(--dr-size-body);
+}
+.st-money-line .value {
+  font-family: var(--dr-font-display);
+  font-weight: 800;
+  font-size: var(--dr-size-title);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.st-money-line .was {
+  font-size: var(--dr-size-small);
+  font-weight: 700;
+  color: var(--dr-ink-soft);
+  text-decoration: line-through;
+  text-decoration-color: var(--dr-path);
+  text-decoration-thickness: 3px;
+  white-space: nowrap;
+}
+.st-suggestions {
+  display: grid;
+  gap: 6px;
+}
+.st-suggestion {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--dr-size-small);
+  font-weight: 700;
+}
+.st-suggestion .gain {
+  font-weight: 800;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.st-suggestion.on .text {
+  text-decoration: underline;
+  text-decoration-color: var(--dr-path);
+  text-decoration-thickness: 3px;
+}
+.st-link {
+  font: inherit;
+  font-weight: 800;
+  color: var(--dr-ink);
+  background: none;
+  border: 0;
+  padding: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* --- prices and costs drawer ------------------------------------------- */
+.st-cost-row {
+  display: grid;
+  grid-template-columns: 7em 1fr 1fr auto;
+  align-items: end;
+  gap: 14px;
+}
+.st-cost-row .name {
+  font-family: var(--dr-font-display);
+  font-weight: 800;
+  font-size: var(--dr-size-label);
+  padding-bottom: 8px;
+}
+.st-cost-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+}
+.st-cost-input {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.st-cost .st-input {
+  font-size: var(--dr-size-label);
+  min-width: 0;
+}
+.st-cost-input .unit {
+  font-weight: 800;
+  font-size: var(--dr-size-small);
+  color: var(--dr-ink-soft);
+  white-space: nowrap;
+}

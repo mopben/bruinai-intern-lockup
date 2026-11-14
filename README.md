@@ -29,7 +29,7 @@ The stage has six steps. Move with → and ←, or jump with 1 to 6.
 1. **Scan.** The scanned boxes rise into place, then get the owner's names. Click a box to rename it or change its role.
 2. **Run.** Dots are people (from the camera); tickets pile up at the slow station (from the tablet taps).
 3. **Trust.** The model's order times next to the measured ones, on orders it did not learn from, with the error as one number.
-4. **Play.** Drag the fridge, a station or the pickup, or add a worker. Walking per order (exact) and time per order (a range) update during the drag.
+4. **Play.** Drag the fridge, a station or the pickup, or add a worker. Walking per order (exact) and time per order (a range) update during the drag. **Profit per hour** follows too, from the prices and costs (key **C**: menu prices and ingredients, wage per worker, electricity, rent, orders in a busy hour; kept in this browser). **Suggest changes** (key **A**) tries a worker more or less at each station and moving every unlocked box, and lists what pays, best first; **Try** puts one on the board. Lock a box in Scan to keep it in place.
 5. **Test.** The run after the change, against the prediction frozen when you left Play. A miss is said plainly.
 6. **Compare.** Before and after, side by side, on the same orders.
 

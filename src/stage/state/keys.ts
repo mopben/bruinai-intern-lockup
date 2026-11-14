@@ -3,6 +3,8 @@
  * (renaming a box) are left alone.
  */
 import { keyAction, navigate, type KeyAction } from "../app/steps";
+import { costsOpen } from "./economics";
+import { startSuggest } from "./suggest";
 import { applyRehearsed, goTo, resetPlay, startOrReplay } from "./flow";
 import { reveal } from "./kitchen-actions";
 import { retrySave, skipToEnd, toggleFaster } from "./runs";
@@ -82,9 +84,11 @@ export function perform(action: KeyAction): void {
       return;
     case "inputs":
       drawerOpen.value = !drawerOpen.value;
+      if (drawerOpen.value) costsOpen.value = false;
       return;
     case "escape":
-      if (drawerOpen.value) drawerOpen.value = false;
+      if (costsOpen.value) costsOpen.value = false;
+      else if (drawerOpen.value) drawerOpen.value = false;
       else selectedId.value = null;
       return;
     case "reset":
@@ -94,6 +98,14 @@ export function perform(action: KeyAction): void {
     case "rehearsed":
       if (here === "play") applyRehearsed(action.key);
       else keyHint("M and W make the rehearsed change in Play (step 4).");
+      return;
+    case "suggest":
+      if (here === "play") startSuggest();
+      else keyHint("A suggests changes in Play (step 4).");
+      return;
+    case "costs":
+      costsOpen.value = !costsOpen.value;
+      if (costsOpen.value) drawerOpen.value = false;
       return;
     case "retry-save":
       if (!retrySave()) keyHint("Nothing is waiting to be saved.");
@@ -113,7 +125,12 @@ function fasterWhyNot(here: string): string {
 
 export function installKeys(): () => void {
   const onKey = (e: KeyboardEvent) => {
-    if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (isTyping(e.target)) {
+      // Esc still closes a drawer from inside one of its fields; every other key is typing.
+      if (e.key !== "Escape") return;
+      (e.target as HTMLElement).blur();
+    }
     if (e.shiftKey && (e.key === "F" || e.key === "f")) {
       e.preventDefault();
       toggleFullscreen();

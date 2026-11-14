@@ -19,6 +19,9 @@ describe("steps", () => {
     expect(keyAction("0")).toBeNull();
     expect(keyAction("f")).toEqual({ type: "faster" });
     expect(keyAction("I")).toEqual({ type: "inputs" });
+    expect(keyAction("a")).toEqual({ type: "suggest" });
+    expect(keyAction("A")).toEqual({ type: "suggest" });
+    expect(keyAction("c")).toEqual({ type: "costs" });
     expect(keyAction("x")).toBeNull();
   });
 

@@ -8,6 +8,7 @@ import { installKeys } from "../state/keys";
 import { addNotice, bootError, loading, step } from "../state/store";
 import { InputsChip, KeyHints, Notices, StepStrip } from "./Chrome";
 import { CompareView } from "./CompareView";
+import { CostsDrawer } from "./CostsDrawer";
 import { InputsDrawer } from "./InputsDrawer";
 import { PlayRail } from "./PlayRail";
 import { RunRail } from "./RunRail";
@@ -93,6 +94,7 @@ export function App() {
         <InputsChip />
       </footer>
       <InputsDrawer />
+      <CostsDrawer />
     </div>
   );
 }
