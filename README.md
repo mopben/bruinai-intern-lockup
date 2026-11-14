@@ -61,6 +61,8 @@ The laptop's network addresses are printed by `npm start` and listed in the inpu
 
 A camera run can also be recorded on the camera page (**Record**, then **Stop and save**) or made from a filmed video; see CAMERA.md.
 
+A filmed video can also be turned into `positions.jsonl` and `actions.jsonl` without hats, by the Python video pipeline in `vision/` (person detector, tracker, zone actions, optional model labels). See **[docs/VISION.md](docs/VISION.md)**. It has been tested on public datasets and synthetic data only, never on a real café run.
+
 ## Commands
 
 | Command | What it does |
@@ -89,6 +91,7 @@ A camera run can also be recorded on the camera page (**Record**, then **Stop an
 | `server/` | The laptop server: pages, run folders, the phone scan upload, the live relay |
 | `tools/world/` | The fixture generator (a separate "real room") and the run-folder validator |
 | `tools/camera/` | A synthetic camera video and checks for the tracker |
+| `vision/` | The Python video pipeline: filmed video to `positions.jsonl` and `actions.jsonl` without hats ([docs/VISION.md](docs/VISION.md), [vision/README.md](vision/README.md)) |
 | `tools/start.mjs` | The one command behind `npm start` |
 | `fixtures/` | Three recorded runs: `counter-a` (original), `counter-b-fridge-closer`, `counter-c-fourth-worker` |
 | `ios/` | The iPhone scan app (Swift, RoomPlan) |
@@ -105,6 +108,7 @@ A camera run can also be recorded on the camera page (**Record**, then **Stop an
 - [docs/PLAN.md](docs/PLAN.md): how the build was planned
 - [docs/BRIEF.md](docs/BRIEF.md): the brief (the gold standard)
 - [docs/FORMATS.md](docs/FORMATS.md), [docs/CAMERA.md](docs/CAMERA.md), [ios/README.md](ios/README.md)
+- [docs/VISION.md](docs/VISION.md): the video pipeline (no hats), how to run it and how it was tested
 
 ## What was verified, and how
 
@@ -119,5 +123,6 @@ A camera run can also be recorded on the camera page (**Record**, then **Stop an
 | Server and inputs (`server/`, `src/inputs`) | 17 + 84 unit tests; scans POSTed with `curl` | Scan accepted, saved in `recordings/scans/`, shown on the stage | Phone and tablet over real Wi-Fi |
 | Scan app (`ios/`) | 27 unit tests in the iPhone 18 Pro simulator (see below); builder's simulator run and unsigned device build | Builder: summary screen, POST to a local listener, error messages | **RoomPlan capture on a LiDAR iPhone has never run.** Which side RoomPlan calls an object's front is unknown |
 | Camera tracker (`src/camera`, `tools/camera`) | 58 + 6 unit tests; a computer-generated video of `counter-a` through the real page | Dots on average 3 cm from the truth, worst 14 cm; hats found in 94–100% of frames | A real phone camera, real hats, real light, Continuity Camera delay |
+| Video pipeline (`vision/`) | Python tests (pytest); PETS09-S2L1 (a public outdoor video with ground truth); synthetic tracks of the bundled runs; Breakfast Actions clips for labels; 4 stock café clips by eye | PETS09: detection precision 0.91, recall 0.96, IDF1 0.83. Synthetic: every worker found, floor error about 2 cm. Model labels about as good as guessing the most common action | Any real café run; a high indoor camera; labels on café footage. See [docs/VISION.md](docs/VISION.md) |
 
 Unit tests: `npx vitest run` gave **489 passed in 49 files** (Nov 14, 2026). Acceptance: `npm run acceptance` gave **26 passed**, two runs in a row, about 2.5 minutes each, with every non-local request blocked. Scan app: `xcodebuild test` gave **27 of 27 passed** on the iPhone 18 Pro simulator.

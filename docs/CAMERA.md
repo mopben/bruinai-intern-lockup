@@ -82,6 +82,8 @@ If someone filmed a run with the phone on the mount (same position as when you c
 
 You can also press Play and watch it track, with Record, to check a part.
 
+**Without hats.** A filmed video can also go through the Python video pipeline in `vision/`, which finds people with a person detector instead of hat colours and also writes `actions.jsonl`. It reuses the calibration you export here (press **Export** after calibrating on the video). For that pipeline `hatHeights` means the height of the top of each worker's head, a few centimetres above where you would measure a hat's middle. See [VISION.md](VISION.md). It has not been tried on a real café video.
+
 ## When it fails
 
 - **The stage falls back by itself.** If no position arrives for 4 seconds, or the laptop link drops, the stage switches the dots to the recorded positions of the matching run, mid-run, without a restart. Say "we're showing the recorded run for the dots" and carry on. The recorded dots only line up with the recorded kitchen: after a fresh phone scan they belong to another floor frame, and the stage warns "The recording standing by is from another kitchen".

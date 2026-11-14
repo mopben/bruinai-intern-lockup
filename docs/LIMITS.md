@@ -15,6 +15,8 @@ Everything below needs a real device, a real room or real people. None of it has
 - **A real projector.** Readability from the back of a room is a design aim, not a measurement.
 - **Real people following the run rules** (fetch round trip, work, tap, carry and come back; hand over within 1 m). The fixtures follow them exactly; people may not.
 - **Any real café.** No real kitchen has been scanned or run.
+- **The video pipeline (`vision/`, see VISION.md) on a real café run.** It has never had a filmed run with a scan and a calibration of the same kitchen. Its parts ran on public datasets and synthetic data only. Also never tried: a high camera tilted down indoors, counters hiding the lower body (with the head anchor), workers sharing a station, customers leaning over the counter, and variable-frame-rate phone video (frame times are assumed evenly spaced).
+- **Model labels on café footage.** SigLIP 2 was measured on Breakfast Actions (home kitchens) and is about as good as always guessing the most common action; Gemini was measured on the same clips (VISION.md). Neither was measured on café footage. Treat every `label` in `actions.jsonl` as experimental.
 - **Signing the scan app with a free Apple ID.**
 
 ## Fragile
@@ -42,6 +44,11 @@ Everything below needs a real device, a real room or real people. None of it has
 - **The first `npm start` needs internet** to install packages. Later starts do not.
 - **The camera page must stay visible on the laptop.** A hidden browser tab slows the tracker down.
 - **Test plays one simulated run per side.** It is one draw, not the range; quote the range.
+- **Video pipeline: telling workers apart.** Workers are named by where they rest (their station). Two workers at one station are told apart only by the order they are listed in; a worker who covers other stations (`covers`) is found by the home station only. In a crowded clip the tracker gave 12 ids for about 9 people. Stitching broken tracks with the default 4 s gap lowered IDF1 on PETS09 from 0.828 to 0.782; a 1–2 s gap gives 0.891. The default was not changed after seeing that.
+- **Video pipeline: what positions cannot see.** A worker who never leaves their station gets one long `work` segment: positions cannot tell waiting from working. A fetch shorter than the 0.5 m trip threshold (counter-b's fridge, 0.43 m away) shows as `walk`.
+- **Video pipeline: head height.** It uses `hatHeights` as the height of the top of the head. A hat measured at its middle is a few cm lower, and each cm costs about 3–4 cm on the floor with a camera 2.8 m up.
+- **Video pipeline: label confidence.** The 0.8 confidence threshold was tuned on half the Breakfast clips and labels only a quarter of frames on the other half. A threshold does not carry over between label lists of different sizes or between models.
+- **Gemini sends frames of the workers to Google.** The café must agree to that before it is used.
 
 ## What we would do next
 
@@ -52,3 +59,4 @@ Everything below needs a real device, a real room or real people. None of it has
 5. **Time the full live demo** on the real network and the real projector, with someone at the back of the room reading the numbers.
 6. **Practise every fallback** in the runbook at least once with the real devices.
 7. Fix what the real runs show, in this order: honest numbers, the instant answer to a drag, the look, then the rest.
+8. **Film one real staged run for the video pipeline** with the camera mount of CAMERA.md, calibrate on that video, and compare `vision`'s `positions.jsonl` with tape marks and its `actions.jsonl` with the taps (`eval-actions`). Then decide whether to use labels at all: measure SigLIP and Gemini on a few minutes of that footage labelled by hand, or fine-tune a small model on it.
