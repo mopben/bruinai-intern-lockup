@@ -208,19 +208,21 @@ export function resetPlay(): void {
 
 /**
  * "Check this with a real run": the second run against the frozen prediction.
- * A second run still going (left to finish when the check was closed) is shown
- * again, not restarted; otherwise the second run is planned and played afresh.
+ * A second run for the same Play layout that is still going, or has ended with
+ * its verdict, is shown again, never restarted (a live run cannot be replayed).
+ * Otherwise the second run is planned and played afresh.
  */
 export function openCheck(): void {
   if (step.value !== "test") return;
   checkOpen.value = true;
   const s = session.value;
   const plan = testPlan.value;
-  if (s && s.purpose === "second" && s.status === "running" && plan && plan.judgeLayout === playLayout.value) return;
+  const started = s !== null && s.purpose === "second" && (s.status === "running" || s.status === "ended");
+  if (started && plan !== null && plan.judgeLayout === playLayout.value) return;
   void beginTest();
 }
 
-/** "Back to the simulation". A second run that is going is left to finish; reopening the check shows it. */
+/** "Back to the simulation". A second run that is going is left to finish; reopening the check shows it and its verdict. */
 export function closeCheck(): void {
   checkOpen.value = false;
 }

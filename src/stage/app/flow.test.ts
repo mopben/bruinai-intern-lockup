@@ -25,7 +25,7 @@ import { layoutNumbers } from "./numbers";
 import { alongPolyline, homePositions, indexMovements, latestPositions, simulatedWorkers } from "./playback";
 import { SIMULATED_BAR, busiestWorker, rangeMeaning, runStory, simulationBasis, testOutcome, verdictSentence, waitsMostAt } from "./words";
 import { closeCheck, goTo, openCheck } from "../state/flow";
-import { candidates as candidateList, checkOpen, firstRun, frozen, kitchen, playLayout, session, step, testPlan, type Session } from "../state/store";
+import { candidates as candidateList, checkOpen, firstRun, frozen, kitchen, outcome, playLayout, secondRun, session, step, testPlan, type Session } from "../state/store";
 
 const root = join(__dirname, "../../../fixtures");
 const jsonl = <T>(text: string) =>
@@ -259,6 +259,39 @@ describe("the Test step and the real-run check", () => {
     openCheck();
     goTo("play");
     expect(checkOpen.value).toBe(false);
+  });
+
+  /** Opens the check and stands in for a second run that has ended with a verdict. */
+  function endSecondRun() {
+    goTo("test");
+    openCheck();
+    const run = firstRun.value!;
+    const verdict = testOutcome(predict(resolveWorld(a.scan, a.setup, b.layout), calA).meanOrderTime, reconstructRun(b.setup, b.taps), 20.8);
+    session.value = { ...idle, purpose: "second", status: "ended" };
+    secondRun.value = run;
+    outcome.value = verdict;
+    return { run, verdict };
+  }
+
+  it("keeps the ended second run and its verdict when the check is closed and reopened", () => {
+    const { run, verdict } = endSecondRun();
+    closeCheck();
+    openCheck();
+    expect(checkOpen.value).toBe(true);
+    expect(secondRun.value).toBe(run);
+    expect(outcome.value).toBe(verdict);
+    expect(session.value?.status).toBe("ended");
+  });
+
+  it("starts a fresh check after the layout in Play changed", () => {
+    endSecondRun();
+    goTo("play");
+    playLayout.value = c.layout;
+    goTo("test");
+    openCheck();
+    expect(outcome.value).toBeNull();
+    expect(secondRun.value).toBeNull();
+    expect(testPlan.value?.judgeLayout).toBe(c.layout);
   });
 
   it("does not open the check outside Test", () => {
