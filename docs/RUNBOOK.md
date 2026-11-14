@@ -29,7 +29,7 @@ Live path first; **from recordings** in brackets. Numbers shown are the recordin
 | --- | --- | --- | --- | --- |
 | 0:00 | 1 Scan | Sweep the phone, press Send. (Recordings: the scan replays by itself.) | P replays the scan | Plain boxes rise, then get names |
 | 0:30 | 2 Run | Start the room. (Recordings: it plays on arrival.) | → then **P** "Start run". (Recordings: F) | Dots move, tickets pile at the espresso machine. Ends by itself, or **E** |
-| 1:30 | 3 Trust | "On orders it never saw, the model is off by this much." | → | Model error **8%**, five order pairs |
+| 1:30 | 3 Trust | "On orders it never saw, the model is off by this much." | → | Model error (about **8%** on the recording), five order pairs |
 | 1:45 | 4 Play | Hand the mouse to a judge: drag the fridge, or **+ worker** | → | Walking **6.2 m**, time **19–23 s**; both change during the drag |
 | 2:15 | 5 Test | Make the same change in the room, then run again. (Recordings: the matching run plays.) | → then **P** (live). (Recordings: F, or E) | Predicted range, measured mean, and a plain verdict |
 | 2:45 | 6 Compare | "Same orders, same luck, before and after." | → (P plays again) | Two kitchens side by side |
@@ -44,7 +44,7 @@ Live path first; **from recordings** in brackets. Numbers shown are the recordin
 | Dots wrong | **I**, Positions: **Recorded** | Recorded dots, run continues |
 | The live run is a mess | **I**, set all three to **Recorded**, Esc. A run not yet started then plays the recording at once (**P** if it is over); a running one switches over. **F** for 4× | The recorded run plays |
 | Judge freezes at the drag | **M** (fridge next to the espresso machine) or **W** (fourth worker). **Backspace** resets | Numbers jump to the rehearsed change |
-| Prediction misses | Nothing. Say: "Outside the range by a second. Ten orders is a short run, and this is why we test it." | "Outside the range: 0.3 s slower than predicted." |
+| Prediction misses | Nothing. Say: "Outside the range. Ten orders is a short run, and this is why we test it." | "Outside the range: … slower than predicted." |
 | Save failed | **S** | "Saved on this laptop in recordings/…" |
 | Laptop or browser dies | Reload, or `npm start` again: it reopens on the same step (the address keeps it), in replay. Use **M** or **W** again | The recorded demo |
 
@@ -52,4 +52,4 @@ With a fresh phone scan, the recordings come from another kitchen, so none stand
 
 ## Honest state of the prediction
 
-On the bundled recordings both changes land **just above** the range: fridge moved, predicted 8.8–9.7 s, measured 9.9 s; fourth worker, predicted 12.3–13.3 s, measured 14.3 s. Keep step 5 only if rehearsal shows the prediction holds. To skip it: in Play press **6** (straight to Compare).
+Rehearse the **fridge move** (key M): on 40 generated rooms its range held 39 times. The **fourth worker** (key W) held only 24 times and runs about 1 s slow, so avoid it on stage. Keep step 5 only if rehearsal with real people shows the prediction holds. To skip it: in Play press **6** (straight to Compare).
