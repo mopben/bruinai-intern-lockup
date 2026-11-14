@@ -49,10 +49,13 @@ export const economics = computed<Economics | null>(() => {
     const base = ex.menu[id] as MenuPrice;
     menu[id] = { price: num(given?.price, base.price), ingredients: num(given?.ingredients, base.ingredients) };
   }
+  const wageByWorker: Record<string, number> = {};
+  for (const [id, v] of Object.entries(s.wageByWorker ?? {})) if (typeof v === "number" && Number.isFinite(v) && v >= 0) wageByWorker[id] = v;
   return {
     currency: typeof s.currency === "string" && s.currency.length <= 4 ? s.currency : ex.currency,
     menu,
     wagePerHour: num(s.wagePerHour, ex.wagePerHour),
+    wageByWorker,
     electricityPerHour: num(s.electricityPerHour, ex.electricityPerHour),
     otherPerHour: num(s.otherPerHour, ex.otherPerHour),
     demandPerHour: num(s.demandPerHour, ex.demandPerHour),
@@ -62,11 +65,17 @@ export const economics = computed<Economics | null>(() => {
 /** True while every number is still an example. */
 export const economicsAreExamples = computed(() => storedEconomics.value === null);
 
-/** Changes some of the numbers. Anything that depends on them (suggestions) is told by the caller. */
+/** Changes some of the numbers; `wageByWorker`, when given, replaces the whole map. Anything that depends on them (suggestions) is told by the caller. */
 export function setEconomics(change: Partial<Economics>): void {
   const cur = economics.value;
   if (!cur) return;
   const next: Partial<Economics> = { ...cur, ...change, menu: { ...cur.menu, ...(change.menu ?? {}) } };
+  storedEconomics.value = next;
+  save(next);
+}
+
+/** Replaces the owner's numbers wholesale (an imported file). Menu items left out keep their example prices. */
+export function replaceEconomics(next: Partial<Economics>): void {
   storedEconomics.value = next;
   save(next);
 }

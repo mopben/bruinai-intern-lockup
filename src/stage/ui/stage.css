@@ -1030,16 +1030,35 @@
 
 /* --- prices and costs section (Edit panel) ------------------------------- */
 .st-cost-row {
+  /* The side panel can be narrow: the name gets its own line, the inputs share the next. */
   display: grid;
-  grid-template-columns: 7em 1fr 1fr auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: end;
-  gap: 14px;
+  gap: 6px 14px;
+  margin-bottom: 10px;
 }
 .st-cost-row .name {
+  grid-column: 1 / -1;
   font-family: var(--dr-font-display);
   font-weight: 800;
   font-size: var(--dr-size-label);
-  padding-bottom: 8px;
+}
+.st-cost-row:not(.st-wage-row) > .st-small:last-child {
+  grid-column: 1 / -1;
+}
+.st-wage-row > :last-child {
+  grid-column: auto;
+  justify-self: start;
+  padding-bottom: 12px;
+}
+.st-wage-row .name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.st-wage-row .st-hat {
+  flex: none;
 }
 .st-cost-grid {
   display: grid;
@@ -1053,6 +1072,8 @@
 }
 .st-cost .st-input {
   font-size: var(--dr-size-label);
+  flex: 1 1 auto;
+  width: 100%;
   min-width: 0;
 }
 .st-cost-input .unit {
