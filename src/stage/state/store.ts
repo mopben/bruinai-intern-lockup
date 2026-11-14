@@ -3,7 +3,7 @@
  * a value. Controllers in this folder change them; components only read them
  * and call controller actions.
  */
-import { signal } from "@preact/signals";
+import { computed, signal } from "@preact/signals";
 import type { Layout, PositionSample, RunBundle, Scan, TapEvent } from "../../core";
 import type { InputHealth, LinkState, RoleCounts, RunListing, ServerInfo } from "../../inputs";
 import { NO_CLIENTS } from "../../inputs";
@@ -11,7 +11,7 @@ import type { Kitchen } from "../app/kitchen-edit";
 import type { Candidate } from "../app/layout-match";
 import type { FrozenPrediction } from "../app/frozen";
 import type { StageParams } from "../app/params";
-import type { StepId } from "../app/steps";
+import { stepOf, type ViewId } from "../app/steps";
 import type { TestOutcome } from "../app/words";
 
 export type Source = "live" | "replay";
@@ -77,7 +77,7 @@ export interface TestPlan {
   readonly loadError: string | null;
 }
 
-export const params = signal<StageParams>({ runId: "counter-a", mode: "replay", speed: 1, step: "scan" });
+export const params = signal<StageParams>({ runId: "counter-a", mode: "replay", speed: 1, view: "scan" });
 export const bootError = signal<string | null>(null);
 export const loading = signal(true);
 
@@ -91,11 +91,13 @@ export const linkState = signal<LinkState>("connecting");
 export const sources = signal<Sources>({ scan: "replay", taps: "replay", positions: "replay" });
 export const health = signal<readonly InputHealth[]>([]);
 export const notices = signal<readonly Notice[]>([]);
-export const drawerOpen = signal(false);
+export const panel = signal<{ open: boolean; width: number }>({ open: true, width: 420 });
 /** "auto" picks the recorded run matching the judge's change. */
 export const secondChoice = signal<string>("auto");
 
-export const step = signal<StepId>("scan");
+export const view = signal<ViewId>("scan");
+export const currentStep = computed(() => stepOf(view.value));
+export const orderCount = signal<number | null>(null);
 export const kitchen = signal<Kitchen | null>(null);
 export const kitchenOrigin = signal<"recorded" | "live">("recorded");
 export const latestLiveScan = signal<Scan | null>(null);
@@ -111,8 +113,6 @@ export const storyText = signal<string | null>(null);
 
 export const playLayout = signal<Layout | null>(null);
 export const frozen = signal<FrozenPrediction | null>(null);
-/** In Test: false shows the simulated before and after; true shows the real-run check (a second run). */
-export const checkOpen = signal(false);
 export const testPlan = signal<TestPlan | null>(null);
 export const secondRun = signal<MeasuredRun | null>(null);
 export const outcome = signal<TestOutcome | null>(null);
@@ -127,7 +127,7 @@ export function dropNotice(id: string): void {
   if (notices.value.some((n) => n.id === id)) notices.value = notices.value.filter((n) => n.id !== id);
 }
 
-/** Commands for the simulated Test's own clock (it plays simulated runs, not a feed). */
+/** Commands for the Compare step's own clock (it plays simulated runs, not a feed). */
 export const compareCommand = signal<{ readonly kind: "replay" | "faster" | "skip"; readonly n: number } | null>(null);
 export function sendCompare(kind: "replay" | "faster" | "skip"): void {
   compareCommand.value = { kind, n: (compareCommand.value?.n ?? 0) + 1 };

@@ -3,10 +3,11 @@
  * the kitchen, the first run or the judge's layout change, never from cache.
  */
 import { computed } from "@preact/signals";
-import { calibrate, reconstructRun, summariseRun, trustCheck, type Calibration, type Layout, type TrustResult } from "../../core";
+import { calibrate, reconstructRun, summariseRun, type Calibration, type Layout } from "../../core";
 import { runFitsKitchen } from "../app/kitchen-edit";
 import { explainError, layoutNumbers, tryWorld, type Computed, type LayoutNumbers } from "../app/numbers";
-import { firstRun, kitchen, playLayout } from "./store";
+import { releasesFor } from "../app/orders";
+import { firstRun, kitchen, orderCount, playLayout } from "./store";
 
 const fail = (message: string) => ({ ok: false as const, message });
 
@@ -20,9 +21,9 @@ export const usableFirstRun = computed(() => {
 
 /** Why there is no usable first run, in words. */
 export const firstRunProblem = computed<string | null>(() => {
-  if (!kitchen.value) return "There is no kitchen yet. Scan one, or use the recorded scan (press I).";
-  if (!firstRun.value) return "This kitchen has not been run yet. Go to Run and start a run.";
-  if (!usableFirstRun.value) return "The run on file was made in a different kitchen. Go to Run and run this one.";
+  if (!kitchen.value) return "There is no kitchen yet. Scan one, or switch the scan to recorded in Inputs in Import (step 1).";
+  if (!firstRun.value) return "This kitchen has not been run yet. Go to step 4, Original run, and start a run.";
+  if (!usableFirstRun.value) return "The run on file was made in a different kitchen. Go to step 4, Original run, and run this one.";
   return null;
 });
 
@@ -33,7 +34,7 @@ const firstWorld = computed(() => {
   const run = usableFirstRun.value;
   const k = kitchen.value;
   if (!run || !k) return null;
-  return tryWorld(k.scan, k.setup, run.kitchen.layout);
+  return tryWorld(k.scan, run.kitchen.setup, run.kitchen.layout);
 });
 
 /** Learned from the whole first run (Play and the frozen prediction use this). */
@@ -43,20 +44,7 @@ export const calibration = computed<Computed<Calibration> | null>(() => {
   if (!run || !w) return null;
   if (!w.ok) return w;
   try {
-    return { ok: true, value: calibrate(w.value, reconstructRun(w.value.setup, run.taps), run.positions) };
-  } catch (error) {
-    return fail(explainError(error));
-  }
-});
-
-/** The trust check on the first run: calibrates on half the orders, checks on the rest. */
-export const trust = computed<Computed<TrustResult> | null>(() => {
-  const run = usableFirstRun.value;
-  const w = firstWorld.value;
-  if (!run || !w) return null;
-  if (!w.ok) return w;
-  try {
-    return { ok: true, value: trustCheck(w.value, run.taps, run.positions) };
+    return { ok: true, value: calibrate(w.value, reconstructRun(run.kitchen.setup, run.taps), run.positions) };
   } catch (error) {
     return fail(explainError(error));
   }
@@ -67,7 +55,7 @@ export const firstMeasuredS = computed<number | null>(() => {
   const run = usableFirstRun.value;
   const k = kitchen.value;
   if (!run || !k) return null;
-  return summariseRun(reconstructRun(k.setup, run.taps)).meanOrderTimeS;
+  return summariseRun(reconstructRun(run.kitchen.setup, run.taps)).meanOrderTimeS;
 });
 
 const cal = () => {
@@ -75,12 +63,17 @@ const cal = () => {
   return c && c.ok ? c.value : null;
 };
 
+export const simReleases = computed(() => {
+  const schedule = kitchen.value?.setup.schedule.orders;
+  return schedule && orderCount.value !== null ? releasesFor(schedule, orderCount.value) : undefined;
+});
+
 /** Both numbers for the layout the first run was made in. */
 export const baselineNumbers = computed<LayoutNumbers | null>(() => {
   const k = kitchen.value;
   const layout = originalLayout.value;
   if (!k || !layout) return null;
-  return layoutNumbers(k.scan, k.setup, layout, cal());
+  return layoutNumbers(k.scan, k.setup, layout, cal(), simReleases.value);
 });
 
 /** Both numbers for the judge's layout, recomputed on every drag move. */
@@ -88,5 +81,5 @@ export const playNumbers = computed<LayoutNumbers | null>(() => {
   const k = kitchen.value;
   const layout = playLayout.value;
   if (!k || !layout) return null;
-  return layoutNumbers(k.scan, k.setup, layout, cal());
+  return layoutNumbers(k.scan, k.setup, layout, cal(), simReleases.value);
 });

@@ -91,7 +91,7 @@ export function buildSchemas(strict: boolean) {
       obj({
         id: id(),
         name: text(),
-        steps: z.array(obj({ stationId: id(), fetchFrom: z.array(id()).optional() })).min(1, "needs at least one step"),
+        steps: z.array(obj({ stationId: id(), fetchFrom: z.array(id()).optional(), workSeconds: time().optional() })).min(1, "needs at least one step"),
         // The graph itself (ids, order, steps matching tasks) is checked in check-tasks.ts.
         tasks: z.array(task).min(1, "must list at least one task").optional(),
       }),

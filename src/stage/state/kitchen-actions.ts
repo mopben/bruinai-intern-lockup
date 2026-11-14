@@ -6,6 +6,7 @@ import { batch } from "@preact/signals";
 import type { Scan } from "../../core";
 import type { Kitchen } from "../app/kitchen-edit";
 import { buildStarterKitchen } from "../app/starter-setup";
+import { withDemoRecipes } from "../app/recipes";
 import { withScene } from "./scene-ref";
 import {
   base,
@@ -21,7 +22,7 @@ import {
   scanState,
   secondRun,
   selectedId,
-  step,
+  view,
   testPlan,
 } from "./store";
 
@@ -62,7 +63,7 @@ export function useRecordedKitchen(animate: boolean): void {
   const b = base.value;
   if (!b) return;
   batch(() => {
-    kitchen.value = { scan: b.scan, setup: b.setup, layout: b.layout };
+    kitchen.value = { scan: b.scan, setup: withDemoRecipes(b.setup), layout: b.layout };
     kitchenOrigin.value = "recorded";
     playLayout.value = b.layout;
     scanNotes.value = [];
@@ -93,7 +94,7 @@ export function acceptLiveScan(scan: Scan): void {
     scanNotes.value = starter.notes;
     moveInScan.value = true;
     selectedId.value = null;
-    step.value = "scan";
+    view.value = "scan";
     resetDownstream();
   });
   reveal();
@@ -116,7 +117,7 @@ export function waitForLiveScan(): void {
   });
 }
 
-/** Applies an owner's correction. A change to placements or workers also resets the judge's layout. */
+/** Applies an owner's correction, keeping the judge's own moves in playLayout where they still fit. */
 export function editKitchen(change: (k: Kitchen) => Kitchen): void {
   const k = kitchen.value;
   if (!k) return;
@@ -125,9 +126,9 @@ export function editKitchen(change: (k: Kitchen) => Kitchen): void {
   batch(() => {
     kitchen.value = next;
     if (next.layout !== k.layout) {
-      playLayout.value = next.layout;
-      resetDownstream();
+      const judge = playLayout.value;
+      playLayout.value = judge && judge !== k.layout ? change({ ...k, layout: judge }).layout : next.layout;
     }
-    if (next.setup !== k.setup) resetDownstream();
+    if (next.setup !== k.setup || next.layout !== k.layout) resetDownstream();
   });
 }

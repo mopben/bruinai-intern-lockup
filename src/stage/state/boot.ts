@@ -9,9 +9,10 @@ import type { Candidate } from "../app/layout-match";
 import type { StageParams } from "../app/params";
 import { useRecordedKitchen, waitForLiveScan } from "./kitchen-actions";
 import { connectStage } from "./link";
+import { loadPanel } from "./panel-actions";
 import { preloadSecondRuns } from "./preload";
 import { stopAllPlayback } from "./runs";
-import { addNotice, base, bootError, candidates, catalog, firstRun, loading, params, secondChoice, sources, step } from "./store";
+import { addNotice, base, bootError, candidates, catalog, firstRun, loading, orderCount, params, secondChoice, sources, view } from "./store";
 
 async function loadCandidate(listing: RunListing): Promise<Candidate | null> {
   if (!listing.meta) return null;
@@ -51,6 +52,7 @@ export async function loadBase(runId: string): Promise<void> {
       bootError.value = null;
       base.value = bundle;
       candidates.value = loaded;
+      orderCount.value = null;
       secondChoice.value = "auto";
       firstRun.value = {
         label: bundle.meta.id,
@@ -63,7 +65,7 @@ export async function loadBase(runId: string): Promise<void> {
       };
       params.value = { ...params.value, runId };
     });
-    if (sources.value.scan === "replay") useRecordedKitchen(step.value === "scan");
+    if (sources.value.scan === "replay") useRecordedKitchen(view.value === "scan");
     else waitForLiveScan();
     // Whole second runs in memory now, so Test needs no server later.
     await preloadSecondRuns(loaded);
@@ -76,9 +78,10 @@ export async function loadBase(runId: string): Promise<void> {
 
 export async function boot(p: StageParams): Promise<void> {
   const mode = p.mode === "live" ? "live" : "replay";
+  loadPanel();
   batch(() => {
     params.value = p;
-    step.value = p.step;
+    view.value = p.view;
     sources.value = { scan: mode, taps: mode, positions: mode };
   });
   connectStage();

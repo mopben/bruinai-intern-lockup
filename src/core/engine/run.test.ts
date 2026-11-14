@@ -263,3 +263,33 @@ describe("station-queue cases, model errors", () => {
     expect(runEngine(m, [], 1, 0).lastFinish).toBe(0);
   });
 });
+
+describe("typed work times (workSeconds on a step)", () => {
+  const typed = (): KitSpec => {
+    const k = twoItemKitchen();
+    return {
+      ...k,
+      menu: [
+        { id: "A", name: "A", steps: [{ stationId: "a" }, { stationId: "b", workSeconds: 3 }] },
+        { id: "B", name: "B", steps: [{ stationId: "b", workSeconds: 4 }] },
+      ],
+    };
+  };
+
+  it("uses each recipe's typed time at a shared station with no measured samples", () => {
+    // o1 (A): a 0-2, then b takes 3. o2 (B): b takes 4 at 0-4, so o1 at b runs 4-7.
+    const r = runOn(typed(), exactCalibration({ a: 2 }));
+    expect(r.finishedAt).toEqual([7, 4]);
+  });
+
+  it("prefers the typed time to measured samples, also when resampling", () => {
+    const model = compileEngineModel(buildKitchen(typed()), fixedCalibration({ a: [2], b: [50, 60, 70] }));
+    for (let rep = 0; rep < 5; rep += 1) expect(runEngine(model, typed().orders ?? [], 9, rep).finishedAt).toEqual([7, 4]);
+  });
+
+  it("still needs measured samples when some step at the station has no typed time", () => {
+    const k = typed();
+    const spec: KitSpec = { ...k, menu: [k.menu[0]!, { id: "B", name: "B", steps: [{ stationId: "b" }] }] };
+    expect(() => compileEngineModel(buildKitchen(spec), exactCalibration({ a: 2 }))).toThrow(/No measured work times for "b"/);
+  });
+});

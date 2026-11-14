@@ -2,7 +2,7 @@
  * The task-centred engine's compiled model: a world plus a calibration, checked and
  * turned into flat data the event loop can use quickly. Build once per layout.
  */
-import type { Vec2 } from "../types";
+import type { MenuItem, Vec2 } from "../types";
 import type { World } from "../world";
 import { taskKey, MIN_TASK_SAMPLES, type Calibration } from "../calibrate";
 import { buildPathTable, pathBetween, type PathTable } from "../walking";
@@ -109,14 +109,28 @@ function compileWorkers(world: World, stationIds: readonly string[]): readonly E
   return workers;
 }
 
-/** One pool per (item, task). Keyed by station alone when the station does one task in the whole menu. */
+/** The work time the owner typed for this task's step (`steps[k]` goes with task k), or undefined. */
+export function typedWorkSeconds(item: MenuItem, taskIndex: number): number | undefined {
+  return item.steps[taskIndex]?.workSeconds;
+}
+
+/**
+ * One pool per (item, task). Keyed by station alone when the station does one task in the whole menu.
+ * A task whose step has a typed time gets a pool of that one value: it is used as it is, never resampled
+ * into anything else, and the station needs no measured samples for it.
+ */
 function compilePools(world: World, calibration: Calibration): { readonly pools: readonly WorkPool[]; readonly index: ReadonlyMap<string, number> } {
-  const all = world.menu.flatMap((m) => itemTasks(m).map((t) => ({ itemId: m.id, task: t })));
+  const all = world.menu.flatMap((m) => itemTasks(m).map((t) => ({ itemId: m.id, task: t, typed: typedWorkSeconds(m, t.index) })));
   const perStation = new Map<string, number>();
   for (const { task } of all) perStation.set(task.stationId, (perStation.get(task.stationId) ?? 0) + 1);
   const pools: WorkPool[] = [];
   const index = new Map<string, number>();
-  for (const { itemId, task } of all) {
+  for (const { itemId, task, typed } of all) {
+    if (typed !== undefined) {
+      index.set(taskKey(itemId, task.id), pools.length);
+      pools.push({ samples: [typed], key: hashString(`${task.stationId}|${itemId}|${task.id}|typed`) });
+      continue;
+    }
     const own = (calibration.taskSamples ?? {})[taskKey(itemId, task.id)] ?? [];
     const samples = own.length >= MIN_TASK_SAMPLES ? own : (calibration.workSamples[task.stationId] ?? []);
     if (samples.length === 0) throw new SimError(`No measured work times for "${nameOf(world, task.stationId)}"; record a run where it is used.`);

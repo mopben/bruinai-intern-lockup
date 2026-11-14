@@ -5,13 +5,13 @@
  * changes nothing and nothing on screen reads it.
  */
 import type { SceneDebug } from "../scene";
+import type { StepId, ViewId } from "../app/steps";
 import { mainScene, namedScenes } from "./scene-ref";
-import { checkOpen, firstRun, frozen, outcome, playLayout, session, sources, step, testPlan } from "./store";
+import { currentStep, firstRun, frozen, outcome, playLayout, session, sources, view, testPlan } from "./store";
 
 export interface DryRunTestHook {
-  readonly step: () => string;
-  /** True while Test shows the real-run check, false while it shows the simulation. */
-  readonly checkOpen: () => boolean;
+  readonly step: () => StepId;
+  readonly view: () => ViewId;
   readonly session: () => unknown;
   readonly sources: () => unknown;
   readonly frozenJudge: () => unknown;
@@ -27,8 +27,8 @@ export interface DryRunTestHook {
 
 export function installTestHook(): void {
   const hook: DryRunTestHook = Object.freeze({
-    step: () => step.value,
-    checkOpen: () => checkOpen.value,
+    step: () => currentStep.value,
+    view: () => view.value,
     session: () => session.value,
     sources: () => sources.value,
     frozenJudge: () => frozen.value?.judge.prediction?.meanOrderTime ?? null,

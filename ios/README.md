@@ -46,7 +46,7 @@ xcodebuild build -project DryRunScan.xcodeproj -scheme DryRunScan \
 
 ## Sending
 
-1. On the laptop, start the product (`npm start`). It prints the laptop's address. The stage shows it too: in the inputs drawer (key **I**, "Scan upload"), and on the Scan step while it waits for the phone.
+1. On the laptop, start the product (`npm start`). It prints the laptop's address. The stage shows it too: in the Inputs section of the Build panel (step **1**, "Scan upload"), and on the Scan step while it waits for the phone.
 2. Phone and laptop on the **same Wi-Fi** (a phone hotspot works; venue guest Wi-Fi often blocks device-to-device traffic).
 3. Type the address in the app, e.g. `192.168.1.20`. Port 5179 is used unless you type one (`192.168.1.20:5179`). The app remembers it.
 4. Press **Send to laptop**. The app POSTs the JSON to `http://<address>:5179/api/scan` and says plainly what happened:

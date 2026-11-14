@@ -8,17 +8,14 @@ import {
   buildPathTable,
   calibrate,
   formatMetres,
-  formatPercent,
   formatRange,
   predict,
   reconstructRun,
   resolveWorld,
   summariseRun,
-  trustCheck,
   walkingPerOrder,
   type Layout,
   type Range,
-  type World,
 } from "../../src/core";
 import { parseLayout, parsePositions, parseScan, parseSetup, parseTaps, unwrap } from "../../src/inputs";
 
@@ -42,21 +39,8 @@ export interface Truth {
   readonly timeA: string;
   readonly timeB: string;
   readonly rangeB: Range;
-  readonly slowA: string;
-  readonly slowB: string;
-  readonly bottleneckA: string;
-  readonly bottleneckB: string;
-  readonly trustError: string;
   readonly measuredA: number;
   readonly measuredB: number;
-}
-
-/** The station's name in the world, or "No waiting" when no station holds orders up. */
-function stationName(w: World, id: string | null): string {
-  if (id === null) return "No waiting";
-  const item = w.itemsById.get(id);
-  if (!item) throw new Error(`bottleneck station ${id} is not in the world`);
-  return item.name;
 }
 
 /** Everything from run A only, except the measured means of A and B. */
@@ -72,12 +56,8 @@ export function computeTruth(): Truth {
   const worldA = world(a.layout);
   const runA = reconstructRun(a.setup, a.taps);
   const cal = calibrate(worldA, runA, a.positions);
-  const worldB = world(b.layout);
-  const predA = predict(worldA, cal);
-  const predB = predict(worldB, cal);
-  const rangeA = predA.meanOrderTime;
-  const rangeB = predB.meanOrderTime;
-  const trust = trustCheck(worldA, a.taps, a.positions);
+  const rangeA = predict(worldA, cal).meanOrderTime;
+  const rangeB = predict(world(b.layout), cal).meanOrderTime;
   return {
     walkA: walk(a.layout),
     walkB: walk(b.layout),
@@ -85,11 +65,6 @@ export function computeTruth(): Truth {
     timeA: formatRange(rangeA),
     timeB: formatRange(rangeB),
     rangeB,
-    slowA: formatRange(predA.slowOrderTime),
-    slowB: formatRange(predB.slowOrderTime),
-    bottleneckA: stationName(worldA, predA.bottleneckStationId),
-    bottleneckB: stationName(worldB, predB.bottleneckStationId),
-    trustError: trust.errorPct === null ? "—" : formatPercent(trust.errorPct),
     measuredA: summariseRun(runA).meanOrderTimeS as number,
     measuredB: summariseRun(reconstructRun(b.setup, b.taps)).meanOrderTimeS as number,
   };

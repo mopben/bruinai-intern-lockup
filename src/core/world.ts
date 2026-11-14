@@ -104,6 +104,7 @@ function checkProcess(setup: Setup, layout: Layout, roles: ReadonlyMap<string, I
     if (m.steps.length === 0) issues.push(`Menu item "${m.name}" has no steps.`);
     issues.push(...taskIssues(m));
     m.steps.forEach((s, i) => {
+      if (s.workSeconds !== undefined && (!Number.isFinite(s.workSeconds) || s.workSeconds < 0)) issues.push(`Menu item "${m.name}" step ${i + 1} has an invalid preparation time.`);
       if (!roleIs(s.stationId, "station")) issues.push(`"${m.name}" step ${i + 1} is at "${s.stationId}", which is not a station.`);
       for (const f of s.fetchFrom ?? []) {
         if (!roleIs(f, "storage")) issues.push(`"${m.name}" step ${i + 1} fetches from "${f}", which is not storage.`);

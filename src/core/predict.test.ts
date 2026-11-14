@@ -30,6 +30,20 @@ describe("predict", () => {
     expect(p.assumption).toMatch(/pace we measured/);
   });
 
+  it("says so when steps use typed times, and not otherwise", () => {
+    const boxes = [
+      { id: "A", x: 0, z: 0, role: "station" as const },
+      { id: "B", x: 1, z: 0, role: "station" as const },
+      { id: "P", x: 2, z: 0, role: "pickup" as const },
+    ];
+    const kit = (menu: KitSpec["menu"]): KitSpec => ({ boxes, menu, workers: [worker("a", "A"), worker("b", "B")], orders: evenOrders(2, 1) });
+    const cal = fixedCalibration({ A: [2], B: [5] });
+    const text = (menu: KitSpec["menu"]) => predict(build(kit(menu)), cal, { reps: 2 }).assumption;
+    expect(text([{ id: "latte", name: "Latte", steps: [{ stationId: "A" }, { stationId: "B" }] }])).not.toMatch(/typed/);
+    expect(text([{ id: "latte", name: "Latte", steps: [{ stationId: "A", workSeconds: 4 }, { stationId: "B" }] }])).toContain("1 step uses a time you typed, not a measured time.");
+    expect(text([{ id: "latte", name: "Latte", steps: [{ stationId: "A", workSeconds: 4 }, { stationId: "B", workSeconds: 6 }] }])).toContain("2 steps use times you typed, not measured times.");
+  });
+
   it("gives a real range with varied work times, and the same answer for the same seed", () => {
     const w = build(cafeKit());
     const a = predict(w, cafeCal);

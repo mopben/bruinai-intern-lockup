@@ -92,6 +92,7 @@ export const itemSetupSchema = z.object({
 export const stepDefSchema = z.object({
   stationId: id(),
   fetchFrom: z.array(id()).optional(),
+  workSeconds: nonNegative().optional(),
 });
 
 /** Graph checks (unknown ids, order, steps matching tasks) live in the world resolver and the folder validator. */

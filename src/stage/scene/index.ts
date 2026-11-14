@@ -32,7 +32,7 @@
  * - Items with role "ignore" are hidden (shown only in scan-label mode).
  * - Locked items cannot be dragged; trying shakes them and shows "Fixed: ...".
  * - setWorkers / setQueues / setPaths are cheap; call them per frame.
- * - The camera is fixed unless `allowOrbit` is set. Rendering is on demand.
+ * - The camera is fixed unless `cameraControls` is set. Rendering is on demand.
  */
 export { createKitchenScene } from "./kitchen-scene";
 export type {

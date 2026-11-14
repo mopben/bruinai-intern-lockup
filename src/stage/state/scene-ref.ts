@@ -26,7 +26,7 @@ export function withScene(fn: (h: KitchenSceneHandle) => void): void {
   else waiting.add(fn);
 }
 
-/** Other live scenes (the two halves of the simulated Test), by name. Read only by the test hook. */
+/** Other live scenes (the two Compare halves), by name. Read only by the test hook. */
 const others = new Map<string, KitchenSceneHandle>();
 
 export function registerScene(name: string, h: KitchenSceneHandle | null): void {

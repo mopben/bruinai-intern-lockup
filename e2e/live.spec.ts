@@ -11,20 +11,21 @@ import { join } from "node:path";
 import type { Page } from "@playwright/test";
 import { connectCamera, listRecordings, newEntries, newRecordings, removeRecording, validateRecording } from "./support/devices";
 import { LIVE_PORT, origin } from "./support/ports";
-import { clockSeconds, expectStep, hook, mainDebug, openStage, session, text, waitForSession } from "./support/stage";
+import { clockSeconds, expectStep, goView, hook, mainDebug, openStage, session, text, waitForSession, type View } from "./support/stage";
 import { FIXTURES, loadFixture } from "./support/truth";
 import { expect, test } from "./support/fixtures";
 
 const SCAN_TEXT = readFileSync(join(FIXTURES, "counter-a", "scan.json"), "utf8");
 
 async function setSources(page: Page, want: Partial<Record<"scan" | "taps" | "positions", "live" | "replay">>): Promise<void> {
-  await page.keyboard.press("i");
-  await expect(page.getByTestId("inputs-drawer")).toBeVisible();
+  const back = await hook<View>(page, "view");
+  await page.keyboard.press("1");
+  await expect(page.getByTestId("inputs-section")).toBeVisible();
   for (const [input, source] of Object.entries(want)) {
     await page.getByTestId(`source-${input}-${source}`).click();
-    await expect(page.getByTestId(`chip-source-${input}`)).toHaveAttribute("data-source", source);
+    await expect(page.getByTestId(`input-${input}`)).toHaveAttribute("data-source", source);
   }
-  await page.keyboard.press("Escape");
+  if (back !== "scan") await goView(page, back);
 }
 
 // Every live run is saved; none of them may stay behind.
@@ -56,14 +57,14 @@ test("rule 9: live with no tablet and no camera falls back to the recording, sur
   await setSources(page, { scan: "replay" });
   await expectStep(page, "scan");
 
-  await page.keyboard.press("ArrowRight");
+  await goView(page, "run");
   await expectStep(page, "run");
   await waitForSession(page, "first", "idle");
   await page.keyboard.press("p");
   await waitForSession(page, "first", "running");
   // No tablet for 5 s: the recorded taps take over; no camera for 4 s: the recorded positions.
   await expect(page.getByTestId("notice").filter({ hasText: "Showing the recorded taps" })).toBeVisible({ timeout: 12_000 });
-  await expect(page.getByTestId("chip-source-positions")).toHaveAttribute("data-source", "replay", { timeout: 12_000 });
+  await expect.poll(async () => (await hook<{ positions: string }>(page, "sources")).positions, { timeout: 12_000 }).toBe("replay");
   const t1 = clockSeconds(await text(page, "run-clock"));
 
   // The link to the server drops mid-run: the run goes on.
@@ -80,28 +81,20 @@ test("rule 9: live with no tablet and no camera falls back to the recording, sur
   const first = await hook<FirstRun>(page, "firstRun");
   expect(first.origin).toBe("live");
   expect([...first.replaced].sort()).toEqual(["positions", "taps"]);
-  await page.keyboard.press("ArrowRight");
-  await expect(page.getByTestId("partly-recorded")).toBeVisible();
-  await expect(page.getByTestId("numbers-basis")).toContainText("partly from the recording");
-
   // The failed inputs stay on the recording: P replays it at the stage speed, and the demo completes.
-  await page.keyboard.press("2");
+  await goView(page, "run");
   await page.keyboard.press("p");
   await waitForSession(page, "first", "ended", 30_000);
-  await page.keyboard.press("3");
-  await expect(page.getByTestId("trust-error")).toHaveText(/^\d+%$/);
-  await page.keyboard.press("4");
+  await goView(page, "play");
   await page.keyboard.press("m");
-  await page.keyboard.press("5");
-  await expect(page.getByTestId("compare-after-time")).toHaveText(/\d+ s$/);
-  await page.getByTestId("btn-check-real").click();
+  await goView(page, "test");
   await waitForSession(page, "second", "ended", 30_000);
   await expect(page.getByTestId("verdict")).toBeVisible();
-  await page.getByTestId("btn-back-to-sim").click();
+  await goView(page, "compare");
   await expect(page.getByTestId("compare-after-time")).toHaveText(/\d+ s$/);
 });
 
-test("live path: tablet taps and camera positions drive the run, the run is saved as a valid recording, and Trust works on it", async ({ page, browser, guard }) => {
+test("live path: tablet taps and camera positions drive the run, saved as a valid recording and used in Edit", async ({ page, browser, guard }) => {
   test.setTimeout(150_000);
   const before = listRecordings(LIVE_PORT);
   await openStage(page, { port: LIVE_PORT, speed: 1 });
@@ -114,8 +107,9 @@ test("live path: tablet taps and camera positions drive the run, the run is save
   const camera = await connectCamera(LIVE_PORT);
   const positions = loadFixture("counter-a").positions;
   try {
-    await expect.poll(async () => page.getByTestId("btn-inputs").innerText()).toContain("1 tablet, 1 camera");
-    await page.keyboard.press("2");
+    await expect.poll(async () => page.getByTestId("health-taps").innerText()).toContain("1 tablet");
+    await expect.poll(async () => page.getByTestId("health-positions").innerText()).toContain("1 camera");
+    await goView(page, "run");
     await waitForSession(page, "first", "idle");
     await page.keyboard.press("p");
     camera.play(positions);
@@ -149,11 +143,9 @@ test("live path: tablet taps and camera positions drive the run, the run is save
     const check = validateRecording(LIVE_PORT, saved[0]!);
     expect(check.ok, check.report).toBe(true);
 
-    // Trust on what the room just did.
-    await page.keyboard.press("ArrowRight");
-    await expectStep(page, "trust");
-    await expect(page.getByTestId("numbers-basis")).toHaveText("Numbers from the run just made in this room.");
-    await expect(page.getByTestId("trust-error").or(page.locator(".st-card .st-warn"))).toBeVisible();
+    // Edit uses what the room just did.
+    await goView(page, "play");
+    await expect(page.getByTestId("time-per-order").or(page.locator(".st-card .st-warn"))).toBeVisible();
   } finally {
     camera.close();
     await tabletContext.close();
@@ -172,11 +164,11 @@ test("scan: a scan posted to /api/scan, and a dropped scan.json, reveal with a s
     await expectStep(page, "scan");
     // Boxes rise with scanner labels, then the starter setup's names.
     await expect.poll(() => page.locator(".dr-tag:not(.mode-scan):not(.hidden)").count(), { timeout: 10_000 }).toBeGreaterThanOrEqual(5);
-    await expect(page.getByTestId("item-panel").or(page.locator(".st-rail"))).toBeVisible();
+    await expect(page.locator(".st-rail")).toBeVisible();
 
     // A live run on the phone's kitchen with no tablet or camera: no recording of this kitchen stands by,
     // so nothing is spliced in; ended by hand, it saves only what was observed, and it validates.
-    await page.keyboard.press("ArrowRight");
+    await goView(page, "run");
     await waitForSession(page, "first", "idle");
     await expect(page.getByTestId("notice").filter({ hasText: "No recording of this kitchen is standing by" })).toBeVisible();
     await page.keyboard.press("p");
@@ -201,7 +193,7 @@ test("scan: a scan posted to /api/scan, and a dropped scan.json, reveal with a s
       window.dispatchEvent(new DragEvent("drop", { dataTransfer: dt, bubbles: true, cancelable: true }));
     }, SCAN_TEXT);
     await expect(page.locator(".dr-tag:not(.mode-scan)").first()).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId("chip-source-scan")).toHaveAttribute("data-source", "live");
+    await expect(page.getByTestId("input-scan")).toHaveAttribute("data-source", "live");
   } finally {
     for (const id of newRecordings(LIVE_PORT, before)) removeRecording(LIVE_PORT, id);
   }
@@ -210,7 +202,7 @@ test("scan: a scan posted to /api/scan, and a dropped scan.json, reveal with a s
 test("P follows the inputs: a prepared live run switched to recorded plays the recording", async ({ page }) => {
   await openStage(page, { port: LIVE_PORT, speed: 32 });
   await setSources(page, { taps: "live", positions: "live" });
-  await page.keyboard.press("2");
+  await goView(page, "run");
   await waitForSession(page, "first", "idle");
   await setSources(page, { taps: "replay", positions: "replay" });
   await expect(page.getByTestId("notice").filter({ hasText: "standing by" })).toHaveCount(0);
@@ -220,31 +212,28 @@ test("P follows the inputs: a prepared live run switched to recorded plays the r
 });
 
 test("Test after a failover gives no verdict; with no matching recording nothing is spliced in", async ({ page }) => {
-  await openStage(page, { port: LIVE_PORT, speed: 32, step: 4 });
+  await openStage(page, { port: LIVE_PORT, speed: 32, step: 2 });
   await page.keyboard.press("m");
-  await page.keyboard.press("ArrowRight");
-  await page.keyboard.press("c");
+  await goView(page, "test");
   await waitForSession(page, "second", "ended");
 
   // The same change, run live; no tablet and no camera, so both inputs fail over to the matching recording.
   await setSources(page, { taps: "live", positions: "live" });
-  await page.keyboard.press("p");
   await waitForSession(page, "second", "idle");
   await page.keyboard.press("p");
   await waitForSession(page, "second", "running");
-  await expect(page.getByTestId("chip-source-taps")).toHaveAttribute("data-source", "replay", { timeout: 12_000 });
+  await expect.poll(async () => (await hook<{ taps: string }>(page, "sources")).taps, { timeout: 12_000 }).toBe("replay");
   await page.keyboard.press("e");
   await waitForSession(page, "second", "ended");
   await expect(page.getByText("Part of this run came from a recording")).toBeVisible();
   await expect(page.getByTestId("verdict")).toHaveCount(0);
 
   // A change with no recording: the base run never stands in, so no "before" run is passed off as the "after".
-  await page.keyboard.press("4");
+  await goView(page, "play");
   await page.keyboard.press("Backspace");
   await page.getByTestId(/btn-add-worker-61A93A22/).click();
   await setSources(page, { taps: "live", positions: "live" });
-  await page.keyboard.press("5");
-  await page.keyboard.press("c");
+  await goView(page, "test");
   await waitForSession(page, "second", "idle");
   await page.keyboard.press("p");
   await waitForSession(page, "second", "running");

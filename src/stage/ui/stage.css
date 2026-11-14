@@ -1,15 +1,34 @@
 /*
- * Stage app layout. The kitchen is the hero: it fills the screen left of a
- * paper rail. Panels look like the scene's own stickers: paper, thick ink
- * outline, a hard offset shadow. Sizes use the theme's projector scale.
+ * Stage app layout, VS Code style: a dark activity bar on the far left, a
+ * resizable side panel beside it, and the kitchen filling the rest. Cards in
+ * the panel are flat; the step's own controls keep the sticker look.
  */
+.st-recipes { display: grid; gap: 12px; }
+.st-recipe { border: 2px solid var(--dr-ink); border-radius: 12px; overflow: hidden; }
+.st-recipe summary { cursor: pointer; padding: 14px; font-weight: 800; }
+.st-recipe summary small { display: block; margin: 5px 0 0 18px; font-weight: 500; opacity: .7; }
+.st-recipe[open] summary { border-bottom: 1px solid var(--dr-ink); }
+.st-recipe-body { padding: 14px; display: grid; gap: 16px; }
+.st-recipe-body input:not([type="checkbox"]), .st-recipe-body select { box-sizing: border-box; min-width: 0; width: 100%; border: 1px solid var(--dr-ink); border-radius: 7px; padding: 8px; font: inherit; color: var(--dr-ink); background: var(--dr-paper); }
+.st-recipe-body button { border: 1px solid var(--dr-ink); border-radius: 6px; padding: 5px 9px; font: inherit; color: var(--dr-ink); background: var(--dr-paper); cursor: pointer; }
+.st-recipe-body button:disabled { opacity: .4; cursor: default; }
+.st-recipe-steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; }
+.st-recipe-steps li { display: grid; gap: 9px; }
+.st-recipe-line { display: flex; align-items: center; gap: 8px; }
+.st-recipe-line strong { flex: 1; overflow-wrap: anywhere; font-size: .9em; }
+.st-recipe-line label { display: flex; align-items: center; gap: 4px; flex: 0 0 86px; }
+.st-recipe-number { font-weight: 800; opacity: .6; }
+.st-recipe-fetch { display: grid; gap: 6px; font-size: .85em; }
+.st-recipe-fetch label { display: flex; align-items: center; gap: 7px; }
+.st-add-recipe { display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; margin: 16px 0; padding: 12px; border: 2px dashed var(--dr-ink); border-radius: 12px; background: transparent; color: var(--dr-ink); font: inherit; font-weight: 800; cursor: pointer; }
+.st-add-recipe span { font-size: 1.6em; }
+.st-add-recipe:disabled { opacity: .4; cursor: default; }
 .st-root {
   position: fixed;
   inset: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--st-rail);
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  --st-rail: clamp(420px, 29vw, 560px);
+  grid-template-columns: 56px auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   --st-gap: clamp(14px, 1.25vw, 24px);
   --st-line: 3px solid var(--dr-ink);
   --st-hard: 0 4px 0 rgba(59, 47, 40, 0.28);
@@ -17,36 +36,134 @@
   overflow: hidden;
 }
 
-/* --- top: wordmark, step strip, notices ---------------------------------- */
-.st-top {
-  grid-column: 1 / -1;
+/* --- left: the activity bar ----------------------------------------------- */
+.st-activity {
+  grid-column: 1;
+  grid-row: 1;
+  background: var(--dr-ink);
+}
+.st-activity ol {
   display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.st-act {
+  position: relative;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--st-gap);
-  padding: var(--st-gap) var(--st-gap) 0;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--dr-paper);
+  font-family: var(--dr-font-display);
+  cursor: pointer;
+  opacity: 0.6;
+}
+.st-act .n {
+  font-size: var(--dr-size-small);
+  font-weight: 800;
+  line-height: 1;
+}
+.st-act:hover,
+.st-act.here {
+  opacity: 1;
+}
+.st-act.here::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--dr-select);
+}
+
+/* --- the side panel -------------------------------------------------------- */
+.st-panel {
+  grid-column: 2;
+  grid-row: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: var(--st-panel);
+  background: var(--dr-paper);
+  border-right: 2px solid var(--dr-ink);
+}
+.st-panel-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 12px 16px 10px;
+  border-bottom: 2px solid var(--dr-ink);
 }
 .st-mark {
   font-family: var(--dr-font-display);
   font-weight: 800;
-  font-size: var(--dr-size-label);
+  font-size: var(--dr-size-small);
   line-height: 1;
   color: var(--dr-ink);
   white-space: nowrap;
 }
-.st-mark small {
-  display: block;
-  font-family: var(--dr-font-body);
-  font-weight: 700;
-  font-size: var(--dr-size-small);
-  color: var(--dr-ink-soft);
-  margin-top: 4px;
+.st-panel-title {
+  font-family: var(--dr-font-display);
+  font-weight: 800;
+  font-size: var(--dr-size-label);
+  color: var(--dr-ink);
+  white-space: nowrap;
 }
-.st-strip {
+.st-panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
-  gap: 10px;
-  margin: 0 auto;
-  padding: 0;
-  list-style: none;
+  flex-direction: column;
+}
+.st-panel-foot {
+  padding: 8px 14px 10px;
+  border-top: 2px solid var(--dr-ink);
+}
+.st-sash {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -3px;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 5;
+}
+.st-sash:hover,
+.st-root.resizing .st-sash {
+  background: var(--dr-select);
+}
+.st-root.resizing {
+  user-select: none;
+}
+.st-root.resizing * {
+  transition: none !important;
+}
+.st-panel .st-card {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  flex: none;
+  overflow: visible;
+}
+.st-panel-actions {
+  padding: 12px 28px 0;
+}
+
+/* --- the results view switch ---------------------------------------------- */
+.st-results-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 12px 28px 0;
 }
 .st-step {
   display: flex;
@@ -65,36 +182,27 @@
   box-shadow: var(--st-hard);
   transition: transform 160ms var(--dr-ease), background-color 200ms ease, color 200ms ease;
 }
-.st-step .n {
-  display: inline-grid;
-  place-items: center;
-  width: 1.45em;
-  height: 1.45em;
-  border-radius: 50%;
-  background: var(--dr-table);
-  font-size: 0.8em;
-}
-.st-step.done {
-  background: #f3ead8;
-  color: var(--dr-ink-soft);
-}
 .st-step.here {
   background: var(--dr-ink);
   color: var(--dr-paper);
   transform: translateY(-2px);
 }
-.st-step.here .n {
-  background: var(--dr-select);
-  color: var(--dr-ink);
+.st-results-switch .st-step {
+  padding: 7px 10px;
+  font-size: clamp(14px, 1.15vw, 19px);
+  white-space: nowrap;
 }
 
 /* --- the kitchen --------------------------------------------------------- */
 .st-stage {
   position: relative;
-  grid-column: 1;
-  grid-row: 2;
+  grid-column: 3;
+  grid-row: 1;
   min-width: 0;
   min-height: 0;
+}
+.st-root.panel-closed .st-stage {
+  grid-column: 2 / -1;
 }
 .st-scene {
   position: absolute;
@@ -139,6 +247,17 @@
 }
 .st-chip.warn .dot {
   background: var(--dr-alert);
+}
+.st-reset-view {
+  position: absolute;
+  top: var(--st-gap);
+  right: var(--st-gap);
+  z-index: 3;
+  color: var(--dr-ink);
+  font: inherit;
+  font-weight: 750;
+  font-size: var(--dr-size-small);
+  cursor: pointer;
 }
 
 /* centred message over the board (waiting for the phone, errors) */
@@ -195,20 +314,6 @@
 }
 
 /* --- the rail ------------------------------------------------------------ */
-.st-rail {
-  grid-column: 2;
-  grid-row: 2;
-  min-height: 0;
-  padding: var(--st-gap) var(--st-gap) 0 0;
-  display: flex;
-  flex-direction: column;
-}
-/* Under the rail's card, not inside it: never scrolled out of view. */
-.st-rail-foot {
-  flex: none;
-  display: flex;
-  padding: 10px 0 0;
-}
 .st-card {
   flex: 1;
   min-height: 0;
@@ -427,6 +532,19 @@
   font-size: var(--dr-size-small);
   color: var(--dr-ink-soft);
 }
+.st-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: var(--dr-size-small);
+  color: var(--dr-ink);
+}
+.st-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--dr-ink);
+}
 .st-input {
   font: inherit;
   font-family: var(--dr-font-display);
@@ -532,16 +650,7 @@
   vertical-align: -1px;
 }
 
-/* --- bottom: key hint and inputs chip ------------------------------------ */
-.st-bottom {
-  grid-column: 1 / -1;
-  grid-row: 3;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--st-gap);
-  padding: 10px var(--st-gap) 12px;
-}
+/* --- key hints (in the panel footer) -------------------------------------- */
 .st-hints {
   display: flex;
   flex-wrap: wrap;
@@ -556,71 +665,45 @@
   align-items: center;
   gap: 6px;
 }
-.st-inputs-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  padding: 6px 14px 5px;
-  border-radius: var(--dr-radius-pill);
-  border: 2px solid var(--dr-ink-soft);
-  background: rgba(255, 250, 240, 0.7);
-  color: var(--dr-ink-soft);
-  font: inherit;
-  font-size: var(--dr-size-small);
-  font-weight: 750;
-  cursor: pointer;
-}
-.st-src {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-.st-src i {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--dr-ink-soft);
-}
-.st-src.live i {
-  background: #1fa84f;
-}
-.st-src.bad i {
-  background: var(--dr-alert);
-}
-
-/* --- inputs drawer ------------------------------------------------------- */
-.st-drawer {
-  position: absolute;
-  right: var(--st-gap);
-  bottom: calc(var(--st-gap) + 52px);
-  width: min(760px, 70vw);
-  max-height: 78vh;
-  overflow-y: auto;
-  z-index: 10;
-  padding: 24px 28px;
-  border: var(--st-line);
-  border-radius: var(--dr-radius-lg);
-  background: var(--dr-paper);
-  box-shadow: var(--dr-shadow-lifted);
+/* --- the Inputs section (Build panel) ------------------------------------- */
+.st-inputs {
   display: grid;
-  gap: 16px;
+  gap: 12px;
+  padding: 14px 28px 24px;
+  border-top: 2px dashed var(--dr-board-edge);
 }
-.st-drawer h2 {
+.st-inputs h2 {
   margin: 0;
   font-family: var(--dr-font-display);
   font-size: var(--dr-size-title);
   line-height: 1;
 }
-.st-drawer h3 {
+.st-inputs h3 {
+  margin: 4px 0 0;
+  font-family: var(--dr-font-display);
+  font-size: var(--dr-size-label);
+}
+/* --- the Prices and costs section (Edit panel) ---------------------------- */
+.st-costs {
+  display: grid;
+  gap: 12px;
+  padding: 14px 28px 24px;
+  border-top: 2px dashed var(--dr-board-edge);
+}
+.st-costs h2 {
+  margin: 0;
+  font-family: var(--dr-font-display);
+  font-size: var(--dr-size-title);
+  line-height: 1;
+}
+.st-costs h3 {
   margin: 4px 0 0;
   font-family: var(--dr-font-display);
   font-size: var(--dr-size-label);
 }
 .st-input-row {
   display: grid;
-  grid-template-columns: 7.5em auto 1fr;
-  align-items: center;
-  gap: 14px;
+  gap: 6px;
 }
 .st-input-row .name {
   font-family: var(--dr-font-display);
@@ -670,7 +753,7 @@
   color: var(--dr-ink);
 }
 
-/* --- test: two simulated kitchens ---------------------------------------- */
+/* --- compare: two kitchens ----------------------------------------------- */
 .st-compare {
   position: absolute;
   inset: 0;
@@ -707,51 +790,14 @@
 .st-half.after .label {
   background: var(--dr-select);
 }
-/*
- * Under each kitchen: one row per number (what, value, how). Each value's line
- * box holds the display font's whole text box, so a row's text never reaches
- * into the row above or below it.
- */
 .st-half .under {
-  display: grid;
-  grid-template-columns: max-content max-content minmax(0, 1fr);
-  column-gap: clamp(10px, 1.2vw, 20px);
-  row-gap: clamp(2px, 0.5vh, 6px);
-  align-items: baseline;
-  padding: 8px 6px 0;
+  display: flex;
+  gap: 28px;
+  align-items: flex-end;
+  padding: 12px 6px 0;
 }
-.st-sim-row {
-  display: contents;
-}
-.st-sim-row .what,
-.st-sim-row .how {
-  font-size: var(--dr-size-small);
-  line-height: 1.5;
-  color: var(--dr-ink-soft);
-  white-space: nowrap;
-}
-.st-sim-row .how {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.st-sim-row .value {
-  font-family: var(--dr-font-display);
-  font-weight: 800;
-  font-size: clamp(18px, min(1.8vw, 3.2vh), 34px);
-  line-height: 1.6;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.st-sim-row .cannot {
-  grid-column: span 2;
-  font-size: var(--dr-size-small);
-  color: var(--dr-alert);
-}
-.st-root.compare {
-  grid-template-columns: minmax(0, 1fr) 0;
-}
-.st-root.compare .st-rail {
-  display: none;
+.st-compare-rail .st-num .value {
+  font-size: var(--dr-size-display);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -770,16 +816,9 @@
 .st-compare-bar {
   grid-column: 1 / -1;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 8px 18px;
+  gap: 18px;
   padding: 6px 0 0;
-}
-.st-compare-bar .st-sim {
-  font-family: var(--dr-font-display);
-  font-weight: 800;
-  font-size: var(--dr-size-label);
-  white-space: nowrap;
 }
 .st-compare-bar .st-say {
   font-size: var(--dr-size-title);
@@ -818,28 +857,39 @@
 .st-runline .st-say {
   padding-bottom: 0.2em;
 }
-/* The bottom bar stays one line: hints never wrap, the chip never wraps. */
-.st-bottom {
-  flex-wrap: nowrap;
+/* Compare: three numbers per side on one line each. */
+.st-half .under {
+  gap: clamp(14px, 1.6vw, 28px);
 }
-.st-hints {
-  flex-wrap: nowrap;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  gap: clamp(10px, 1vw, 18px);
-}
-.st-inputs-chip {
-  flex: none;
+.st-compare-rail .st-num .what,
+.st-compare-rail .st-num .how {
   white-space: nowrap;
 }
-.st-src {
-  white-space: nowrap;
+.st-compare-rail .st-num .what {
+  font-size: var(--dr-size-small);
+}
+.st-compare-rail .st-num .value {
+  font-size: clamp(30px, 3.1vw, 64px);
 }
 
 @media (max-height: 860px), (max-width: 1100px) {
-  .st-root {
-    --st-rail: clamp(380px, 31vw, 560px);
+  /* On a small projector the panel chrome goes on a diet: slim head and foot,
+     one compact row of view buttons, hints that may wrap. */
+  .st-panel-head {
+    padding: 8px 14px 6px;
+  }
+  .st-panel-foot {
+    padding: 5px 10px 6px;
+  }
+  .st-hints {
+    gap: 4px 10px;
+  }
+  .st-results-switch {
+    padding-top: 8px;
+  }
+  .st-results-switch .st-step {
+    padding: 4px 8px 2px;
+    font-size: var(--dr-size-small);
   }
   .st-card {
     padding: 16px 20px 14px;
@@ -867,12 +917,12 @@
   .st-num .dir {
     font-size: var(--dr-size-body);
   }
-  .st-rail .st-btn {
+  .st-panel .st-btn {
     padding: 5px 11px 3px;
     font-size: var(--dr-size-small);
     gap: 7px;
   }
-  .st-rail .st-row {
+  .st-panel .st-row {
     gap: 8px;
   }
   .st-say {
@@ -907,14 +957,15 @@
     max-height: 30vh;
   }
   .st-step {
-    padding: 6px 16px 4px 6px;
+    padding: 6px 10px 4px;
     font-size: clamp(17px, 1.6vw, 28px);
   }
-  .st-strip {
-    gap: 8px;
-  }
-  .st-mark small {
-    display: none;
+  .st-panel-actions,
+  .st-inputs,
+  .st-costs,
+  .st-results-switch {
+    padding-left: 20px;
+    padding-right: 20px;
   }
 }
 .st-basis {
@@ -947,3 +998,116 @@
 .st-runline .st-num .what {
   white-space: nowrap;
 }
+
+/* --- profit and suggestions (Play) ---------------------------------------- */
+/* Profit is the headline of Edit: on top, the biggest numeral in the rail. */
+.st-money {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 2px dashed var(--dr-board-edge);
+}
+.st-card.play .st-money .st-num .what {
+  font-size: var(--dr-size-label);
+}
+.st-money {
+  container-type: inline-size;
+}
+/* Sized to the rail's width so "$1,790–$1,930" always fits on one line. */
+.st-card.play .st-money .st-num .value {
+  font-size: clamp(34px, min(12.5cqi, 11vh), 112px);
+}
+/* Walking and time sit side by side under it, a size down. */
+.st-card.play .st-nums.pair {
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+}
+.st-card.play .st-nums.pair .st-num .value {
+  font-size: clamp(32px, min(3.1vw, 6vh), 60px);
+}
+.st-card.play .st-nums.pair .st-num .change {
+  flex-wrap: wrap;
+  gap: 0 10px;
+}
+@media (max-height: 820px) {
+  .st-money {
+    gap: 6px;
+    padding-bottom: 8px;
+  }
+  .st-card.play .st-nums.pair .st-num .how,
+  .st-card.play .st-roomy {
+    display: none;
+  }
+}
+.st-suggestions {
+  display: grid;
+  gap: 6px;
+}
+.st-suggestion {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--dr-size-small);
+  font-weight: 700;
+}
+.st-suggestion .gain {
+  font-weight: 800;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.st-suggestion.on .text {
+  text-decoration: underline;
+  text-decoration-color: var(--dr-path);
+  text-decoration-thickness: 3px;
+}
+.st-link {
+  font: inherit;
+  font-weight: 800;
+  color: var(--dr-ink);
+  background: none;
+  border: 0;
+  padding: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* --- prices and costs section (Edit panel) ------------------------------- */
+.st-cost-row {
+  display: grid;
+  grid-template-columns: 7em 1fr 1fr auto;
+  align-items: end;
+  gap: 14px;
+}
+.st-cost-row .name {
+  font-family: var(--dr-font-display);
+  font-weight: 800;
+  font-size: var(--dr-size-label);
+  padding-bottom: 8px;
+}
+.st-cost-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+}
+.st-cost-input {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.st-cost .st-input {
+  font-size: var(--dr-size-label);
+  min-width: 0;
+}
+.st-cost-input .unit {
+  font-weight: 800;
+  font-size: var(--dr-size-small);
+  color: var(--dr-ink-soft);
+  white-space: nowrap;
+}
+
+.st-workers { display: grid; gap: 12px; }
+.st-worker-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(130px, 1fr); gap: 14px; align-items: center; }
+.st-worker-name { display: flex; align-items: center; gap: 10px; font-weight: 800; }
+.st-worker-name small { display: block; font-weight: 600; color: var(--dr-ink-soft); }
+.st-worker-row .st-input { width: 100%; }

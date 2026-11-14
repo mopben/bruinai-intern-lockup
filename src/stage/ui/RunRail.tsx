@@ -1,5 +1,5 @@
 /**
- * Step 2. The run plays: dots from the camera log, tickets from the taps.
+ * Step 3, Original run. Dots from the camera log, tickets from the taps.
  * Also the run controls the Test step reuses.
  */
 import type { ComponentChildren } from "preact";
@@ -54,7 +54,6 @@ export function RunControls(props: { readonly purpose: Session["purpose"]; reado
         {mine.replay ? <Btn label={fast ? "Normal speed" : "Faster"} k="F" kind={fast ? "on" : "plain"} onClick={toggleFaster} disabled={mine.status === "ended"} testId="btn-faster" /> : null}
         <Btn label={mine.replay ? "Skip to end" : "End run"} k="E" onClick={skipToEnd} disabled={mine.status !== "running"} testId="btn-skip" />
       </div>
-      {mine.status === "idle" ? <p class="st-small">Orders go to the tablet when the run starts. The stage keeps the time.</p> : null}
       <SaveLine s={mine} />
     </>
   );
@@ -72,10 +71,9 @@ export function RunRail() {
   return (
     <div class="st-card">
       <h1>The kitchen at work</h1>
-      <p class="st-lede">Each dot is a person, from the camera. Each ticket is an order waiting at a station, from the tablet taps.</p>
       {recordedElsewhere ? (
         <p class="st-note">
-          The recorded run was made in the recorded kitchen, not in this scan. Press I and switch taps and positions to live to run this kitchen, or switch the scan back to recorded.
+          This run was recorded in a different kitchen. Switch taps and positions to live in Inputs, or switch the scan back to recorded.
         </p>
       ) : null}
       {ended && storyText.value ? (

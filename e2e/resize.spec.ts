@@ -24,9 +24,9 @@ async function renders(page: Page, name: string): Promise<number> {
   }, name);
 }
 
-test("rule 9: Run and the simulated Test redraw at once after resizes (projector mode change)", async ({ page }) => {
+test("rule 9: Run and Compare redraw at once after resizes (projector mode change)", async ({ page }) => {
   await page.setViewportSize({ width: 1600, height: 900 });
-  await openStage(page, { speed: 2, step: 2 });
+  await openStage(page, { speed: 2, step: 4, view: "run" });
   await expectStep(page, "run");
   await waitForSession(page, "first", "running");
   await expectDrawn(page, '[data-testid="kitchen-scene"] canvas');
@@ -38,8 +38,8 @@ test("rule 9: Run and the simulated Test redraw at once after resizes (projector
   }
 
   await page.setViewportSize({ width: 1600, height: 900 });
-  await page.keyboard.press("5");
-  await expectStep(page, "test");
+  await page.keyboard.press("4");
+  await expectStep(page, "compare");
   await expectDrawn(page, '[data-testid="compare-before"] canvas');
   await expectDrawn(page, '[data-testid="compare-after"] canvas');
   for (const size of [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }, { width: 1024, height: 768 }, { width: 1600, height: 900 }]) {
@@ -50,7 +50,7 @@ test("rule 9: Run and the simulated Test redraw at once after resizes (projector
 });
 
 test("rule 9: fullscreen, a hidden tab and a lost WebGL context all redraw", async ({ page }) => {
-  await openStage(page, { speed: 4, step: 4 });
+  await openStage(page, { speed: 4, step: 2 });
   await expectStep(page, "play");
   await expectDrawn(page, '[data-testid="kitchen-scene"] canvas');
 

@@ -1,9 +1,9 @@
 /**
- * The main kitchen scene (steps 1 to 5) and how each step uses it: what
+ * The main kitchen scene and how each view uses it: what
  * layout it shows, who stands where, the walking paths, the ghost, dragging.
  */
 import { computed, effect } from "@preact/signals";
-import { useEffect, useRef } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { formatMetres, type Layout } from "../../core";
 import type { WalkLeg } from "../../core";
 import { standingWorkers } from "../app/playback";
@@ -12,22 +12,21 @@ import { originalLayout, playNumbers } from "../state/derive";
 import { editKitchen } from "../state/kitchen-actions";
 import { currentPlayer } from "../state/runs";
 import { mainScene, setMainScene } from "../state/scene-ref";
-import { kitchen, moveInScan, playLayout, scanState, selectedId, session, step, testPlan } from "../state/store";
+import { kitchen, moveInScan, playLayout, scanState, selectedId, session, view, testPlan } from "../state/store";
 import { createKitchenScene, type KitchenSceneHandle, type PathInput } from "../scene";
 
 /** The layout each step shows. */
 function shownLayout(): Layout | null {
   const k = kitchen.value;
   if (!k) return null;
-  switch (step.value) {
+  switch (view.value) {
     case "play":
       return playLayout.value ?? k.layout;
-    case "test": {
+    case "test":
+    case "compare": {
       const plan = testPlan.value;
       return plan && plan.judgeLayout === playLayout.value ? plan.layout : playLayout.value ?? k.layout;
     }
-    case "trust":
-      return originalLayout.value ?? k.layout;
     default:
       return originalLayout.value ?? k.layout;
   }
@@ -39,7 +38,7 @@ function pathsFrom(legs: readonly WalkLeg[]): readonly PathInput[] {
 
 /** True while the step on screen shows a run that has started (the player draws then). */
 const drawingRun = computed(() => {
-  const s = step.value;
+  const s = view.value;
   const sess = session.value;
   if (!sess || sess.status === "idle") return false;
   return (s === "run" && sess.purpose === "first") || (s === "test" && sess.purpose === "second");
@@ -55,14 +54,14 @@ function syncScene(scene: KitchenSceneHandle): () => void {
       scene.setKitchen({ scan: k.scan, setup: k.setup, layout });
     }),
     effect(() => {
-      const s = step.value;
+      const s = view.value;
       scene.setEditable(s === "play" || (s === "scan" && moveInScan.value));
-      scene.setSelected(s === "scan" ? selectedId.value : null);
+      scene.setSelected(s === "play" ? selectedId.value : null);
       scene.setGhost(s === "play" || s === "test" ? originalLayout.value : null);
     }),
     effect(() => {
       const n = playNumbers.value;
-      if (step.value !== "play" || !n) {
+      if (view.value !== "play" || !n) {
         scene.setPaths([]);
         return;
       }
@@ -70,7 +69,7 @@ function syncScene(scene: KitchenSceneHandle): () => void {
     }),
     effect(() => {
       // Who stands where when no run is being drawn.
-      const s = step.value;
+      const s = view.value;
       const k = kitchen.value;
       const layout = shownLayout();
       if (!k || !layout) return;
@@ -96,20 +95,23 @@ function syncScene(scene: KitchenSceneHandle): () => void {
 
 export function SceneHost(props: { readonly hidden: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [moved, setMoved] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const scene = createKitchenScene(el, {
       initialLabels: "scan",
+      cameraControls: true,
+      onCameraChange: setMoved,
       onLayoutChange: (layout) => {
-        if (step.value === "play") playLayout.value = layout;
+        if (view.value === "play") playLayout.value = layout;
       },
       onLayoutCommit: (layout) => {
-        if (step.value === "scan") editKitchen((k) => ({ ...k, layout }));
-        if (step.value === "play") playLayout.value = layout;
+        if (view.value === "scan") editKitchen((k) => ({ ...k, layout }));
+        if (view.value === "play") playLayout.value = layout;
       },
       onSelect: (id) => {
-        if (step.value === "scan" || step.value === "play") selectedId.value = id;
+        if (view.value === "play") selectedId.value = id;
       },
     });
     setMainScene(scene);
@@ -121,7 +123,15 @@ export function SceneHost(props: { readonly hidden: boolean }) {
     };
   }, []);
   const k = kitchen.value;
-  return <div ref={ref} class={`st-scene${props.hidden || !k ? " dim" : ""}`} data-testid="kitchen-scene" />;
+  return (
+    <div ref={ref} class={`st-scene${props.hidden || !k ? " dim" : ""}`} data-testid="kitchen-scene">
+      {moved && (
+        <button type="button" class="st-chip st-reset-view" data-testid="reset-view" onClick={() => mainScene()?.reframe()}>
+          Reset view
+        </button>
+      )}
+    </div>
+  );
 }
 
 export { mainScene };

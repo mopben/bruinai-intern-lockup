@@ -1,17 +1,26 @@
 /**
- * The five demo steps and the operator's keyboard map. Pure: no DOM.
+ * The three demo steps, their views and the operator's keyboard map. Pure: no DOM.
  */
 
 export const STEPS = [
-  { id: "scan", name: "Scan" },
-  { id: "run", name: "Run" },
-  { id: "trust", name: "Trust" },
-  { id: "play", name: "Play" },
-  { id: "test", name: "Test" },
+  { id: "build", name: "Import", views: ["scan"] },
+  { id: "edit", name: "Edit", views: ["play"] },
+  { id: "orders", name: "Orders", views: ["orders"] },
+  { id: "results", name: "Run", views: ["compare", "run", "test"] },
 ] as const;
 
 export type StepId = (typeof STEPS)[number]["id"];
+export type ViewId = (typeof STEPS)[number]["views"][number];
 export const STEP_IDS: readonly StepId[] = STEPS.map((s) => s.id);
+export const VIEW_ORDER: readonly ViewId[] = ["scan", "play", "orders", "compare", "run", "test"];
+
+export function stepOf(view: ViewId): StepId {
+  return STEPS.find((s) => (s.views as readonly ViewId[]).includes(view))!.id;
+}
+
+export function defaultView(step: StepId): ViewId {
+  return STEPS.find((s) => s.id === step)!.views[0];
+}
 
 export function stepIndex(id: StepId): number {
   return STEP_IDS.indexOf(id);
@@ -22,6 +31,11 @@ export function stepAt(index: number): StepId {
   return STEP_IDS[i] as StepId;
 }
 
+export function viewAt(index: number): ViewId {
+  const i = Math.min(VIEW_ORDER.length - 1, Math.max(0, Math.floor(index)));
+  return VIEW_ORDER[i] as ViewId;
+}
+
 /** What a key press means. Step-specific actions are interpreted by the step itself. */
 export type KeyAction =
   | { readonly type: "next" }
@@ -30,12 +44,11 @@ export type KeyAction =
   | { readonly type: "play" }
   | { readonly type: "faster" }
   | { readonly type: "skip" }
-  | { readonly type: "inputs" }
-  /** Test: open the real-run check, or go back to the simulation. */
-  | { readonly type: "check" }
   | { readonly type: "escape" }
   | { readonly type: "reset" }
   | { readonly type: "rehearsed"; readonly key: "m" | "w" }
+  | { readonly type: "suggest" }
+  | { readonly type: "costs" }
   | { readonly type: "retry-save" };
 
 /** Maps a KeyboardEvent.key (with no modifiers) to an action, or null. */
@@ -57,9 +70,6 @@ export function keyAction(key: string): KeyAction | null {
     case "e":
     case "E":
       return { type: "skip" };
-    case "i":
-    case "I":
-      return { type: "inputs" };
     case "Escape":
       return { type: "escape" };
     case "Backspace":
@@ -73,9 +83,12 @@ export function keyAction(key: string): KeyAction | null {
     case "s":
     case "S":
       return { type: "retry-save" };
+    case "a":
+    case "A":
+      return { type: "suggest" };
     case "c":
     case "C":
-      return { type: "check" };
+      return { type: "costs" };
     default: {
       const n = Number(key);
       if (key.length === 1 && Number.isInteger(n) && n >= 1 && n <= STEP_IDS.length) return { type: "jump", step: stepAt(n - 1) };
@@ -84,41 +97,40 @@ export function keyAction(key: string): KeyAction | null {
   }
 }
 
-/** The step after a navigation action, or the same step for anything else. */
-export function navigate(current: StepId, action: KeyAction): StepId {
-  const i = stepIndex(current);
-  if (action.type === "next") return stepAt(i + 1);
-  if (action.type === "back") return stepAt(i - 1);
-  if (action.type === "jump") return action.step;
+/** The view after a navigation action, or the same view for anything else. */
+export function navigate(current: ViewId, action: KeyAction): ViewId {
+  const i = VIEW_ORDER.indexOf(current);
+  if (action.type === "next") return viewAt(i + 1);
+  if (action.type === "back") return viewAt(i - 1);
+  if (action.type === "jump") return defaultView(action.step);
   return current;
 }
 
-/**
- * The quiet key hint for each step: only the keys that do something there.
- * `check`: Test is showing the real-run check, not the simulation.
- */
-export function keyHints(step: StepId, live: boolean, check = false): readonly { readonly keys: string; readonly does: string }[] {
+/** The quiet key hint for each step: only the keys that do something there. */
+export function keyHints(view: ViewId, live: boolean): readonly { readonly keys: string; readonly does: string }[] {
   const nav = [
     { keys: "→", does: "next" },
     { keys: "←", does: "back" },
   ];
-  const common = [{ keys: "I", does: "inputs" }];
-  const run = live
-    ? [...nav, { keys: "P", does: "start" }, { keys: "E", does: "end run" }]
-    : [...nav, { keys: "P", does: "play again" }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }];
-  switch (step) {
+  switch (view) {
     case "scan":
-      return [...nav, { keys: "P", does: "replay the scan" }, ...common, { keys: "⇧F", does: "full screen" }];
+      return [...nav, { keys: "P", does: "replay the scan" }, { keys: "⇧F", does: "full screen" }];
     case "run":
-      return [...run, ...common];
     case "test":
-      return check
-        ? [...run, { keys: "C", does: "back to the simulation" }, ...common]
-        : [{ keys: "←", does: "back" }, { keys: "P", does: "play again" }, { keys: "F", does: "faster" }, { keys: "C", does: "check with a real run" }, ...common];
-    case "trust":
-      return [...nav, ...common];
+      return live
+        ? [...nav, { keys: "P", does: `start ${view === "run" ? "Original run" : "After the change"}` }, { keys: "E", does: "end run" }]
+        : [...nav, { keys: "P", does: `replay ${view === "run" ? "Original run" : "After the change"}` }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }];
     case "play":
-      return [...nav, { keys: "M", does: "rehearsed move" }, { keys: "W", does: "rehearsed worker" }, { keys: "⌫", does: "reset" }, ...common];
+      return [
+        ...nav,
+        { keys: "M", does: "rehearsed move" },
+        { keys: "W", does: "rehearsed worker" },
+        { keys: "A", does: "suggest" },
+        { keys: "C", does: "costs" },
+        { keys: "⌫", does: "reset" },
+      ];
+    case "compare":
+      return [...nav, { keys: "P", does: "replay Before vs after" }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }];
     default:
       return nav;
   }

@@ -4,7 +4,7 @@
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   calibrate,
   predict,
@@ -22,10 +22,9 @@ import { freezePredictions } from "./frozen";
 import { addWorker, removeWorker } from "./kitchen-edit";
 import { changeKind, matchRecordedRun, type Candidate } from "./layout-match";
 import { layoutNumbers } from "./numbers";
+import { releasesFor } from "./orders";
 import { alongPolyline, homePositions, indexMovements, latestPositions, simulatedWorkers } from "./playback";
-import { SIMULATED_BAR, busiestWorker, rangeMeaning, runStory, simulationBasis, testOutcome, verdictSentence, waitsMostAt } from "./words";
-import { closeCheck, goTo, openCheck } from "../state/flow";
-import { candidates as candidateList, checkOpen, firstRun, frozen, kitchen, outcome, playLayout, secondRun, session, step, testPlan, type Session } from "../state/store";
+import { rangeMeaning, runStory, testOutcome, verdictSentence } from "./words";
 
 const root = join(__dirname, "../../../fixtures");
 const jsonl = <T>(text: string) =>
@@ -53,6 +52,11 @@ const MAKE = "98EA7E27-B557-42A2-9AE3-1C7A609FDAC0";
 const FINISH = "9886D544-4186-4B47-978D-7D032CCECDEA";
 
 describe("Play numbers", () => {
+  it("uses the requested simulation releases", () => {
+    const releases = releasesFor(a.setup.schedule.orders, 15);
+    const n = layoutNumbers(a.scan, a.setup, a.layout, calA, releases);
+    expect(n.time.ok && n.time.value.meanOrderTime).toEqual(predict(worldA, calA, { releases }).meanOrderTime);
+  });
   it("are exactly what the core computes for the layout", () => {
     const n = layoutNumbers(a.scan, a.setup, a.layout, calA);
     const direct = predict(worldA, calA);
@@ -167,16 +171,6 @@ describe("the Test verdict", () => {
     expect(verdictSentence({ ...base, inside: false, side: "below", missByS: 4, missByPct: 30 })).toBe("Outside the range: 4.0 s faster than predicted.");
   });
 
-  it("words the simulated Test's rows and bar", () => {
-    const names = (id: string) => ({ ben: "Ben", ana: "Ana", make: "Espresso" })[id] ?? id;
-    expect(busiestWorker([{ workerId: "ana", busyShare: 0.74 }, { workerId: "ben", busyShare: 0.906 }], names)).toBe("Ben 91%");
-    expect(busiestWorker([], names)).toBeNull();
-    expect(waitsMostAt("make", names)).toBe("Espresso");
-    expect(waitsMostAt(null, names)).toBe("No waiting");
-    expect(SIMULATED_BAR).toBe("Simulated. Same orders, same luck.");
-    expect(simulationBasis(200)).toBe("Ranges from 200 runs. The animation is one of them.");
-  });
-
   it("finds where orders waited longest in the recorded run", () => {
     const story = runStory(runA, (id) => worldA.itemsById.get(id)?.name ?? id);
     expect(story.slowestId).toBe(MAKE);
@@ -211,92 +205,5 @@ describe("playback", () => {
     const mid = simulatedWorkers(worldA, moves, (seg.t0 + seg.t1) / 2).find((w) => w.id === "blue")!;
     const homeBlue = homePositions(worldA).get("blue")!;
     expect(Math.hypot(mid.x - homeBlue.x, mid.z - homeBlue.z)).toBeGreaterThan(0.2);
-  });
-});
-
-describe("the Test step and the real-run check", () => {
-  const idle: Session = { purpose: "first", status: "ended", t: 0, duration: 1, done: 0, total: 0, speed: 1, replay: true, save: { kind: "none" } };
-  beforeEach(() => {
-    const k = { scan: a.scan, setup: a.setup, layout: a.layout };
-    kitchen.value = k;
-    firstRun.value = { label: "counter-a", kitchen: k, taps: a.taps, positions: a.positions, origin: "recorded", replaced: [] };
-    candidateList.value = candidates;
-    playLayout.value = b.layout;
-    frozen.value = null;
-    testPlan.value = null;
-    checkOpen.value = false;
-    session.value = idle;
-    step.value = "play";
-  });
-
-  it("shows the simulation on arrival: no second run, no test plan", () => {
-    goTo("test");
-    expect(step.value).toBe("test");
-    expect(session.value).toBe(idle);
-    expect(testPlan.value).toBeNull();
-    expect(checkOpen.value).toBe(false);
-  });
-
-  it("still freezes the prediction on leaving Play, from the first run", () => {
-    goTo("test");
-    expect(frozen.value?.basis).toBe("counter-a");
-    expect(frozen.value?.judge.layout).toBe(b.layout);
-    expect(frozen.value?.judge.prediction?.meanOrderTime).toEqual(predict(resolveWorld(a.scan, a.setup, b.layout), calA).meanOrderTime);
-  });
-
-  it("opens the check on request, with a test plan for the judge's change", () => {
-    goTo("test");
-    openCheck();
-    expect(checkOpen.value).toBe(true);
-    expect(testPlan.value).toMatchObject({ matched: true, candidate: { id: b.meta.id }, judgeLayout: b.layout });
-  });
-
-  it("closes the check on the way back to the simulation, and on leaving Test", () => {
-    goTo("test");
-    openCheck();
-    closeCheck();
-    expect(checkOpen.value).toBe(false);
-    openCheck();
-    goTo("play");
-    expect(checkOpen.value).toBe(false);
-  });
-
-  /** Opens the check and stands in for a second run that has ended with a verdict. */
-  function endSecondRun() {
-    goTo("test");
-    openCheck();
-    const run = firstRun.value!;
-    const verdict = testOutcome(predict(resolveWorld(a.scan, a.setup, b.layout), calA).meanOrderTime, reconstructRun(b.setup, b.taps), 20.8);
-    session.value = { ...idle, purpose: "second", status: "ended" };
-    secondRun.value = run;
-    outcome.value = verdict;
-    return { run, verdict };
-  }
-
-  it("keeps the ended second run and its verdict when the check is closed and reopened", () => {
-    const { run, verdict } = endSecondRun();
-    closeCheck();
-    openCheck();
-    expect(checkOpen.value).toBe(true);
-    expect(secondRun.value).toBe(run);
-    expect(outcome.value).toBe(verdict);
-    expect(session.value?.status).toBe("ended");
-  });
-
-  it("starts a fresh check after the layout in Play changed", () => {
-    endSecondRun();
-    goTo("play");
-    playLayout.value = c.layout;
-    goTo("test");
-    openCheck();
-    expect(outcome.value).toBeNull();
-    expect(secondRun.value).toBeNull();
-    expect(testPlan.value?.judgeLayout).toBe(c.layout);
-  });
-
-  it("does not open the check outside Test", () => {
-    openCheck();
-    expect(checkOpen.value).toBe(false);
-    expect(testPlan.value).toBeNull();
   });
 });

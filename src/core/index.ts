@@ -94,7 +94,7 @@ export type {
   TaskRule,
   WorkPool,
 } from "./engine/index";
-export { predict, simulateRun, assumptionText, hasSharedStation, DEFAULT_REPS, DEFAULT_SEED } from "./predict";
+export { predict, simulateRun, assumptionText, hasSharedStation, typedStepCount, DEFAULT_REPS, DEFAULT_SEED } from "./predict";
 export type { Prediction, PredictOptions, SimulateRunOptions } from "./predict";
 export { BOTTLENECK_MIN_WAIT_S, SLOW_ORDER_QUANTILE } from "./engine/metrics";
 export type { StationMetric, WorkerMetric } from "./engine/metrics";
@@ -123,3 +123,20 @@ export {
 export { rangeOf, mean, median, quantile } from "./stats";
 export type { Range } from "./stats";
 export { mulberry32, streamFor } from "./rng";
+
+// Profit per hour, from the owner's prices and costs
+export {
+  capacityPerHour,
+  exampleEconomics,
+  formatMoney,
+  formatMoneyRange,
+  marginPerOrder,
+  profitFromCapacity,
+  profitOf,
+  rushReleases,
+  scheduleRatePerHour,
+  CAPACITY_ORDERS,
+  PROFIT_REPS,
+  PROFIT_SEED,
+} from "./profit";
+export type { Economics, MenuPrice, ProfitEstimate, CapacityOptions } from "./profit";

@@ -1,5 +1,5 @@
 /**
- * The operator's inputs drawer (key I): each input live or recorded, its
+ * The Inputs section of the Build panel: each input live or recorded, its
  * health, the addresses the devices use, and which runs to use.
  */
 import { loadBase } from "../state/boot";
@@ -9,7 +9,6 @@ import {
   base,
   candidates,
   catalog,
-  drawerOpen,
   health,
   latestLiveScan,
   linkState,
@@ -20,7 +19,6 @@ import {
   type InputKind,
   type Source,
 } from "../state/store";
-import { Btn } from "./bits";
 
 function healthText(input: InputKind): string {
   const src = sources.value[input];
@@ -42,7 +40,7 @@ function Row(props: { readonly input: InputKind; readonly name: string }) {
   const sw = liveSwitchable();
   const current: Source = props.input !== "scan" && sw && sw.status() === "running" ? sw.sources()[props.input] : sources.value[props.input];
   return (
-    <div class="st-input-row">
+    <div class="st-input-row" data-testid={`input-${props.input}`} data-source={current}>
       <span class="name">{props.name}</span>
       <span class="st-seg" role="group" aria-label={`${props.name} source`}>
         {(["replay", "live"] as const).map((s) => (
@@ -58,16 +56,12 @@ function Row(props: { readonly input: InputKind; readonly name: string }) {
   );
 }
 
-export function InputsDrawer() {
-  if (!drawerOpen.value) return null;
+export function InputsSection() {
   const info = serverInfo.value;
   const runs = catalog.value.filter((r) => r.meta);
   return (
-    <section class="st-drawer" data-testid="inputs-drawer" aria-label="Inputs">
-      <div class="st-row" style={{ justifyContent: "space-between" }}>
-        <h2>Inputs</h2>
-        <Btn small label="Close" k="Esc" onClick={() => (drawerOpen.value = false)} testId="btn-close-drawer" />
-      </div>
+    <section class="st-inputs" data-testid="inputs-section" aria-label="Inputs">
+      <h2>Inputs</h2>
       <Row input="scan" name="Scan" />
       <Row input="taps" name="Taps" />
       <Row input="positions" name="Positions" />
@@ -82,10 +76,10 @@ export function InputsDrawer() {
           <code>{info.urls.scanUpload}</code>
         </div>
       ) : (
-        <p class="st-small">No laptop server reachable. Recorded runs still work.</p>
+        <p class="st-small">No laptop server reachable.</p>
       )}
       <h3>Runs</h3>
-      <div class="st-row">
+      <div class="st-field">
         <label class="st-field">
           <span>First run (base)</span>
           <select class="st-select" data-testid="select-base" value={base.value?.meta.id ?? ""} onChange={(e) => void loadBase((e.target as HTMLSelectElement).value)}>

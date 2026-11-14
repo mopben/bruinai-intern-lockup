@@ -152,6 +152,7 @@ export function createKitchenScene(container: HTMLElement, options: KitchenScene
       room = r;
       vp.contentPoints = tops;
       vp.setRoom(r);
+      options.onCameraChange?.(cameraMoved());
     }
     area = dragArea(base);
     board.update(r, resolveWalls(next.scan));
@@ -197,7 +198,7 @@ export function createKitchenScene(container: HTMLElement, options: KitchenScene
     floorPoint: (cx, cy) => vp.floorPoint(cx, cy),
     itemInfo: (id) => { const it = itemById(id); return it ? { x: it.x, z: it.z, locked: it.locked } : null; },
     isEditable: () => editable,
-    allowOrbit: () => !!options.allowOrbit,
+    cameraControls: () => !!options.cameraControls,
     allowRotate: () => options.allowRotate !== false,
     selectedId: () => selected,
     beginDrag: (id) => { dragId = id; const v = views.get(id); if (v) v.liftTarget = 1; markDirty(); },
@@ -233,11 +234,34 @@ export function createKitchenScene(container: HTMLElement, options: KitchenScene
     orbit: (dx, dy) => {
       vp.view = { azimuth: vp.view.azimuth - dx * 0.006, elevation: Math.min(1.35, Math.max(0.45, vp.view.elevation + dy * 0.004)) };
       vp.applyFrame();
-      markDirty();
+      cameraChanged();
     },
-    zoom: (f) => { vp.zoom = Math.min(2.5, Math.max(0.7, vp.zoom * f)); vp.applyFrame(); markDirty(); },
+    pan: (dx, dy) => { vp.panBy(dx, dy); cameraChanged(); },
+    zoom: (f, cx, cy) => {
+      const r = vp.renderer.domElement.getBoundingClientRect();
+      vp.zoomAt(f, cx - r.left, cy - r.top);
+      cameraChanged();
+    },
+    resetCamera: () => reframe(),
     setHover: (id) => { hover = id; applyPaint(); },
   });
+
+  function cameraMoved(): boolean {
+    return vp.pan.x !== 0 || vp.pan.y !== 0 || vp.pan.z !== 0 || vp.zoom !== 1 || vp.view.azimuth !== homeView.azimuth || vp.view.elevation !== homeView.elevation;
+  }
+
+  function cameraChanged(): void {
+    markDirty();
+    options.onCameraChange?.(cameraMoved());
+  }
+
+  function reframe(): void {
+    vp.view = homeView;
+    vp.zoom = 1;
+    vp.pan = { x: 0, y: 0, z: 0 };
+    vp.applyFrame();
+    cameraChanged();
+  }
 
   function setSelected(id: string | null): void {
     selected = id;
@@ -389,7 +413,7 @@ export function createKitchenScene(container: HTMLElement, options: KitchenScene
     setPaths: (ps: readonly PathInput[]) => { paths.set(ps); markDirty(); },
     setGhost: (l) => { ghostLayout = l; refreshGhost(); },
     projectToScreen: (x, y, z) => { const p = vp.project(v3.set(x, y, z)); return Number.isFinite(p.x) ? { x: p.x, y: p.y } : null; },
-    reframe: () => { vp.view = homeView; vp.zoom = 1; vp.applyFrame(); markDirty(); },
+    reframe,
     debug: (): SceneDebug => {
       const rect = container.getBoundingClientRect();
       const screen: Record<string, { x: number; y: number }> = {};

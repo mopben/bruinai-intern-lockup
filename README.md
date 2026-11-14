@@ -18,25 +18,23 @@ You need:
 - **A Mac with Xcode** only to build the iPhone scan app (`ios/README.md`). The rest runs in Chrome on any laptop that runs Node.
 - To give the demo, read **[docs/RUNBOOK.md](docs/RUNBOOK.md)**.
 
-Stage page options, as URL parameters: `?run=<id>` (base run, default `counter-a`), `mode=replay|live` (`live` puts all three inputs on live), `speed=` (0.25 to 64), `step=1..5` (step to open on; `6`, the old Compare step, opens Test). Example: http://localhost:5179/?mode=live
+Stage page options, as URL parameters: `?run=<id>` (base run, default `counter-a`), `mode=replay|live` (`live` puts all three inputs on live), `speed=` (0.25 to 64), `step=1..3` (step to open on), `view=compare|run|test` (within step 3). Example: http://localhost:5179/?mode=live
 
 Another port: `PORT=5180 npm start`. Do not open a browser: `DRYRUN_NO_OPEN=1 npm start`.
 
 ## What you see
 
-The stage has five steps. Move with → and ←, or jump with 1 to 5.
+The stage is laid out like an editor: a dark activity bar on the far left picks one of three steps, a resizable side panel beside it holds the step's controls, and the kitchen fills the rest. Move through the views with → and ←, or jump to a step with 1 to 3; clicking the active step's button (or pressing its number again while on it) toggles the panel.
 
-1. **Scan.** The scanned boxes rise into place, then get the owner's names. Click a box to rename it or change its role.
-2. **Run.** Dots are people (from the camera); tickets pile up at the slow station (from the tablet taps).
-3. **Trust.** The model's order times next to the measured ones, on orders it did not learn from, with the error as one number.
-4. **Play.** Drag the fridge, a station or the pickup, or add a worker. Walking per order (exact) and time per order (a range) update during the drag.
-5. **Test.** The simulated service before and after the change, side by side, on the same orders with the same luck. Under each kitchen: time per order (a range), slow orders (a range: the order time that 9 in 10 orders beat), walking per order, the station where orders wait most, and the busiest worker. The ranges come from 200 simulated runs; the animation is one of them. **Check this with a real run** (key **C**) opens the real second run against the prediction frozen when you left Play. A miss is said plainly. **C** goes back to the simulation.
+1. **Build.** The scanned boxes rise into place, then get the owner's names. The panel has **Add a scan**, **Add a floor mark**, and the **Inputs** section.
+2. **Edit.** Click a box to rename it, change its role, or split it in two. Drag the fridge, a station or the pickup, add a worker, or change the number of orders. Walking per order (exact) and time per order (a simulated range) update as you edit. **Profit per hour** follows too, from the prices and costs (key **C** opens the **Prices and costs** section in the Edit panel: menu prices and ingredients, wage per worker, electricity, rent, orders in a busy hour; kept in this browser). **Suggest changes** (key **A**) tries a worker more or less at each station and moving every unlocked box, and lists what pays, best first; **Try** puts one on the board. Lock a box in Edit to keep it in place.
+3. **Run.** Switch between **Before vs after** (simulated side by side), **Original run**, and **After the change** (the real test against a frozen prediction). A changed order count affects simulation only; the real test keeps its own schedule.
 
-All keys are in the runbook. Press **I** for the inputs drawer, **Shift+F** for full screen.
+All keys are in the runbook. **Shift+F** for full screen.
 
 ## The three inputs
 
-Each input can be live or recorded, switched in the inputs drawer (**I**) at any time. The rest of the app does not care which.
+Each input can be live or recorded, switched in the Inputs section of the Build panel (step **1**) at any time. The rest of the app does not care which.
 
 | Input | Live | Recorded | Format and how-to |
 | --- | --- | --- | --- |
@@ -44,7 +42,7 @@ Each input can be live or recorded, switched in the inputs drawer (**I**) at any
 | Taps (orders and "done") | Tablet page `http://<laptop>:5179/tablet` | `taps.jsonl` | [docs/FORMATS.md](docs/FORMATS.md) |
 | Positions (where each worker was) | Camera page `http://localhost:5179/camera` on the laptop, with the filming phone as webcam | `positions.jsonl` | [docs/FORMATS.md](docs/FORMATS.md), [docs/CAMERA.md](docs/CAMERA.md) |
 
-The laptop's network addresses are printed by `npm start` and listed in the inputs drawer.
+The laptop's network addresses are printed by `npm start` and listed in Inputs, in the Build panel.
 
 ## Record a real run and load it
 
@@ -55,7 +53,7 @@ The laptop's network addresses are printed by `npm start` and listed in the inpu
    npx tsx tools/world/validate.ts recordings/rec-20261114-153000
    ```
    It prints `OK` or a list of problems with file and line. Fix by hand as in FORMATS.md.
-4. Load it. Press **I**, then under **Runs** pick it as **First run (base)**. Or open `http://localhost:5179/?run=rec-20261114-153000`.
+4. Load it. Open Build (**1**), then under **Runs** in the Inputs section pick it as **First run (base)**. Or open `http://localhost:5179/?run=rec-20261114-153000`.
 5. A **second run (Test)** appears in the list only if its `run.json` has `"baseRunId"` equal to the first run's `id`. A live second run made after a live first run says `"baseRunId": "live run"`; change it to the first run's id by hand.
 6. To bundle a run with the product, copy its folder to `fixtures/` (the folder name must match `id` in `run.json`).
 
@@ -85,7 +83,7 @@ A filmed video can also be turned into `positions.jsonl` and `actions.jsonl` wit
 | `src/core/` | The numbers: walking paths, run reconstruction, calibration, simulation, trust check, prediction. No screen, no network. |
 | `src/core/engine/` | The simulator: orders as task graphs, workers who cover stations, station capacity. A golden test holds it to the old simulator's results on the three fixtures |
 | `src/inputs/` | The three inputs, live and replayed, behind one interface; file parsing and checks |
-| `src/stage/` | The big-screen app: the 3D toy kitchen and the five steps |
+| `src/stage/` | The big-screen app: the 3D toy kitchen and the three steps |
 | `src/tablet/` | The tablet page where staff tap "done" |
 | `src/camera/` | The hat-colour camera tracker page |
 | `server/` | The laptop server: pages, run folders, the phone scan upload, the live relay |
@@ -118,7 +116,7 @@ A filmed video can also be turned into `positions.jsonl` and `actions.jsonl` wit
 | --- | --- | --- | --- |
 | Core numbers (`src/core`) | 161 unit tests, with known answers (distances, ticket timing, calibration, simulation, trust, prediction) and a golden test against the old simulator's results, plus a coverage check on 40 freshly generated rooms (`npx tsx tools/coverage/coverage.ts 40`) | Pass. On `counter-a`: model error about 8% on 5 held-out orders; walking 6.2 m per order; time per order 19–23 s. On 40 fresh rooms the stated range held the real result 39 times for the fridge move and 24 times for the fourth worker | Any real run. The fourth-worker prediction is too slow by about 1.1 s on average. The two bundled second runs now fall inside their ranges, but they were looked at while the model was being fixed, so they are not evidence |
 | Fixtures (`tools/world`, `fixtures/`) | 66 unit tests; the validator on all three folders | All three load: 10 orders each; 88.6 s, 70.9 s, 75.2 s long | They are generated, not recorded (`source: "synthetic"`) |
-| Stage app (`src/stage`) | 90 unit tests; the five steps driven in Chrome on the laptop in replay and live mode | All five steps, and the real-run check behind Test; keys M, W, Backspace, E, F, I; a mouse drag of the fridge (6.2 m to 3.1 m, 19–23 s to 8–10 s); failover to recorded positions after 4 s and recorded taps after 5 s with no tablet; a live run saved to `recordings/` | A real projector; touch dragging; a run from a real scan |
+| Stage app (`src/stage`) | Unit tests and the three steps driven in Chrome on the laptop in replay and live mode | Build, Edit and Run & results; keys M, W, Backspace, E, F, I; a mouse drag of the fridge; failover to recorded positions after 4 s and recorded taps after 5 s with no tablet; a live run saved to `recordings/` | A real projector; touch dragging; a run from a real scan |
 | Tablet (`src/tablet`) | 6 unit tests; the page in a second browser tab on the laptop | Orders appear when the run starts; a tap is accepted and the ticket moves on | A real tablet over Wi-Fi |
 | Server and inputs (`server/`, `src/inputs`) | 17 + 84 unit tests; scans POSTed with `curl` | Scan accepted, saved in `recordings/scans/`, shown on the stage | Phone and tablet over real Wi-Fi |
 | Scan app (`ios/`) | 27 unit tests in the iPhone 18 Pro simulator (see below); builder's simulator run and unsigned device build | Builder: summary screen, POST to a local listener, error messages | **RoomPlan capture on a LiDAR iPhone has never run.** Which side RoomPlan calls an object's front is unknown |

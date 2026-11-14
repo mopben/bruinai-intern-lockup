@@ -1,18 +1,18 @@
 # Dry Run: stage runbook
 
-One page. Keys work on the stage page (the laptop browser). Press **I** at any time to see the inputs and the network addresses.
+One page. Keys work on the stage page (the laptop browser). Open Import (**1**) at any time to see the inputs and the network addresses in the panel's Inputs section.
 
 ## Before the day (once)
 
 1. Clone the repository. Run `npm start` **with internet**: it installs and builds (a few minutes). Later starts need no internet.
-2. The stage opens at http://localhost:5179/ in replay. Press → four times and check all five steps work. In Test, press **C** for the real-run check and **C** again to come back.
+2. The stage opens at http://localhost:5179/ in replay. Press → four times and check all three steps and five views work.
 3. Build the scan app and install it on the LiDAR iPhone: see `ios/README.md`.
 4. Rehearse the whole demo at least three times, live and from recordings. Count how often the prediction holds (see the last section).
 
 ## Set up on stage (about 30 minutes)
 
 - [ ] **Network.** Laptop, tablet and both phones on **one Wi-Fi you control** (a travel router or a phone hotspot). No internet is needed. Venue guest Wi-Fi often blocks devices from reaching each other.
-- [ ] **Laptop.** `npm start`. Stage on the projector; press **Shift+F** for full screen (or the browser's own). Press **I**: the drawer lists the Tablet, Camera and Scan upload addresses.
+- [ ] **Laptop.** `npm start`. Stage on the projector; press **Shift+F** for full screen (or the browser's own). Open Import (**1**): the Inputs section lists the Tablet, Camera and Scan upload addresses.
 - [ ] **Tablet.** Open the Tablet address. It must say **Connected**. The stage footer then counts "1 tablet".
 - [ ] **Scan phone.** Type the laptop address in the app (port 5179 is added).
 - [ ] **Scan first, then the camera.** Do the real scan now and send it. The camera calibration belongs to one scan: a new sweep needs a new calibration (about a minute). On stage, send this same scan again (Review screen, **Send again**) and say it was taken before.
@@ -27,30 +27,28 @@ Live path first; **from recordings** in brackets. Numbers shown are the recordin
 
 | Time | Step | Say / do | Key | The room sees |
 | --- | --- | --- | --- | --- |
-| 0:00 | 1 Scan | Sweep the phone, press Send. (Recordings: the scan replays by itself.) | P replays the scan | Plain boxes rise, then get names |
-| 0:30 | 2 Run | Start the room. (Recordings: it plays on arrival.) | → then **P** "Start run". (Recordings: F) | Dots move, tickets pile at the espresso machine. Ends by itself, or **E** |
-| 1:30 | 3 Trust | "On orders it never saw, the model is off by this much." | → | Model error (about **8%** on the recording), five order pairs |
-| 1:45 | 4 Play | Hand the mouse to a judge: drag the fridge, or **+ worker** | → | Walking **6.2 m**, time **19–23 s**; both change during the drag |
-| 2:15 | 5 Test | "Simulated. Same orders, same luck, before and after." | → (P plays again, F faster) | Two simulated kitchens side by side. Under each: time per order, slow orders, walking per order, where orders wait most, the busiest worker |
-| 2:35 | 5 Test: real-run check | Make the same change in the room, then run again. (Recordings: the matching run plays.) | **C**, then **P** (live). (Recordings: F, or E) | Predicted range, measured mean, and a plain verdict |
-| 3:05 | 5 Test | Back to the two kitchens to close. | **C** | The simulation again |
+| 0:00 | 1 Import | Sweep the phone, press Send. (Recordings: the scan replays by itself.) | **P** replays the scan | Plain boxes rise, then get names |
+| 0:30 | 3 Original run | Start the room. (Recordings: it plays on arrival.) | **3**, then select Original run and **P** (live); **F** (recordings) | Dots move and tickets pile up. Ends by itself, or **E** |
+| 1:45 | 2 Edit | Hand the mouse to a judge: drag the fridge, add a worker, or change the simulated order count. **A** suggests changes; **C** opens the prices and costs section | **2**, **A**, **C** | Walking, simulated time and profit per hour update during the edit |
+| 2:15 | 3 After the change | Make the same change in the room, then run again. (Recordings: the matching run plays.) | **3**, select After the change, then **P** (live); **F** or **E** (recordings) | Predicted range, measured mean, and a plain verdict; the real run keeps its own orders |
+| 2:45 | 3 Before vs after | "Same orders, same luck, before and after." | **3** (P plays again) | Two simulated kitchens side by side |
 
 ## When something fails
 
 | Symptom | Press | The room sees |
 | --- | --- | --- |
-| Scan does not arrive ("Waiting for the phone") | Check the address under **I**. Or AirDrop `scan.json` and drag it onto the stage. Or **I**, Scan: **Recorded** | The kitchen appears |
+| Scan does not arrive ("Waiting for the phone") | Check the address in Inputs under Import (**1**). Or AirDrop `scan.json` and drag it onto the stage. Or **1**, Scan: **Recorded** | The kitchen appears |
 | Tablet disconnected | Nothing. It retries and resends taps. After 5 s with no tablet, the stage uses recorded taps | "Showing the recorded taps (no tablet connected for 5 s)" |
 | Camera lost | Nothing. After 4 s the stage uses recorded positions | "Showing the recorded run (positions: …)" |
-| Dots wrong | **I**, Positions: **Recorded** | Recorded dots, run continues |
-| The live run is a mess | **I**, set all three to **Recorded**, Esc. A run not yet started then plays the recording at once (**P** if it is over); a running one switches over. **F** for 4× | The recorded run plays |
-| Judge freezes at the drag | **M** (fridge next to the espresso machine) or **W** (fourth worker). **Backspace** resets | Numbers jump to the rehearsed change |
+| Dots wrong | **1**, Positions: **Recorded** | Recorded dots, run continues |
+| The live run is a mess | **1**, set all three to **Recorded**. A run not yet started then plays the recording at once (**P** if it is over); a running one switches over. **F** for 4× | The recorded run plays |
+| Judge freezes at the drag | In Edit, **M** (fridge next to the espresso machine) or **W** (fourth worker). **Backspace** resets | Numbers jump to the rehearsed change |
 | Prediction misses | Nothing. Say: "Outside the range. Ten orders is a short run, and this is why we test it." | "Outside the range: … slower than predicted." |
 | Save failed | **S** | "Saved on this laptop in recordings/…" |
-| Laptop or browser dies | Reload, or `npm start` again: it reopens on the same step (the address keeps it), in replay. In Test it opens on the simulation; press **C** for the check. Go to Play (**4**) and use **M** or **W** again | The recorded demo |
+| Laptop or browser dies | Reload, or `npm start` again: it reopens on the same step (the address keeps it), in replay. Use **M** or **W** again | The recorded demo |
 
 With a fresh phone scan, the recordings come from another kitchen, so none stands by: a failed live input shows its trouble and nothing is filled in (the stage says so). Then the only fallback is all three on **Recorded**.
 
 ## Honest state of the prediction
 
-Rehearse the **fridge move** (key M): on 40 generated rooms its range held 39 times. The **fourth worker** (key W) held only 24 times and runs about 1 s slow, so avoid it on stage. Keep the real-run check only if rehearsal with real people shows the prediction holds. To skip it: in Test do not press **C**; the simulation is the end of the demo.
+Rehearse the **fridge move** (key M): on 40 generated rooms its range held 39 times. The **fourth worker** (key W) held only 24 times and runs about 1 s slow, so avoid it on stage. Use After the change only if rehearsal with real people shows the prediction holds. To skip the real test, stay on Before vs after in step 3.

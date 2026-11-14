@@ -8,7 +8,7 @@ import { acceptLiveScan, useRecordedKitchen, waitForLiveScan } from "./kitchen-a
 import { liveScanFeed } from "./link";
 import { reprepareIdleRun } from "./flow";
 import { currentPlayer, liveSwitchable, standbyUsable } from "./runs";
-import { addNotice, dropNotice, latestLiveScan, sources, step, type InputKind, type Source } from "./store";
+import { addNotice, dropNotice, latestLiveScan, sources, view, type InputKind, type Source } from "./store";
 
 export function setSource(input: InputKind, source: Source): void {
   if (sources.value[input] === source) return;
@@ -17,7 +17,7 @@ export function setSource(input: InputKind, source: Source): void {
     if (input === "taps") dropNotice("notablet");
   });
   if (input === "scan") {
-    if (source === "replay") useRecordedKitchen(step.value === "scan");
+    if (source === "replay") useRecordedKitchen(view.value === "scan");
     else waitForLiveScan();
     return;
   }
@@ -67,6 +67,6 @@ export function watchScans(): void {
       return;
     }
     latestLiveScan.value = scan;
-    addNotice({ id: "phone-scan", text: "A new scan arrived from the phone. Press I and switch the scan to live to use it.", tone: "calm" });
+    addNotice({ id: "phone-scan", text: "A new scan arrived from the phone. Switch the scan to live in Inputs in Import (step 1) to use it.", tone: "calm" });
   });
 }

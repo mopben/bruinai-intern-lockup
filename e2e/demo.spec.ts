@@ -1,7 +1,6 @@
 /**
- * Definition of done: the whole demo, steps 1 to 5, from fixtures, with the
- * keyboard (the runbook's keys) and the two check buttons in Test, at an
- * accelerated replay speed.
+ * Definition of done: the whole demo, steps 1 to 3, from fixtures, with the
+ * keyboard only (the runbook's keys), at an accelerated replay speed.
  */
 import { BOX, STATIONS, clockSeconds, expectStep, mainDebug, openStage, startQueueSampler, stopQueueSampler, text, waitForSession } from "./support/stage";
 import { expect, test } from "./support/fixtures";
@@ -14,7 +13,7 @@ function parseHeadline(s: string): { lo: number; hi: number; measured: number } 
   return m ? { lo: Number(m[1]), hi: Number(m[2]), measured: Number(m[3]) } : null;
 }
 
-test("definition of done: full demo, replay, keyboard and check buttons (acceptance steps 1-5)", async ({ page }) => {
+test("definition of done: full demo, replay, keyboard only (acceptance steps 1-3)", async ({ page }) => {
   await openStage(page, { speed: SPEED });
   const kb = page.keyboard;
 
@@ -26,6 +25,8 @@ test("definition of done: full demo, replay, keyboard and check buttons (accepta
 
   // 2. The run: dots move, the clock advances, orders complete, Make piles up.
   await startQueueSampler(page);
+  await kb.press("ArrowRight");
+  await kb.press("ArrowRight");
   await kb.press("ArrowRight");
   await expectStep(page, "run");
   await expect.poll(async () => clockSeconds(await text(page, "run-clock"))).toBeGreaterThan(5);
@@ -45,15 +46,8 @@ test("definition of done: full demo, replay, keyboard and check buttons (accepta
   const alerted = new Set(samples.flatMap((s) => s.a));
   expect([...alerted]).toEqual([BOX.make]);
 
-  // 3. The trust check: one error number and paired order times.
-  await kb.press("ArrowRight");
-  await expectStep(page, "trust");
-  await expect(page.getByTestId("trust-error")).toHaveText(/^\d+%$/);
-  await expect(page.getByTestId("trust-words")).toContainText(/The model (was \d+% (slower|faster) than|matched) the real run/);
-  expect(await page.getByTestId("trust-pairs").locator("circle").count()).toBeGreaterThanOrEqual(8);
-
-  // 4. The play: the rehearsed move changes both numbers; a range with its assumption.
-  await kb.press("ArrowRight");
+  // Edit: the rehearsed move changes both numbers; a range with its assumption.
+  await kb.press("2");
   await expectStep(page, "play");
   const walkBefore = await text(page, "walking-per-order");
   const timeBefore = await text(page, "time-per-order");
@@ -64,27 +58,12 @@ test("definition of done: full demo, replay, keyboard and check buttons (accepta
   await expect(page.getByTestId("walking-per-order-before")).toHaveText(walkBefore);
   const range = await text(page, "prediction-range");
   expect(range).toMatch(/^(\d+–\d+ s|about \d+ s)$/);
-  await expect(page.getByTestId("assumption")).toContainText(/pace we measured/i);
 
-  // 5. The test, simulated: two kitchens, both with numbers, the clock advancing, and it says it is a simulation.
+  // After the change: the recorded second run plays with an honest verdict.
+  await kb.press("ArrowRight");
+  await kb.press("ArrowRight");
   await kb.press("ArrowRight");
   await expectStep(page, "test");
-  await expect(page.getByTestId("compare-bar")).toContainText("Simulated");
-  await expect(page.getByTestId("compare-bar")).toContainText("Simulated. Same orders, same luck.");
-  for (const side of ["before", "after"]) {
-    await expect(page.getByTestId(`compare-${side}`)).toBeVisible();
-    await expect(page.getByTestId(`compare-${side}-walking`)).toHaveText(/^\d+\.\d m$/);
-    await expect(page.getByTestId(`compare-${side}-time`)).toHaveText(/\d+ s$/);
-    await expect(page.getByTestId(`compare-${side}-slow`)).toHaveText(/\d+ s$/);
-    await expect(page.getByTestId(`compare-${side}-bottleneck`)).not.toHaveText("—");
-    await expect(page.getByTestId(`compare-${side}-busiest`)).toHaveText(/^\S.* \d+%$/);
-    await expect(page.getByTestId(`compare-${side}-done`)).toHaveText(/^\d+ of 10$/);
-  }
-  await expect.poll(async () => clockSeconds(await text(page, "compare-clock"))).toBeGreaterThan(2);
-  await expect(page.getByTestId("compare-before-walking")).not.toHaveText(await text(page, "compare-after-walking"));
-
-  // The check: the recorded second run plays; a measured result and an honest verdict.
-  await page.getByTestId("btn-check-real").click();
   await expect(page.getByTestId("prediction-range")).toHaveText(range);
   await waitForSession(page, "second", "ended");
   const headline = await text(page, "measured-result");
@@ -104,11 +83,15 @@ test("definition of done: full demo, replay, keyboard and check buttons (accepta
     if (!inside) expect(verdict).toMatch(/outside/i);
   }
 
-  // Back to the two kitchens.
-  await page.getByTestId("btn-back-to-sim").click();
-  await expectStep(page, "test");
-  await expect(page.getByTestId("compare-before")).toBeVisible();
-  await expect(page.getByTestId("compare-after")).toBeVisible();
-  await expect(page.getByTestId("compare-bar")).toContainText("Simulated");
-  await expect(page.getByTestId("verdict")).toHaveCount(0);
+  // Before vs after: two kitchens, both with numbers, the clock advancing.
+  await kb.press("4");
+  await expectStep(page, "compare");
+  for (const side of ["before", "after"]) {
+    await expect(page.getByTestId(`compare-${side}`)).toBeVisible();
+    await expect(page.getByTestId(`compare-${side}-walking`)).toHaveText(/^\d+\.\d m$/);
+    await expect(page.getByTestId(`compare-${side}-time`)).toHaveText(/\d+ s$/);
+    await expect(page.getByTestId(`compare-${side}-done`)).toHaveText(/^\d+ of 10$/);
+  }
+  await expect.poll(async () => clockSeconds(await text(page, "compare-clock"))).toBeGreaterThan(2);
+  await expect(page.getByTestId("compare-before-walking")).not.toHaveText(await text(page, "compare-after-walking"));
 });

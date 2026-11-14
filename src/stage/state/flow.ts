@@ -1,10 +1,6 @@
 /**
- * Moving through the five steps, and what each step does on arrival and on
- * leaving. The prediction is frozen on leaving Play, from the first run only.
- *
- * Test opens on the simulated before and after. The real second run is the
- * check inside Test (checkOpen): opening it plans and plays the second run,
- * against the prediction frozen on leaving Play.
+ * Moving through the views, and what each does on arrival and on
+ * leaving. The prediction is frozen from the first run only.
  */
 import { batch } from "@preact/signals";
 import { reconstructRun, type RunBundle } from "../../core";
@@ -12,8 +8,9 @@ import { loadRunBundle } from "../../inputs";
 import { freezePredictions } from "../app/frozen";
 import { runFitsKitchen } from "../app/kitchen-edit";
 import { changeKind, layoutsMatch, matchRecordedRun, type Candidate } from "../app/layout-match";
-import { stepIndex, type StepId } from "../app/steps";
+import { stepIndex, stepOf, type ViewId } from "../app/steps";
 import { runStory, testOutcome } from "../app/words";
+import { cancelSuggest } from "./suggest";
 import { calibration, firstMeasuredS, originalLayout, usableFirstRun } from "./derive";
 import { settleReveal } from "./kitchen-actions";
 import { preloadedBundle } from "./preload";
@@ -21,7 +18,6 @@ import { beginRun, currentPlayer, nextRunIsLive, startLive } from "./runs";
 import {
   base,
   candidates,
-  checkOpen,
   firstRun,
   frozen,
   kitchen,
@@ -32,7 +28,7 @@ import {
   secondRun,
   selectedId,
   session,
-  step,
+  view,
   storyText,
   testPlan,
   type MeasuredRun,
@@ -78,10 +74,9 @@ export function beginFirstRun(): void {
     kitchen: k,
     label: "Live run",
     onEnd: (run: MeasuredRun) => {
-      const now = kitchen.value ?? k;
       batch(() => {
-        firstRun.value = run.origin === "live" ? run : { ...run, kitchen: { ...now, layout: run.kitchen.layout } };
-        storyText.value = runStory(reconstructRun(now.setup, run.taps), nameOf).sentence;
+        firstRun.value = run;
+        storyText.value = runStory(reconstructRun(run.kitchen.setup, run.taps), nameOf).sentence;
       });
     },
     // A second run made later is linked to the saved first run, so it is listed under it.
@@ -130,7 +125,7 @@ function finishTest(run: MeasuredRun, setupFrom: RunBundle["setup"]): void {
 /** Chooses the second run, loads it and plays it (recorded) or gets the live run ready. */
 export async function beginTest(): Promise<void> {
   const k = kitchen.value;
-  if (!frozen.value) freezeNow();
+  freezeNow();
   const f = frozen.value;
   batch(() => {
     outcome.value = null;
@@ -146,7 +141,7 @@ export async function beginTest(): Promise<void> {
   const pick = pickCandidate();
   if (!pick && !live) {
     testPlan.value = null;
-    outcomeProblem.value = "No recorded second run exists for this kitchen. Switch taps and positions to live (press I) to run the change for real.";
+    outcomeProblem.value = "No recorded second run exists for this kitchen. Switch taps and positions to live in Inputs in Import (step 1) to run the change for real.";
     return;
   }
   const layout = live || !pick || pick.matched ? f.judge.layout : pick.candidate.layout;
@@ -166,8 +161,7 @@ export async function beginTest(): Promise<void> {
   // Only a recording of the very layout being tested may stand in for the live inputs.
   const standbyAllowed = bundle !== null && (pick?.matched ?? false);
   bundle ??= live ? base.value : null;
-  // The check was closed (or Test left) while the run loaded: nothing is started then.
-  if (!bundle || step.value !== "test" || !checkOpen.value) return;
+  if (!bundle || view.value !== "test") return;
   const plan = testPlan.value;
   if (!plan) return;
   testPlan.value = { ...plan, bundle };
@@ -196,57 +190,44 @@ export function applyRehearsed(key: "m" | "w"): void {
   const k = kitchen.value;
   const original = originalLayout.value;
   if (!k || !original) return;
+  cancelSuggest();
   const want = key === "m" ? "move" : "staff";
   const c = candidates.value.find((x) => changeKind(k.scan, k.setup, original, x.layout) === want);
   if (c) playLayout.value = c.layout;
 }
 
 export function resetPlay(): void {
+  cancelSuggest();
   const original = originalLayout.value;
   if (original) playLayout.value = original;
 }
 
-/**
- * "Check this with a real run": the second run against the frozen prediction.
- * A second run for the same Play layout that is still going, or has ended with
- * its verdict, is shown again, never restarted (a live run cannot be replayed).
- * Otherwise the second run is planned and played afresh.
- */
-export function openCheck(): void {
-  if (step.value !== "test") return;
-  checkOpen.value = true;
-  const s = session.value;
-  const plan = testPlan.value;
-  const started = s !== null && s.purpose === "second" && (s.status === "running" || s.status === "ended");
-  if (started && plan !== null && plan.judgeLayout === playLayout.value) return;
-  void beginTest();
-}
-
-/** "Back to the simulation". A second run that is going is left to finish; reopening the check shows it and its verdict. */
-export function closeCheck(): void {
-  checkOpen.value = false;
-}
-
 /** Everything that happens when the step changes. */
-export function goTo(next: StepId): void {
-  const prev = step.value;
+export function goTo(next: ViewId): void {
+  const prev = view.value;
   if (next === prev) return;
   if (prev === "scan") settleReveal();
-  if (prev === "play") freezeNow();
+  if (prev === "play") {
+    cancelSuggest();
+    freezeNow();
+  }
+  if (prev === "orders") freezeNow();
   batch(() => {
-    step.value = next;
+    view.value = next;
     selectedId.value = null;
-    if (prev === "test") checkOpen.value = false;
   });
   rememberStep(next);
   enterStep(next);
 }
 
 /** Keeps ?step= in the address, so a reload (or a crashed tab reopened) comes back to the same step. */
-function rememberStep(next: StepId): void {
+function rememberStep(next: ViewId): void {
   try {
     const url = new URL(globalThis.location.href);
-    url.searchParams.set("step", String(stepIndex(next) + 1));
+    const step = stepOf(next);
+    url.searchParams.set("step", String(stepIndex(step) + 1));
+    if (step === "results") url.searchParams.set("view", next);
+    else url.searchParams.delete("view");
     globalThis.history.replaceState(globalThis.history.state, "", url);
   } catch {
     // No history API (tests in node): nothing to remember.
@@ -254,17 +235,18 @@ function rememberStep(next: StepId): void {
 }
 
 /** What a step does on arrival (also used when the page opens on a step). */
-export function enterStep(next: StepId): void {
+export function enterStep(next: ViewId): void {
   if (next === "run") {
     const s = session.value;
     if (!s || s.purpose !== "first") beginFirstRun();
     else currentPlayer()?.redraw();
   }
+  if (next === "test") void beginTest();
   if (next === "play" && !playLayout.value) playLayout.value = originalLayout.value;
 }
 
 /**
- * P in Run or in the real-run check, and the Start / Play again buttons. Follows the inputs as
+ * P in Run or Test, and the Start / Play again buttons. Follows the inputs as
  * they are now: a prepared live run starts only if the inputs are still live;
  * otherwise the run is prepared (or played) again from the current sources.
  */
@@ -282,6 +264,6 @@ export function startOrReplay(purpose: "first" | "second"): void {
 export function reprepareIdleRun(): void {
   const s = session.value;
   if (!s || s.status !== "idle") return;
-  if (s.purpose === "first" && step.value === "run") beginFirstRun();
-  if (s.purpose === "second" && step.value === "test" && checkOpen.value) void beginTest();
+  if (s.purpose === "first" && view.value === "run") beginFirstRun();
+  if (s.purpose === "second" && view.value === "test") void beginTest();
 }

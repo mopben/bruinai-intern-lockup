@@ -87,6 +87,17 @@ export function hasSharedStation(world: World): boolean {
   return [...counts.values()].some((n) => n > 1);
 }
 
+/** How many recipe steps use a time the owner typed (`workSeconds`), not measured times. */
+export function typedStepCount(world: World): number {
+  return world.menu.reduce((n, m) => n + m.steps.filter((s) => s.workSeconds !== undefined).length, 0);
+}
+
+function typedWords(world: World | undefined): string {
+  const n = world === undefined ? 0 : typedStepCount(world);
+  if (n === 0) return "";
+  return n === 1 ? " 1 step uses a time you typed, not a measured time." : ` ${n} steps use times you typed, not measured times.`;
+}
+
 /** The prediction's assumptions in plain words. */
 export function assumptionText(cal: Calibration, reps: number, world?: World, extrapolation?: WalkExtrapolation): string {
   const shared = world !== undefined && hasSharedStation(world)
@@ -94,7 +105,7 @@ export function assumptionText(cal: Calibration, reps: number, world?: World, ex
     : "";
   return (
     `People work and walk at the pace we measured (${cal.sampleCount} timed steps; ${paceWords(cal)}). ` +
-    `Only distances and staffing change.${shared}${extrapolation?.outside ? ` ${extrapolation.note}` : ""} The range is the middle 80% of ${reps} simulated runs.`
+    `Only distances and staffing change.${shared}${typedWords(world)}${extrapolation?.outside ? ` ${extrapolation.note}` : ""} The range is the middle 80% of ${reps} simulated runs.`
   );
 }
 
