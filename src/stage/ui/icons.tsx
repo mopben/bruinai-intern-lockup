@@ -3,6 +3,14 @@
  * take the button's colour. Decorative only (the button has the label).
  */
 
+export function UploadIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 16V3m-5 5 5-5 5 5M4 16v5h16v-5" />
+    </svg>
+  );
+}
+
 export function BuildIcon() {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

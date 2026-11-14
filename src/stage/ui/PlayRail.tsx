@@ -1,18 +1,15 @@
 /**
- * Step 2, Edit. Adjust the layout and staffing, then compare walking and order time.
+ * Setup controls for the kitchen layout, workers, and costs.
  */
-import { formatMetres, formatRange, formatSeconds } from "../../core";
+import { formatSeconds } from "../../core";
 import type { Suggestion } from "../app/suggest";
-import { clampOrders, MAX_ORDERS, MIN_ORDERS } from "../app/orders";
-import { changeDirection } from "../app/words";
-import { baselineNumbers, calibration, firstRunProblem, playNumbers } from "../state/derive";
+import { calibration, firstRunProblem } from "../state/derive";
 import { costsOpen, economics, workersOpen } from "../state/economics";
 import { applySuggestion, startSuggest, suggestState, undoSuggestion } from "../state/suggest";
 import { resetPlay } from "../state/flow";
-import { kitchen, orderCount, playLayout, selectedId } from "../state/store";
-import { BigNum, Btn } from "./bits";
+import { kitchen, playLayout, selectedId } from "../state/store";
+import { Btn } from "./bits";
 import { CostsSection } from "./CostsSection";
-import { ExtrapolationNote } from "./Basis";
 import { ItemPanel } from "./ItemPanel";
 
 /** Lists changes ranked by profit; pressing again while it searches stops it. */
@@ -103,83 +100,16 @@ function Suggestions() {
   );
 }
 
-function Orders() {
-  const schedule = kitchen.value?.setup.schedule.orders;
-  if (!schedule) return null;
-  const count = orderCount.value ?? schedule.length;
-  const setCount = (n: number) => {
-    const next = clampOrders(n);
-    orderCount.value = next === schedule.length ? null : next;
-  };
-  return (
-    <div class="st-row" aria-label="Orders in the rush">
-      <span>Orders in the rush</span>
-      <Btn small label="−" onClick={() => setCount(count - 1)} disabled={count <= MIN_ORDERS} testId="btn-orders-less" />
-      <span data-testid="orders-count">{count}</span>
-      <Btn small label="+" onClick={() => setCount(count + 1)} disabled={count >= MAX_ORDERS} testId="btn-orders-more" />
-      {count !== schedule.length ? <Btn small label="Reset" onClick={() => (orderCount.value = null)} testId="btn-orders-reset" /> : null}
-    </div>
-  );
-}
-
 export function PlayRail() {
-  const n = playNumbers.value;
-  const before = baselineNumbers.value;
   const problem = firstRunProblem.value;
   const id = selectedId.value;
   if (id && kitchen.value) return <ItemPanel boxId={id} />;
-  if (!n)
-    return (
-      <div class="st-card">
-        <h1>Change one thing</h1>
-        <Rehearsed />
-
-        <p class="st-note">{problem}</p>
-      </div>
-    );
-  const walk = n.walking.ok ? n.walking.value.perOrderM : null;
-  const walkBefore = before?.walking.ok ? before.walking.value.perOrderM : null;
-  const time = n.time.ok ? n.time.value : null;
-  const originalCount = kitchen.value?.setup.schedule.orders.length ?? 0;
-  const count = orderCount.value ?? originalCount;
-  const countChanged = count !== originalCount;
-  const timeBefore = before?.time.ok ? before.time.value : null;
-  const walkChanged = walk !== null && walkBefore !== null && formatMetres(walk) !== formatMetres(walkBefore);
-  const timeChanged = time && timeBefore && formatRange(time.meanOrderTime) !== formatRange(timeBefore.meanOrderTime);
-  const dir = time && timeBefore && timeChanged ? changeDirection(timeBefore.meanOrderTime.p50, time.meanOrderTime.p50) : null;
   return (
     <div class="st-card play">
       <Rehearsed />
       <CostsSection />
-      <div class="st-nums pair">
-        <BigNum
-          what="Walking per order"
-          value={walk === null ? null : formatMetres(walk)}
-          cannot={n.walking.ok ? null : n.walking.message}
-          was={walkChanged && walkBefore !== null ? formatMetres(walkBefore) : null}
-          dir={walkChanged && walk !== null && walkBefore !== null ? (walk < walkBefore ? "less walking" : "more walking") : null}
-          how=""
-          testId="walking-per-order"
-        />
-        <BigNum
-          what="Time per order"
-          value={time ? formatRange(time.meanOrderTime) : null}
-          cannot={n.time.ok ? null : n.time.message}
-          was={timeChanged && timeBefore ? formatRange(timeBefore.meanOrderTime) : null}
-          dir={dir}
-          how=""
-          testId="time-per-order"
-        />
-      </div>
       {problem ? <p class="st-note">{problem}</p> : null}
-      {time ? (
-        <p class="st-say st-predict">
-          Prediction{countChanged ? ` (${count} orders)` : ""}: <span data-testid="prediction-range">{formatRange(time.meanOrderTime)}</span>
-        </p>
-      ) : null}
-      <Orders />
       <Suggestions />
-      <ExtrapolationNote prediction={time} />
     </div>
   );
 }

@@ -4,7 +4,7 @@
  */
 import { workersOpen } from "../state/economics";
 import { WorkersSection } from "./WorkersSection";
-import { useEffect, useRef } from "preact/hooks";
+import { useEffect } from "preact/hooks";
 import { acceptDroppedScan } from "../state/input-actions";
 import { installKeys } from "../state/keys";
 import { addNotice, bootError, currentStep, importOpen, loading, panel, view } from "../state/store";
@@ -15,25 +15,14 @@ import { PlayRail } from "./PlayRail";
 import { OrdersRail } from "./OrdersRail";
 import { RunRail } from "./RunRail";
 import { ImportMenu } from "./ImportMenu";
-import { Btn } from "./bits";
+import { UploadIcon } from "./icons";
 import { SceneHost } from "./SceneHost";
 import { TestRail } from "./TestRail";
 
 function BuildRail() {
-  const upload = useRef<HTMLInputElement>(null);
   return <>
     <div class="st-row st-panel-actions st-build-import">
-      <Btn label="Import" onClick={() => (importOpen.value = true)} testId="btn-import" />
-      <Btn label="Upload" onClick={() => upload.current?.click()} testId="btn-upload" title="Upload a kitchen scan" />
-      <input ref={upload} type="file" accept=".json,application/json" hidden aria-label="Upload a kitchen scan" onChange={(event) => {
-        const file = event.currentTarget.files?.[0];
-        event.currentTarget.value = "";
-        if (!file) return;
-        file.text().then(
-          (text) => acceptDroppedScan(text, file.name),
-          () => addNotice({ id: "drop", text: `Could not read ${file.name}.`, tone: "warn" }),
-        );
-      }} />
+      <button type="button" class="st-btn" onClick={() => (importOpen.value = true)} data-testid="btn-import"><UploadIcon />Import</button>
     </div>
     <PlayRail />
   </>;
