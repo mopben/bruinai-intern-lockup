@@ -21,6 +21,7 @@ export default defineConfig({
     proxy: {
       "/api": "http://localhost:5179",
       "/fixtures": "http://localhost:5179",
+      "/recordings": "http://localhost:5179",
       "/ws": { target: "ws://localhost:5179", ws: true },
     },
   },
