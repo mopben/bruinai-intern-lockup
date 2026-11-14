@@ -78,7 +78,7 @@ export function evenOrders(n: number, gap: number, itemId = "latte", start = 0):
   return Array.from({ length: n }, (_, i) => ({ orderId: `o${i + 1}`, itemId, t: start + i * gap }));
 }
 
-export function fixedCalibration(samples: Record<string, readonly number[]>, speed = 1.2): Calibration {
+export function fixedCalibration(samples: Record<string, readonly number[]>, speed = 1.2, taskSamples: Record<string, readonly number[]> = {}): Calibration {
   return {
     walkSpeedMps: speed,
     walkOverheadS: 0,
@@ -87,6 +87,7 @@ export function fixedCalibration(samples: Record<string, readonly number[]>, spe
     walkSpeedAssumed: false,
     walkSpeedSamples: 100,
     workSamples: samples,
+    taskSamples,
     sampleCount: Object.values(samples).flat().length,
     clampedCount: 0,
     orderIds: [],

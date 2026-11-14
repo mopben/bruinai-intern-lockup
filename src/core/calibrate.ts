@@ -9,11 +9,20 @@ import type { OrderTrace, StepTrace } from "./trace";
 import { planItems, type ItemPlan, type StepPlan } from "./plan";
 import { estimatePace, walkSeconds, type Pace, type PaceMethod } from "./pace";
 import type { Trip } from "./trips";
+import { itemTasks } from "./tasks";
 
 export { DEFAULT_WALK_SPEED_MPS, estimateWalkSpeed, MOVING_THRESHOLD_MPS, SPEED_WINDOW_S, type SpeedEstimate } from "./speed";
 
 /** Work-time samples are clamped up to this (a step cannot take no time). */
 export const MIN_WORK_S = 0.5;
+
+/** A task with fewer samples than this uses all samples of its station. */
+export const MIN_TASK_SAMPLES = 3;
+
+/** Key of `Calibration.taskSamples` for one task of one menu item. */
+export function taskKey(itemId: string, taskId: string): string {
+  return `${itemId}\u0000${taskId}`;
+}
 
 export interface Calibration {
   /** Walking speed (pace.speedMps). */
@@ -30,6 +39,8 @@ export interface Calibration {
   readonly walkSpeedSamples: number;
   /** Work time per step at each station (seconds), walking removed. */
   readonly workSamples: Readonly<Record<string, readonly number[]>>;
+  /** The same samples keyed by menu item and task (`taskKey`), in the same order. */
+  readonly taskSamples: Readonly<Record<string, readonly number[]>>;
   readonly sampleCount: number;
   /** Samples that came out below MIN_WORK_S and were raised to it. */
   readonly clampedCount: number;
@@ -74,6 +85,8 @@ export function calibrate(
   const plans = planItems(world);
   const warnings: string[] = [...est.warnings];
   const samples: Record<string, number[]> = {};
+  const byTask: Record<string, number[]> = {};
+  const taskIds = new Map(world.menu.map((m) => [m.id, itemTasks(m).map((t) => t.id)] as const));
   let clamped = 0;
   const used = new Set<string>();
   const stations = [...new Set(world.menu.flatMap((m) => m.steps.map((s) => s.stationId)))];
@@ -97,7 +110,10 @@ export function calibrate(
         const start = Math.max(arrival, freeAt.get(wid) as number);
         const work = tap - start - fetchSeconds(pace, sp);
         if (work < MIN_WORK_S) clamped += 1;
-        (samples[stationId] as number[]).push(Math.max(work, MIN_WORK_S));
+        const value = Math.max(work, MIN_WORK_S);
+        (samples[stationId] as number[]).push(value);
+        const key = taskKey(order.itemId, taskIds.get(order.itemId)?.[step.step] ?? `s${step.step}`);
+        (byTask[key] ??= []).push(value);
         used.add(order.orderId);
       }
       if (wid !== undefined) freeAt.set(wid, tap + 2 * walkSeconds(pace, sp.carry.oneWayM));
@@ -114,6 +130,7 @@ export function calibrate(
     walkSpeedAssumed: est.method === "assumed",
     walkSpeedSamples: est.samples,
     workSamples: samples,
+    taskSamples: byTask,
     sampleCount,
     clampedCount: clamped,
     orderIds: run.orders.map((o) => o.orderId).filter((id) => used.has(id)),

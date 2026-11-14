@@ -21,30 +21,11 @@ import { streamFor } from "./rng";
 import { buildQueueTimeline } from "./timeline";
 import { SimError, type ModelStep, type SimModel } from "./model";
 import { bootstrapPace, walkSeconds, type Pace } from "./pace";
+import type { Replication, ReplicationOptions } from "./engine/run";
 
 export type Releases = OrderSchedule["orders"];
 
-export interface ReplicationOptions {
-  /** Resample each station's work samples (bootstrap) before drawing. Default true. */
-  readonly bootstrap?: boolean;
-  /** Also return the full trace for animation. Default false. */
-  readonly trace?: boolean;
-  /**
-   * "calibrated" (default): every replication uses the calibrated pace method.
-   * "fit-or-speed": each replication draws its pace model, half the time the
-   * overhead + speed fit and half the time one effective speed (both bootstrapped),
-   * for walks outside the measured lengths. Only differs when the pace was fitted.
-   */
-  readonly paceModels?: "calibrated" | "fit-or-speed";
-}
-
-export interface Replication {
-  /** Per order, in the order of `releases`: finish minus release. */
-  readonly orderTimes: readonly number[];
-  readonly finishedAt: readonly number[];
-  readonly lastFinish: number;
-  readonly trace: RunTrace | null;
-}
+export type { Replication, ReplicationOptions } from "./engine/run";
 
 interface Ev {
   readonly t: number;

@@ -1,8 +1,10 @@
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import type { PositionSample, TapEvent } from "./types";
+import type { Layout, PositionSample, Scan, Setup, TapEvent } from "./types";
 import { resolveWorld } from "./world";
 import { reconstructRun } from "./reconstruct";
-import { calibrate, DEFAULT_WALK_SPEED_MPS, estimateWalkSpeed, MIN_WORK_S } from "./calibrate";
+import { calibrate, DEFAULT_WALK_SPEED_MPS, estimateWalkSpeed, MIN_TASK_SAMPLES, MIN_WORK_S, taskKey } from "./calibrate";
 import { kitLayout, kitScan, kitSetup, worker, type KitSpec } from "./testkit";
 
 /** A(0) -> B(3, fetch from F at 6) -> pickup P(10.5). Stand points on z = 0.85, straight paths. */
@@ -214,5 +216,28 @@ describe("work-time samples", () => {
     const c = calibrate(world, reconstructRun(world.setup, taps.slice(0, 4)), positions);
     expect(c.workSamples.B).toEqual([]);
     expect(c.warnings.join("\n")).toMatch(/No usable work times at "B"/);
+  });
+});
+
+describe("task samples", () => {
+  const root = join(__dirname, "..", "..", "fixtures", "counter-a");
+  const have = existsSync(join(root, "taps.jsonl"));
+  const read = (f: string): string => readFileSync(join(root, f), "utf8");
+  const jsonl = <T,>(text: string): T[] =>
+    text
+      .split("\n")
+      .filter((l) => l.trim().length > 0)
+      .map((l) => JSON.parse(l) as { type: string })
+      .filter((l) => l.type !== "header") as T[];
+
+  it.skipIf(!have)("keys the samples of counter-a by item and task, equal to the station's", () => {
+    const setup = JSON.parse(read("setup.json")) as Setup;
+    const w = resolveWorld(JSON.parse(read("scan.json")) as Scan, setup, JSON.parse(read("layout.json")) as Layout);
+    const c = calibrate(w, reconstructRun(setup, jsonl<TapEvent>(read("taps.jsonl"))), jsonl<PositionSample>(read("positions.jsonl")));
+    const item = w.menu[0]!;
+    const make = item.steps[1]!.stationId;
+    expect(c.workSamples[make]!.length).toBeGreaterThan(0);
+    expect(c.taskSamples[taskKey(item.id, "s1")]).toEqual(c.workSamples[make]);
+    expect(MIN_TASK_SAMPLES).toBe(3);
   });
 });
