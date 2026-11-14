@@ -71,7 +71,6 @@ function Rehearsed() {
   const original = originalLayout.value;
   if (!k || !original) return null;
   const list = candidates.value.map((c) => ({ c, kind: changeKind(k.scan, k.setup, original, c.layout) }));
-  const move = list.find((x) => x.kind === "move");
   const staff = list.find((x) => x.kind === "staff");
   return (
     <div class="st-row">
@@ -185,7 +184,6 @@ export function PlayRail() {
   const dir = time && timeBefore && timeChanged ? changeDirection(timeBefore.meanOrderTime.p50, time.meanOrderTime.p50) : null;
   return (
     <div class="st-card play">
-      <Money />
       <Rehearsed />
       <WorkersSection />
       <CostsSection />
