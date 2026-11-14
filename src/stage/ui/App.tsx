@@ -5,8 +5,8 @@
 import { useEffect } from "preact/hooks";
 import { acceptDroppedScan } from "../state/input-actions";
 import { installKeys } from "../state/keys";
-import { addNotice, bootError, loading, step } from "../state/store";
-import { InputsChip, KeyHints, Notices, StepStrip } from "./Chrome";
+import { addNotice, bootError, loading, view } from "../state/store";
+import { InputsChip, KeyHints, Notices, ResultsSwitch, StepStrip } from "./Chrome";
 import { CompareView } from "./CompareView";
 import { CostsDrawer } from "./CostsDrawer";
 import { InputsDrawer } from "./InputsDrawer";
@@ -15,16 +15,13 @@ import { RunRail } from "./RunRail";
 import { ScanRail } from "./ScanRail";
 import { SceneHost } from "./SceneHost";
 import { TestRail } from "./TestRail";
-import { TrustRail } from "./TrustRail";
 
 function Rail() {
-  switch (step.value) {
+  switch (view.value) {
     case "scan":
       return <ScanRail />;
     case "run":
       return <RunRail />;
-    case "trust":
-      return <TrustRail />;
     case "play":
       return <PlayRail />;
     case "test":
@@ -58,7 +55,7 @@ function useDropScan(): void {
 export function App() {
   useEffect(() => installKeys(), []);
   useDropScan();
-  const comparing = step.value === "compare";
+  const comparing = view.value === "compare";
   return (
     <div class={`st-root${comparing ? " compare" : ""}`}>
       <header class="st-top">
@@ -67,6 +64,7 @@ export function App() {
           <small>scan, change one thing, run again</small>
         </div>
         <StepStrip />
+        <ResultsSwitch />
       </header>
       <main class="st-stage">
         <SceneHost hidden={comparing} />

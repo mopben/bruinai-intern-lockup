@@ -21,7 +21,7 @@ import {
   scanState,
   secondRun,
   selectedId,
-  step,
+  view,
   testPlan,
 } from "./store";
 
@@ -93,7 +93,7 @@ export function acceptLiveScan(scan: Scan): void {
     scanNotes.value = starter.notes;
     moveInScan.value = true;
     selectedId.value = null;
-    step.value = "scan";
+    view.value = "scan";
     resetDownstream();
   });
   reveal();

@@ -3,11 +3,11 @@
  * server at all; a reload at any step lands somewhere usable; switching an
  * input in the drawer never resets the step; keys that do nothing say so.
  */
-import { expectStep, openStage, STEP_IDS, text, waitForSession } from "./support/stage";
+import { expectStep, goView, openStage, VIEW_IDS, text, waitForSession } from "./support/stage";
 import { REPLAY_PORT, origin } from "./support/ports";
 import { expect, test } from "./support/fixtures";
 
-test("rule 9: with the server gone after loading, steps 1 to 6 still complete", async ({ page }) => {
+test("rule 9: with the server gone after loading, steps 1 to 3 still complete", async ({ page }) => {
   let serverGone = false;
   const sockets: { close(): void }[] = [];
   await page.routeWebSocket(/\/ws/, (ws) => {
@@ -27,28 +27,28 @@ test("rule 9: with the server gone after loading, steps 1 to 6 still complete", 
   });
   sockets.forEach((s) => s.close());
 
-  await page.keyboard.press("ArrowRight");
+  await goView(page, "run");
   await waitForSession(page, "first", "ended");
   await expect(page.getByTestId("run-story")).toBeVisible();
-  await page.keyboard.press("ArrowRight");
-  await expect(page.getByTestId("trust-error")).toHaveText(/^\d+%$/);
-  await page.keyboard.press("ArrowRight");
+  await goView(page, "play");
   await page.keyboard.press("m");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
   await expectStep(page, "test");
   await waitForSession(page, "second", "ended");
   await expect(page.getByTestId("verdict")).toBeVisible();
   await expect(page.getByText("Could not load the recorded run")).toHaveCount(0);
-  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("3");
   await expect(page.getByTestId("compare-after-time")).toHaveText(/\d+ s$/);
   test.info().annotations.push({ type: "offline", description: `${refused} requests to the server refused after it died` });
 });
 
-for (const [i, step] of STEP_IDS.entries()) {
-  test(`rule 9: a reload at step ${i + 1} (${step}) lands in a usable state`, async ({ page }) => {
+for (const step of VIEW_IDS) {
+  test(`rule 9: a reload at view ${step} lands in a usable state`, async ({ page }) => {
     // Get there with the keys, as the operator does; the address remembers the step.
     await openStage(page, { speed: 32 });
-    await page.keyboard.press(String(i + 1));
+    await goView(page, step);
     await expectStep(page, step);
     await page.reload();
     await page.waitForFunction(() => "__dryrun" in globalThis);
@@ -58,7 +58,6 @@ for (const [i, step] of STEP_IDS.entries()) {
     const want: Record<string, string> = {
       scan: "step-strip",
       run: "run-clock",
-      trust: "trust-error",
       play: "walking-per-order",
       test: "prediction-range",
       compare: "compare-after-walking",
@@ -70,7 +69,7 @@ for (const [i, step] of STEP_IDS.entries()) {
 }
 
 test("rule 9: switching an input in the drawer keeps the step and the change", async ({ page }) => {
-  await openStage(page, { speed: 32, step: 4 });
+  await openStage(page, { speed: 32, step: 2 });
   await page.keyboard.press("m");
   const walk = await text(page, "walking-per-order");
   await page.keyboard.press("i");
@@ -88,17 +87,17 @@ test("rule 9: switching an input in the drawer keeps the step and the change", a
 });
 
 test("keys that do nothing here say so, and steps entered early explain themselves", async ({ page }) => {
-  await openStage(page, { speed: 32, step: 3 });
+  await openStage(page, { speed: 32, step: 1 });
   await page.keyboard.press("m");
-  await expect(page.getByTestId("notice")).toContainText("Play (step 4)");
+  await expect(page.getByTestId("notice")).toContainText("Edit (step 2)");
   await page.keyboard.press("e");
-  await expect(page.getByTestId("notice")).toContainText("E skips to the end of a run");
+  await expect(page.getByTestId("notice")).toContainText("E skips to the end");
   await page.keyboard.press("1");
   await page.keyboard.press("ArrowLeft");
   await expect(page.getByTestId("notice")).toContainText("This is the first step");
   // Every step, opened directly, shows words, never a blank panel.
-  for (const [i, step] of STEP_IDS.entries()) {
-    await page.keyboard.press(String(i + 1));
+  for (const step of VIEW_IDS) {
+    await goView(page, step);
     await expectStep(page, step);
     if (step === "compare") await expect(page.getByTestId("compare-before-walking")).toBeVisible();
     else expect((await page.locator(".st-rail").innerText()).trim().length).toBeGreaterThan(20);

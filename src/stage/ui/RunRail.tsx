@@ -1,5 +1,5 @@
 /**
- * Step 2. The run plays: dots from the camera log, tickets from the taps.
+ * Step 3, Original run. Dots from the camera log, tickets from the taps.
  * Also the run controls the Test step reuses.
  */
 import type { ComponentChildren } from "preact";

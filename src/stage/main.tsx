@@ -8,7 +8,7 @@ import "./ui/stage.css";
 import { parseParams } from "./app/params";
 import { boot } from "./state/boot";
 import { enterStep } from "./state/flow";
-import { step } from "./state/store";
+import { view } from "./state/store";
 import { watchScans } from "./state/input-actions";
 import { installTestHook } from "./state/test-hook";
 import { App } from "./ui/App";
@@ -19,6 +19,6 @@ if (root) {
   render(<App />, root);
   void boot(parseParams(globalThis.location.search)).then(() => {
     watchScans();
-    enterStep(step.value);
+    enterStep(view.value);
   });
 }

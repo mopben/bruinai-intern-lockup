@@ -2,6 +2,12 @@
 
 Short entries: what we chose and why. Append under your own heading.
 
+## Three-step stage
+
+- **Build, Edit, Run & results.** At the user's request, the six screens are regrouped into three steps, with Before vs after, Original run and After the change as views of step 3.
+- **Trust removed from the stage.** At the user's request, this contradicts BRIEF rule 3; `trustCheck` remains in the core library.
+- **Order count is simulation-only.** Edit and Before vs after use the selected count; the frozen prediction and real test retain the run's own schedule.
+
 ## Orchestrator
 
 - **One TypeScript codebase, simulation in the browser.** A drag must answer with no visible wait and the demo must run offline. A Python service would add a process, a network hop and a second language for no gain.

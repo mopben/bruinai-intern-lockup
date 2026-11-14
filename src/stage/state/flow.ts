@@ -1,6 +1,6 @@
 /**
- * Moving through the six steps, and what each step does on arrival and on
- * leaving. The prediction is frozen on leaving Play, from the first run only.
+ * Moving through the views, and what each does on arrival and on
+ * leaving. The prediction is frozen from the first run only.
  */
 import { batch } from "@preact/signals";
 import { reconstructRun, type RunBundle } from "../../core";
@@ -8,7 +8,7 @@ import { loadRunBundle } from "../../inputs";
 import { freezePredictions } from "../app/frozen";
 import { runFitsKitchen } from "../app/kitchen-edit";
 import { changeKind, layoutsMatch, matchRecordedRun, type Candidate } from "../app/layout-match";
-import { stepIndex, type StepId } from "../app/steps";
+import { stepIndex, stepOf, type ViewId } from "../app/steps";
 import { runStory, testOutcome } from "../app/words";
 import { cancelSuggest } from "./suggest";
 import { calibration, firstMeasuredS, originalLayout, usableFirstRun } from "./derive";
@@ -28,7 +28,7 @@ import {
   secondRun,
   selectedId,
   session,
-  step,
+  view,
   storyText,
   testPlan,
   type MeasuredRun,
@@ -126,7 +126,7 @@ function finishTest(run: MeasuredRun, setupFrom: RunBundle["setup"]): void {
 /** Chooses the second run, loads it and plays it (recorded) or gets the live run ready. */
 export async function beginTest(): Promise<void> {
   const k = kitchen.value;
-  if (!frozen.value) freezeNow();
+  freezeNow();
   const f = frozen.value;
   batch(() => {
     outcome.value = null;
@@ -162,7 +162,7 @@ export async function beginTest(): Promise<void> {
   // Only a recording of the very layout being tested may stand in for the live inputs.
   const standbyAllowed = bundle !== null && (pick?.matched ?? false);
   bundle ??= live ? base.value : null;
-  if (!bundle || step.value !== "test") return;
+  if (!bundle || view.value !== "test") return;
   const plan = testPlan.value;
   if (!plan) return;
   testPlan.value = { ...plan, bundle };
@@ -204,8 +204,8 @@ export function resetPlay(): void {
 }
 
 /** Everything that happens when the step changes. */
-export function goTo(next: StepId): void {
-  const prev = step.value;
+export function goTo(next: ViewId): void {
+  const prev = view.value;
   if (next === prev) return;
   if (prev === "scan") settleReveal();
   if (prev === "play") {
@@ -213,7 +213,7 @@ export function goTo(next: StepId): void {
     freezeNow();
   }
   batch(() => {
-    step.value = next;
+    view.value = next;
     selectedId.value = null;
   });
   rememberStep(next);
@@ -221,10 +221,13 @@ export function goTo(next: StepId): void {
 }
 
 /** Keeps ?step= in the address, so a reload (or a crashed tab reopened) comes back to the same step. */
-function rememberStep(next: StepId): void {
+function rememberStep(next: ViewId): void {
   try {
     const url = new URL(globalThis.location.href);
-    url.searchParams.set("step", String(stepIndex(next) + 1));
+    const step = stepOf(next);
+    url.searchParams.set("step", String(stepIndex(step) + 1));
+    if (step === "results") url.searchParams.set("view", next);
+    else url.searchParams.delete("view");
     globalThis.history.replaceState(globalThis.history.state, "", url);
   } catch {
     // No history API (tests in node): nothing to remember.
@@ -232,7 +235,7 @@ function rememberStep(next: StepId): void {
 }
 
 /** What a step does on arrival (also used when the page opens on a step). */
-export function enterStep(next: StepId): void {
+export function enterStep(next: ViewId): void {
   if (next === "run") {
     const s = session.value;
     if (!s || s.purpose !== "first") beginFirstRun();
@@ -261,6 +264,6 @@ export function startOrReplay(purpose: "first" | "second"): void {
 export function reprepareIdleRun(): void {
   const s = session.value;
   if (!s || s.status !== "idle") return;
-  if (s.purpose === "first" && step.value === "run") beginFirstRun();
-  if (s.purpose === "second" && step.value === "test") void beginTest();
+  if (s.purpose === "first" && view.value === "run") beginFirstRun();
+  if (s.purpose === "second" && view.value === "test") void beginTest();
 }

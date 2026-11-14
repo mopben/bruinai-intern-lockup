@@ -8,13 +8,11 @@ import {
   buildPathTable,
   calibrate,
   formatMetres,
-  formatPercent,
   formatRange,
   predict,
   reconstructRun,
   resolveWorld,
   summariseRun,
-  trustCheck,
   walkingPerOrder,
   type Layout,
   type Range,
@@ -41,7 +39,6 @@ export interface Truth {
   readonly timeA: string;
   readonly timeB: string;
   readonly rangeB: Range;
-  readonly trustError: string;
   readonly measuredA: number;
   readonly measuredB: number;
 }
@@ -61,7 +58,6 @@ export function computeTruth(): Truth {
   const cal = calibrate(worldA, runA, a.positions);
   const rangeA = predict(worldA, cal).meanOrderTime;
   const rangeB = predict(world(b.layout), cal).meanOrderTime;
-  const trust = trustCheck(worldA, a.taps, a.positions);
   return {
     walkA: walk(a.layout),
     walkB: walk(b.layout),
@@ -69,7 +65,6 @@ export function computeTruth(): Truth {
     timeA: formatRange(rangeA),
     timeB: formatRange(rangeB),
     rangeB,
-    trustError: trust.errorPct === null ? "—" : formatPercent(trust.errorPct),
     measuredA: summariseRun(runA).meanOrderTimeS as number,
     measuredB: summariseRun(reconstructRun(b.setup, b.taps)).meanOrderTimeS as number,
   };

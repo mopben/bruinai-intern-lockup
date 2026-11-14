@@ -8,7 +8,7 @@ import { startSuggest } from "./suggest";
 import { applyRehearsed, goTo, resetPlay, startOrReplay } from "./flow";
 import { reveal } from "./kitchen-actions";
 import { retrySave, skipToEnd, toggleFaster } from "./runs";
-import { addNotice, drawerOpen, dropNotice, selectedId, sendCompare, session, step } from "./store";
+import { addNotice, drawerOpen, dropNotice, selectedId, sendCompare, session, view } from "./store";
 
 const HINT_MS = 3500;
 let hintTimer: ReturnType<typeof setTimeout> | undefined;
@@ -36,11 +36,11 @@ function isTyping(target: EventTarget | null): boolean {
 function play(): void {
   const s = session.value;
   // Never restart a live run by accident: P does nothing while one is running.
-  if (s && s.status === "running" && !s.replay && (step.value === "run" || step.value === "test")) {
+  if (s && s.status === "running" && !s.replay && (view.value === "run" || view.value === "test")) {
     keyHint("A live run is going. Press E to end it first.");
     return;
   }
-  switch (step.value) {
+  switch (view.value) {
     case "scan":
       reveal();
       return;
@@ -54,13 +54,13 @@ function play(): void {
       sendCompare("replay");
       return;
     default:
-      keyHint("P plays a run in Run, Test and Compare.");
+      keyHint("P plays Original run, After the change, and Before vs after in step 3.");
       return;
   }
 }
 
 export function perform(action: KeyAction): void {
-  const here = step.value;
+  const here = view.value;
   switch (action.type) {
     case "next":
     case "back":
@@ -79,7 +79,7 @@ export function perform(action: KeyAction): void {
       return;
     case "skip":
       if (here === "compare") sendCompare("skip");
-      else if (here !== "run" && here !== "test") keyHint("E skips to the end of a run in Run and Test.");
+      else if (here !== "run" && here !== "test") keyHint("E skips to the end in Original run, After the change, and Before vs after.");
       else if (!skipToEnd()) keyHint("No run is playing. Press P to start one.");
       return;
     case "inputs":
@@ -93,15 +93,15 @@ export function perform(action: KeyAction): void {
       return;
     case "reset":
       if (here === "play") resetPlay();
-      else keyHint("Backspace undoes the change in Play (step 4).");
+      else keyHint("Backspace undoes the change in Edit (step 2).");
       return;
     case "rehearsed":
       if (here === "play") applyRehearsed(action.key);
-      else keyHint("M and W make the rehearsed change in Play (step 4).");
+      else keyHint("M and W make the rehearsed change in Edit (step 2).");
       return;
     case "suggest":
       if (here === "play") startSuggest();
-      else keyHint("A suggests changes in Play (step 4).");
+      else keyHint("A suggests changes in Edit (step 2).");
       return;
     case "costs":
       costsOpen.value = !costsOpen.value;
@@ -116,7 +116,7 @@ export function perform(action: KeyAction): void {
 }
 
 function fasterWhyNot(here: string): string {
-  if (here !== "run" && here !== "test") return "F plays a run faster in Run, Test and Compare.";
+  if (here !== "run" && here !== "test") return "F plays faster in Original run, After the change, and Before vs after.";
   const s = session.value;
   if (s && !s.replay) return "A live run plays at real speed.";
   if (s?.status === "ended") return "The run is over. Press P to play it again.";

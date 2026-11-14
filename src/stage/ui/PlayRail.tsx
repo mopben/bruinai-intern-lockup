@@ -1,17 +1,18 @@
 /**
- * Step 4. The judge changes one thing; the two numbers answer during the drag,
+ * Step 2, Edit. The judge changes one thing; the two numbers answer during the drag,
  * and so does profit per hour. Suggestions rank changes by that profit.
  */
 import { formatMetres, formatMoney, formatMoneyRange, formatRange, formatSeconds } from "../../core";
 import type { Suggestion } from "../app/suggest";
 import { addWorker, removeWorker, workersAt } from "../app/kitchen-edit";
 import { changeKind } from "../app/layout-match";
+import { clampOrders, MAX_ORDERS, MIN_ORDERS } from "../app/orders";
 import { changeDirection } from "../app/words";
 import { baselineNumbers, calibration, firstRunProblem, originalLayout, playNumbers } from "../state/derive";
 import { baselineProfit, costsOpen, economics, economicsAreExamples, playProfit } from "../state/economics";
 import { applySuggestion, startSuggest, suggestState, undoSuggestion } from "../state/suggest";
 import { applyRehearsed, resetPlay } from "../state/flow";
-import { candidates, kitchen, playLayout } from "../state/store";
+import { candidates, kitchen, orderCount, playLayout } from "../state/store";
 import { BigNum, Btn } from "./bits";
 import { ExtrapolationNote, NumbersBasis } from "./Basis";
 
@@ -42,6 +43,26 @@ function Staffing() {
   );
 }
 
+/** Lists changes ranked by profit; pressing again while it searches stops it. */
+function SuggestButton() {
+  const st = suggestState.value;
+  const cal = calibration.value;
+  const running = st.kind === "running";
+  return (
+    <Btn
+      small
+      kind={running ? "on" : "plain"}
+      label={running ? `Stop (${Math.round(st.fraction * 100)}%)` : "Suggest"}
+      k="A"
+      onClick={startSuggest}
+      disabled={!(cal && cal.ok) && !running}
+      testId="btn-suggest"
+      title="Try more or fewer workers and moving the unlocked boxes, ranked by profit per hour"
+    />
+  );
+}
+
+/** The quick changes: the rehearsed ones, suggestions, costs and reset. */
 function Rehearsed() {
   const k = kitchen.value;
   const original = originalLayout.value;
@@ -51,8 +72,10 @@ function Rehearsed() {
   const staff = list.find((x) => x.kind === "staff");
   return (
     <div class="st-row">
-      {move ? <Btn small label={move.c.meta.title} k="M" onClick={() => applyRehearsed("m")} testId="btn-rehearsed-m" /> : null}
-      {staff ? <Btn small label={staff.c.meta.title} k="W" onClick={() => applyRehearsed("w")} testId="btn-rehearsed-w" /> : null}
+      {move ? <Btn small label="Move fridge" title={move.c.meta.title} k="M" onClick={() => applyRehearsed("m")} testId="btn-rehearsed-m" /> : null}
+      {staff ? <Btn small label="Add worker" title={staff.c.meta.title} k="W" onClick={() => applyRehearsed("w")} testId="btn-rehearsed-w" /> : null}
+      <SuggestButton />
+      <Btn small label="Costs" title="Prices and costs" k="C" onClick={() => (costsOpen.value = !costsOpen.value)} testId="btn-costs" />
       <Btn small label="Reset" k="⌫" onClick={resetPlay} testId="btn-reset" />
     </div>
   );
@@ -74,55 +97,40 @@ function describe(s: Suggestion): string {
   return [staff, move].filter(Boolean).join(" and ");
 }
 
-/** Profit per hour, the buttons that change it, and the suggestions. */
+/** The headline: profit per hour, what it is made of, and the buttons that change it. */
 function Money() {
   const p = playProfit.value;
   const before = baselineProfit.value;
   const econ = economics.value;
-  const st = suggestState.value;
-  const cal = calibration.value;
   if (!econ || !p) return null;
   const cur = econ.currency;
   const value = p.ok ? p.value : null;
-  const was = before && before.ok && value && formatMoneyRange(before.value.profitPerHour, cur) !== formatMoneyRange(value.profitPerHour, cur) ? formatMoneyRange(before.value.profitPerHour, cur) : null;
-  const running = st.kind === "running";
+  const was =
+    before && before.ok && value && formatMoneyRange(before.value.profitPerHour, cur) !== formatMoneyRange(value.profitPerHour, cur) ? before.value : null;
+  const dir = was && value ? (value.profitPerHour.p50 > was.profitPerHour.p50 ? "more profit" : "less profit") : null;
   return (
     <div class="st-money" data-testid="money">
-      <div class="st-money-line">
-        <span class="what">Profit per hour</span>
-        {value ? (
-          <span class="value" data-testid="profit-per-hour">
-            {formatMoneyRange(value.profitPerHour, cur)}
-          </span>
-        ) : (
-          <span class="st-small" data-testid="profit-per-hour-cannot">{p.ok ? "" : p.message}</span>
-        )}
-        {was ? <span class="was" data-testid="profit-per-hour-before">{was}</span> : null}
-      </div>
-      {value ? (
-        <p class="st-small" data-testid="profit-basis">
-          {value.limitedBy === "capacity"
-            ? `Sells all it can make: ${Math.round(value.salesPerHour.p50)} of the ${Math.round(econ.demandPerHour)} orders an hour that come in.`
-            : `Sells all ${Math.round(econ.demandPerHour)} orders an hour that come in; it could make ${Math.round(value.capacityPerHour.p50)}.`}{" "}
-          {formatMoney(value.marginPerOrder, cur)} an order after ingredients, less {formatMoney(value.wagesPerHour, cur)} wages ({value.workers} people) and{" "}
-          {formatMoney(value.fixedPerHour, cur)} running costs.
-          {economicsAreExamples.value ? " Example prices and costs: press C to set yours." : ""}
-        </p>
-      ) : null}
-      <div class="st-row">
-        <Btn
-          small
-          kind={running ? "on" : "plain"}
-          label={running ? `Stop (${Math.round(st.fraction * 100)}%)` : "Suggest changes"}
-          k="A"
-          onClick={startSuggest}
-          disabled={!(cal && cal.ok) && !running}
-          testId="btn-suggest"
-          title="Try more or fewer workers and moving the unlocked boxes, ranked by profit per hour"
-        />
-        <Btn small label="Prices and costs" k="C" onClick={() => (costsOpen.value = !costsOpen.value)} testId="btn-costs" />
-      </div>
-      <Suggestions />
+      <BigNum
+        what="Profit per hour"
+        value={value ? formatMoneyRange(value.profitPerHour, cur) : null}
+        cannot={p.ok ? null : p.message}
+        was={was ? formatMoneyRange(was.profitPerHour, cur) : null}
+        dir={dir}
+        how={
+          value ? (
+            <span data-testid="profit-basis">
+              {value.limitedBy === "capacity"
+                ? `Sells ${Math.round(value.salesPerHour.p50)} of ${Math.round(econ.demandPerHour)} orders an hour (all it can make)`
+                : `Sells all ${Math.round(econ.demandPerHour)} orders an hour (could make ${Math.round(value.capacityPerHour.p50)})`}
+              {`: ${formatMoney(value.marginPerOrder, cur)} each after ingredients, less ${formatMoney(value.wagesPerHour, cur)} wages and ${formatMoney(value.fixedPerHour, cur)} running costs.`}
+              {economicsAreExamples.value ? <span class="st-roomy"> Example prices: C to set yours.</span> : null}
+            </span>
+          ) : (
+            ""
+          )
+        }
+        testId="profit-per-hour"
+      />
     </div>
   );
 }
@@ -164,7 +172,7 @@ function Suggestions() {
         );
       })}
       <p class="st-small">
-        Best first. Moves keep locked boxes where they are and know nothing of customers, doors or sockets: lock what must stay in Scan. A second worker at a station is assumed
+        Best first. Moves keep locked boxes where they are and know nothing of customers, doors or sockets: lock what must stay in Build. A second worker at a station is assumed
         not to get in the first one's way.{" "}
         {st.list.some((x) => x.s.layout === onBoard) ? (
           <button type="button" class="st-link" onClick={undoSuggestion} data-testid="btn-undo-suggestion">
@@ -172,6 +180,25 @@ function Suggestions() {
           </button>
         ) : null}
       </p>
+    </div>
+  );
+}
+
+function Orders() {
+  const schedule = kitchen.value?.setup.schedule.orders;
+  if (!schedule) return null;
+  const count = orderCount.value ?? schedule.length;
+  const setCount = (n: number) => {
+    const next = clampOrders(n);
+    orderCount.value = next === schedule.length ? null : next;
+  };
+  return (
+    <div class="st-row" aria-label="Orders in the rush">
+      <span>Orders in the rush</span>
+      <Btn small label="−" onClick={() => setCount(count - 1)} disabled={count <= MIN_ORDERS} testId="btn-orders-less" />
+      <span data-testid="orders-count">{count}</span>
+      <Btn small label="+" onClick={() => setCount(count + 1)} disabled={count >= MAX_ORDERS} testId="btn-orders-more" />
+      {count !== schedule.length ? <Btn small label="Reset" onClick={() => (orderCount.value = null)} testId="btn-orders-reset" /> : null}
     </div>
   );
 }
@@ -184,15 +211,19 @@ export function PlayRail() {
   const walk = n.walking.ok ? n.walking.value.perOrderM : null;
   const walkBefore = before?.walking.ok ? before.walking.value.perOrderM : null;
   const time = n.time.ok ? n.time.value : null;
+  const originalCount = kitchen.value?.setup.schedule.orders.length ?? 0;
+  const count = orderCount.value ?? originalCount;
+  const countChanged = count !== originalCount;
   const timeBefore = before?.time.ok ? before.time.value : null;
   const walkChanged = walk !== null && walkBefore !== null && formatMetres(walk) !== formatMetres(walkBefore);
   const timeChanged = time && timeBefore && formatRange(time.meanOrderTime) !== formatRange(timeBefore.meanOrderTime);
   const dir = time && timeBefore && timeChanged ? changeDirection(timeBefore.meanOrderTime.p50, time.meanOrderTime.p50) : null;
   return (
     <div class="st-card play">
-      <h1>Change one thing</h1>
-      <p class="st-lede">Drag the fridge, a station or the pickup, or add a worker.</p>
-      <div class="st-nums">
+      <Money />
+      <Rehearsed />
+      <p class="st-small st-roomy">Change one thing: drag the fridge, a station or the pickup, or add a worker.</p>
+      <div class="st-nums pair">
         <BigNum
           what="Walking per order"
           value={walk === null ? null : formatMetres(walk)}
@@ -215,12 +246,13 @@ export function PlayRail() {
       {problem ? <p class="st-note">{problem}</p> : null}
       {time ? (
         <p class="st-say st-predict">
-          Next run with this kitchen: orders should take <span data-testid="prediction-range">{formatRange(time.meanOrderTime)}</span> on average.
+          {countChanged ? `With ${count} orders, orders should take ` : "Next run with this kitchen: orders should take "}<span data-testid="prediction-range">{formatRange(time.meanOrderTime)}</span> on average.
         </p>
       ) : null}
+      {countChanged ? <p class="st-small">The real run in step 3 keeps its own {originalCount} orders.</p> : null}
       <Staffing />
-      <Rehearsed />
-      <Money />
+      <Orders />
+      <Suggestions />
       <ExtrapolationNote prediction={time} />
       {time ? (
         <p class="st-small" data-testid="assumption">

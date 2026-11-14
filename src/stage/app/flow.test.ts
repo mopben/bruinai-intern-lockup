@@ -22,6 +22,7 @@ import { freezePredictions } from "./frozen";
 import { addWorker, removeWorker } from "./kitchen-edit";
 import { changeKind, matchRecordedRun, type Candidate } from "./layout-match";
 import { layoutNumbers } from "./numbers";
+import { releasesFor } from "./orders";
 import { alongPolyline, homePositions, indexMovements, latestPositions, simulatedWorkers } from "./playback";
 import { rangeMeaning, runStory, testOutcome, verdictSentence } from "./words";
 
@@ -51,6 +52,11 @@ const MAKE = "98EA7E27-B557-42A2-9AE3-1C7A609FDAC0";
 const FINISH = "9886D544-4186-4B47-978D-7D032CCECDEA";
 
 describe("Play numbers", () => {
+  it("uses the requested simulation releases", () => {
+    const releases = releasesFor(a.setup.schedule.orders, 15);
+    const n = layoutNumbers(a.scan, a.setup, a.layout, calA, releases);
+    expect(n.time.ok && n.time.value.meanOrderTime).toEqual(predict(worldA, calA, { releases }).meanOrderTime);
+  });
   it("are exactly what the core computes for the layout", () => {
     const n = layoutNumbers(a.scan, a.setup, a.layout, calA);
     const direct = predict(worldA, calA);

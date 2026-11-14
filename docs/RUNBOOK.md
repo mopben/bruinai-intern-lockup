@@ -5,7 +5,7 @@ One page. Keys work on the stage page (the laptop browser). Press **I** at any t
 ## Before the day (once)
 
 1. Clone the repository. Run `npm start` **with internet**: it installs and builds (a few minutes). Later starts need no internet.
-2. The stage opens at http://localhost:5179/ in replay. Press → five times and check all six steps work.
+2. The stage opens at http://localhost:5179/ in replay. Press → four times and check all three steps and five views work.
 3. Build the scan app and install it on the LiDAR iPhone: see `ios/README.md`.
 4. Rehearse the whole demo at least three times, live and from recordings. Count how often the prediction holds (see the last section).
 
@@ -27,12 +27,11 @@ Live path first; **from recordings** in brackets. Numbers shown are the recordin
 
 | Time | Step | Say / do | Key | The room sees |
 | --- | --- | --- | --- | --- |
-| 0:00 | 1 Scan | Sweep the phone, press Send. (Recordings: the scan replays by itself.) | P replays the scan | Plain boxes rise, then get names |
-| 0:30 | 2 Run | Start the room. (Recordings: it plays on arrival.) | → then **P** "Start run". (Recordings: F) | Dots move, tickets pile at the espresso machine. Ends by itself, or **E** |
-| 1:30 | 3 Trust | "On orders it never saw, the model is off by this much." | → | Model error (about **8%** on the recording), five order pairs |
-| 1:45 | 4 Play | Hand the mouse to a judge: drag the fridge, or **+ worker** | → | Walking **6.2 m**, time **19–23 s**; both change during the drag |
-| 2:15 | 5 Test | Make the same change in the room, then run again. (Recordings: the matching run plays.) | → then **P** (live). (Recordings: F, or E) | Predicted range, measured mean, and a plain verdict |
-| 2:45 | 6 Compare | "Same orders, same luck, before and after." | → (P plays again) | Two kitchens side by side |
+| 0:00 | 1 Build | Sweep the phone, press Send. (Recordings: the scan replays by itself.) | **P** replays the scan | Plain boxes rise, then get names |
+| 0:30 | 3 Original run | Start the room. (Recordings: it plays on arrival.) | **3**, then select Original run and **P** (live); **F** (recordings) | Dots move and tickets pile up. Ends by itself, or **E** |
+| 1:45 | 2 Edit | Hand the mouse to a judge: drag the fridge, add a worker, or change the simulated order count | **2** | Walking and simulated time update during the edit |
+| 2:15 | 3 After the change | Make the same change in the room, then run again. (Recordings: the matching run plays.) | **3**, select After the change, then **P** (live); **F** or **E** (recordings) | Predicted range, measured mean, and a plain verdict; the real run keeps its own orders |
+| 2:45 | 3 Before vs after | "Same orders, same luck, before and after." | **3** (P plays again) | Two simulated kitchens side by side |
 
 ## When something fails
 
@@ -43,7 +42,7 @@ Live path first; **from recordings** in brackets. Numbers shown are the recordin
 | Camera lost | Nothing. After 4 s the stage uses recorded positions | "Showing the recorded run (positions: …)" |
 | Dots wrong | **I**, Positions: **Recorded** | Recorded dots, run continues |
 | The live run is a mess | **I**, set all three to **Recorded**, Esc. A run not yet started then plays the recording at once (**P** if it is over); a running one switches over. **F** for 4× | The recorded run plays |
-| Judge freezes at the drag | **M** (fridge next to the espresso machine) or **W** (fourth worker). **Backspace** resets | Numbers jump to the rehearsed change |
+| Judge freezes at the drag | In Edit, **M** (fridge next to the espresso machine) or **W** (fourth worker). **Backspace** resets | Numbers jump to the rehearsed change |
 | Prediction misses | Nothing. Say: "Outside the range. Ten orders is a short run, and this is why we test it." | "Outside the range: … slower than predicted." |
 | Save failed | **S** | "Saved on this laptop in recordings/…" |
 | Laptop or browser dies | Reload, or `npm start` again: it reopens on the same step (the address keeps it), in replay. Use **M** or **W** again | The recorded demo |
@@ -52,4 +51,4 @@ With a fresh phone scan, the recordings come from another kitchen, so none stand
 
 ## Honest state of the prediction
 
-Rehearse the **fridge move** (key M): on 40 generated rooms its range held 39 times. The **fourth worker** (key W) held only 24 times and runs about 1 s slow, so avoid it on stage. Keep step 5 only if rehearsal with real people shows the prediction holds. To skip it: in Play press **6** (straight to Compare).
+Rehearse the **fridge move** (key M): on 40 generated rooms its range held 39 times. The **fourth worker** (key W) held only 24 times and runs about 1 s slow, so avoid it on stage. Use After the change only if rehearsal with real people shows the prediction holds. To skip the real test, stay on Before vs after in step 3.

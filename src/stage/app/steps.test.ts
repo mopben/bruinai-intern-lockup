@@ -1,58 +1,54 @@
 import { describe, expect, it } from "vitest";
-import { keyAction, keyHints, navigate, stepAt } from "./steps";
+import { defaultView, keyAction, keyHints, navigate, stepIndex, stepOf, viewAt, VIEW_ORDER } from "./steps";
 import { parseParams } from "./params";
 
-describe("steps", () => {
-  it("moves forward and back and clamps at the ends", () => {
-    expect(navigate("scan", { type: "next" })).toBe("run");
-    expect(navigate("scan", { type: "back" })).toBe("scan");
-    expect(navigate("compare", { type: "next" })).toBe("compare");
-    expect(navigate("play", { type: "back" })).toBe("trust");
+describe("steps and views", () => {
+  it("navigates through views and clamps at both ends", () => {
+    expect(VIEW_ORDER).toEqual(["scan", "play", "compare", "run", "test"]);
+    for (let i = 0; i < VIEW_ORDER.length; i++) {
+      expect(navigate(VIEW_ORDER[i]!, { type: "next" })).toBe(viewAt(i + 1));
+      expect(navigate(VIEW_ORDER[i]!, { type: "back" })).toBe(viewAt(i - 1));
+    }
+    expect(viewAt(-3)).toBe("scan");
+    expect(viewAt(99)).toBe("test");
   });
-
-  it("maps the operator's keys", () => {
+  it("maps keys to step jumps and view navigation", () => {
     expect(keyAction("ArrowRight")).toEqual({ type: "next" });
     expect(keyAction(" ")).toEqual({ type: "next" });
+    expect(keyAction("PageDown")).toEqual({ type: "next" });
     expect(keyAction("ArrowLeft")).toEqual({ type: "back" });
-    expect(keyAction("4")).toEqual({ type: "jump", step: "play" });
-    expect(keyAction("7")).toBeNull();
+    expect(keyAction("PageUp")).toEqual({ type: "back" });
+    expect(keyAction("1")).toEqual({ type: "jump", step: "build" });
+    expect(keyAction("2")).toEqual({ type: "jump", step: "edit" });
+    expect(keyAction("3")).toEqual({ type: "jump", step: "results" });
+    expect(keyAction("4")).toBeNull();
     expect(keyAction("0")).toBeNull();
-    expect(keyAction("f")).toEqual({ type: "faster" });
-    expect(keyAction("I")).toEqual({ type: "inputs" });
     expect(keyAction("a")).toEqual({ type: "suggest" });
     expect(keyAction("A")).toEqual({ type: "suggest" });
     expect(keyAction("c")).toEqual({ type: "costs" });
-    expect(keyAction("x")).toBeNull();
-  });
-
-  it("jumps by number and clamps bad indices", () => {
-    expect(navigate("scan", { type: "jump", step: "test" })).toBe("test");
-    expect(stepAt(99)).toBe("compare");
-    expect(stepAt(-3)).toBe("scan");
-  });
-
-  it("offers start in live runs and play again in recorded ones", () => {
-    expect(keyHints("run", true).some((h) => h.does === "start")).toBe(true);
-    expect(keyHints("run", false).some((h) => h.does === "play again")).toBe(true);
+    expect(navigate("test", { type: "jump", step: "results" })).toBe("compare");
+    expect(navigate("scan", { type: "jump", step: "edit" })).toBe("play");
+    expect(stepOf("run")).toBe("results");
+    expect(stepIndex("edit")).toBe(1);
+    expect(defaultView("build")).toBe("scan");
+    expect(keyHints("run", true).some((h) => h.does.includes("Original run"))).toBe(true);
+    expect(keyHints("test", false).some((h) => h.does.includes("After the change"))).toBe(true);
+    expect(keyHints("compare", false).some((h) => h.does.includes("Before vs after"))).toBe(true);
   });
 });
 
 describe("params", () => {
   it("defaults to the recorded counter-a run", () => {
-    expect(parseParams("")).toEqual({ runId: "counter-a", mode: "replay", speed: 1, step: "scan" });
+    expect(parseParams("")).toEqual({ runId: "counter-a", mode: "replay", speed: 1, view: "scan" });
   });
-
-  it("reads run, mode, speed and step", () => {
-    expect(parseParams("?run=counter-b-fridge-closer&mode=live&speed=8&step=4")).toEqual({
-      runId: "counter-b-fridge-closer",
-      mode: "live",
-      speed: 8,
-      step: "play",
-    });
-  });
-
-  it("rejects unsafe or silly values", () => {
-    const p = parseParams("?run=../etc&mode=bogus&speed=-2&step=x");
-    expect(p).toEqual({ runId: "counter-a", mode: "replay", speed: 1, step: "scan" });
+  it("reads steps and result views, ignoring invalid values", () => {
+    expect(parseParams("?run=counter-b&mode=live&speed=8&step=2&view=test")).toEqual({ runId: "counter-b", mode: "live", speed: 8, view: "play" });
+    expect(parseParams("?step=3").view).toBe("compare");
+    expect(parseParams("?step=3&view=run").view).toBe("run");
+    expect(parseParams("?step=3&view=test").view).toBe("test");
+    expect(parseParams("?step=3&view=play").view).toBe("compare");
+    expect(parseParams("?step=6").view).toBe("compare");
+    expect(parseParams("?step=2.5").view).toBe("scan");
+    expect(parseParams("?step=-2").view).toBe("scan");
   });
 });

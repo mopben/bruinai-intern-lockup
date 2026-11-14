@@ -29,7 +29,7 @@ const fail = (message) => {
 
 function run(label, args, hint) {
   say(label);
-  const result = spawnSync(npm, args, { cwd: root, stdio: "inherit", env: process.env });
+  const result = spawnSync(npm, args, { cwd: root, stdio: "inherit", env: process.env, shell: process.platform === "win32" });
   if (result.error) fail(`${label} could not run: ${result.error.message}`);
   if (result.status !== 0) fail(`${label} failed (exit ${result.status}). ${hint}`);
 }

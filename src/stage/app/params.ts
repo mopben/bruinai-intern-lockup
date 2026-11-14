@@ -5,9 +5,10 @@
  *   &mode=replay|live   replay (default): every input from the recording.
  *                       live: scan, taps and positions start on live.
  *   &speed=4            replay speed for every playback (default 1, 0.25 to 64).
- *   &step=1..6          step to open on (default 1).
+ *   &step=1..3          step to open on (default 1).
+ *   &view=compare|run|test  view within step 3.
  */
-import { stepAt, type StepId } from "./steps";
+import { defaultView, stepAt, type ViewId } from "./steps";
 
 export type Mode = "replay" | "live";
 
@@ -15,7 +16,7 @@ export interface StageParams {
   readonly runId: string;
   readonly mode: Mode;
   readonly speed: number;
-  readonly step: StepId;
+  readonly view: ViewId;
 }
 
 export const DEFAULT_RUN_ID = "counter-a";
@@ -28,10 +29,12 @@ export function parseParams(search: string): StageParams {
   const run = q.get("run") ?? "";
   const speed = Number(q.get("speed") ?? "1");
   const step = Number(q.get("step") ?? "1");
+  const chosen = Number.isInteger(step) ? stepAt(step - 1) : "build";
+  const requested = q.get("view");
   return {
     runId: SAFE_ID.test(run) ? run : DEFAULT_RUN_ID,
     mode: q.get("mode") === "live" ? "live" : "replay",
     speed: Number.isFinite(speed) && speed >= MIN_SPEED && speed <= MAX_SPEED ? speed : 1,
-    step: Number.isInteger(step) ? stepAt(step - 1) : "scan",
+    view: chosen === "results" && (requested === "compare" || requested === "run" || requested === "test") ? requested : defaultView(chosen),
   };
 }

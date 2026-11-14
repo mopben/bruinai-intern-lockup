@@ -3,7 +3,7 @@
  * a value. Controllers in this folder change them; components only read them
  * and call controller actions.
  */
-import { signal } from "@preact/signals";
+import { computed, signal } from "@preact/signals";
 import type { Layout, PositionSample, RunBundle, Scan, TapEvent } from "../../core";
 import type { InputHealth, LinkState, RoleCounts, RunListing, ServerInfo } from "../../inputs";
 import { NO_CLIENTS } from "../../inputs";
@@ -11,7 +11,7 @@ import type { Kitchen } from "../app/kitchen-edit";
 import type { Candidate } from "../app/layout-match";
 import type { FrozenPrediction } from "../app/frozen";
 import type { StageParams } from "../app/params";
-import type { StepId } from "../app/steps";
+import { stepOf, type ViewId } from "../app/steps";
 import type { TestOutcome } from "../app/words";
 
 export type Source = "live" | "replay";
@@ -77,7 +77,7 @@ export interface TestPlan {
   readonly loadError: string | null;
 }
 
-export const params = signal<StageParams>({ runId: "counter-a", mode: "replay", speed: 1, step: "scan" });
+export const params = signal<StageParams>({ runId: "counter-a", mode: "replay", speed: 1, view: "scan" });
 export const bootError = signal<string | null>(null);
 export const loading = signal(true);
 
@@ -95,7 +95,9 @@ export const drawerOpen = signal(false);
 /** "auto" picks the recorded run matching the judge's change. */
 export const secondChoice = signal<string>("auto");
 
-export const step = signal<StepId>("scan");
+export const view = signal<ViewId>("scan");
+export const currentStep = computed(() => stepOf(view.value));
+export const orderCount = signal<number | null>(null);
 export const kitchen = signal<Kitchen | null>(null);
 export const kitchenOrigin = signal<"recorded" | "live">("recorded");
 export const latestLiveScan = signal<Scan | null>(null);

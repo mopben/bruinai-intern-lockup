@@ -13,6 +13,7 @@ import {
   type Calibration,
   type Layout,
   type Prediction,
+  type Releases,
   type Scan,
   type Setup,
   type WalkLeg,
@@ -65,7 +66,7 @@ function blockedMessage(world: World, legs: readonly WalkLeg[]): string | null {
  * Both numbers for one layout. `calibration` is null before a run has been
  * measured; walking is still exact then.
  */
-export function layoutNumbers(scan: Scan, setup: Setup, layout: Layout, calibration: Calibration | null): LayoutNumbers {
+export function layoutNumbers(scan: Scan, setup: Setup, layout: Layout, calibration: Calibration | null, releases?: Releases): LayoutNumbers {
   const world = tryWorld(scan, setup, layout);
   if (!world.ok) return { walking: world, time: world, world: null };
   const w = world.value;
@@ -84,7 +85,7 @@ export function layoutNumbers(scan: Scan, setup: Setup, layout: Layout, calibrat
   const walking: Computed<Walking> = { ok: true, value: { perOrderM: summary.perOrderM, legs } };
   if (calibration === null) return { walking, time: fail("Run the kitchen once to measure how long each step takes."), world: w };
   try {
-    return { walking, time: { ok: true, value: predict(w, calibration, { table }) }, world: w };
+    return { walking, time: { ok: true, value: predict(w, calibration, { table, releases }) }, world: w };
   } catch (error) {
     return { walking, time: fail(explainError(error)), world: w };
   }

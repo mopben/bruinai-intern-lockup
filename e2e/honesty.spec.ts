@@ -11,12 +11,8 @@ import { expect, test } from "./support/fixtures";
 
 const truth = computeTruth();
 
-test("rule 6: walking, trust, prediction and measured result equal src/core on the fixtures", async ({ page }) => {
-  await openStage(page, { speed: 32, step: 3 });
-  await expectStep(page, "trust");
-  await expect(page.getByTestId("trust-error")).toHaveText(truth.trustError);
-
-  await page.keyboard.press("ArrowRight");
+test("rule 6: walking, prediction and measured result equal src/core on the fixtures", async ({ page }) => {
+  await openStage(page, { speed: 32, step: 2 });
   await expectStep(page, "play");
   await expect(page.getByTestId("walking-per-order")).toHaveText(truth.walkA);
   await expect(page.getByTestId("time-per-order")).toHaveText(truth.timeA);
@@ -35,6 +31,8 @@ test("rule 6: walking, trust, prediction and measured result equal src/core on t
   await page.keyboard.press("m");
 
   await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
   await expectStep(page, "test");
   await expect(page.getByTestId("prediction-range")).toHaveText(truth.timeB);
   await waitForSession(page, "second", "ended");
@@ -45,7 +43,7 @@ test("rule 6: walking, trust, prediction and measured result equal src/core on t
   await expect(page.getByTestId("verdict")).toHaveText(inside ? "Inside the range." : /^Outside the range: /);
   await expect(page.getByTestId("before-after")).toContainText(`Before ${truth.measuredA.toFixed(1)} s → after ${truth.measuredB.toFixed(1)} s`);
 
-  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("3");
   await expectStep(page, "compare");
   await expect(page.getByTestId("compare-before-walking")).toHaveText(truth.walkA);
   await expect(page.getByTestId("compare-after-walking")).toHaveText(truth.walkB);

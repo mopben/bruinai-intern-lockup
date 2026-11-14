@@ -11,7 +11,7 @@ import { join } from "node:path";
 import type { Page } from "@playwright/test";
 import { connectCamera, listRecordings, newEntries, newRecordings, removeRecording, validateRecording } from "./support/devices";
 import { LIVE_PORT, origin } from "./support/ports";
-import { clockSeconds, expectStep, hook, mainDebug, openStage, session, text, waitForSession } from "./support/stage";
+import { clockSeconds, expectStep, goView, hook, mainDebug, openStage, session, text, waitForSession } from "./support/stage";
 import { FIXTURES, loadFixture } from "./support/truth";
 import { expect, test } from "./support/fixtures";
 
@@ -56,7 +56,7 @@ test("rule 9: live with no tablet and no camera falls back to the recording, sur
   await setSources(page, { scan: "replay" });
   await expectStep(page, "scan");
 
-  await page.keyboard.press("ArrowRight");
+  await goView(page, "run");
   await expectStep(page, "run");
   await waitForSession(page, "first", "idle");
   await page.keyboard.press("p");
@@ -80,26 +80,23 @@ test("rule 9: live with no tablet and no camera falls back to the recording, sur
   const first = await hook<FirstRun>(page, "firstRun");
   expect(first.origin).toBe("live");
   expect([...first.replaced].sort()).toEqual(["positions", "taps"]);
-  await page.keyboard.press("ArrowRight");
-  await expect(page.getByTestId("partly-recorded")).toBeVisible();
+  await goView(page, "play");
   await expect(page.getByTestId("numbers-basis")).toContainText("partly from the recording");
 
   // The failed inputs stay on the recording: P replays it at the stage speed, and the demo completes.
-  await page.keyboard.press("2");
+  await goView(page, "run");
   await page.keyboard.press("p");
   await waitForSession(page, "first", "ended", 30_000);
-  await page.keyboard.press("3");
-  await expect(page.getByTestId("trust-error")).toHaveText(/^\d+%$/);
-  await page.keyboard.press("4");
+  await goView(page, "play");
   await page.keyboard.press("m");
-  await page.keyboard.press("5");
+  await goView(page, "test");
   await waitForSession(page, "second", "ended", 30_000);
   await expect(page.getByTestId("verdict")).toBeVisible();
-  await page.keyboard.press("6");
+  await goView(page, "compare");
   await expect(page.getByTestId("compare-after-time")).toHaveText(/\d+ s$/);
 });
 
-test("live path: tablet taps and camera positions drive the run, the run is saved as a valid recording, and Trust works on it", async ({ page, browser, guard }) => {
+test("live path: tablet taps and camera positions drive the run, saved as a valid recording and used in Edit", async ({ page, browser, guard }) => {
   test.setTimeout(150_000);
   const before = listRecordings(LIVE_PORT);
   await openStage(page, { port: LIVE_PORT, speed: 1 });
@@ -113,7 +110,7 @@ test("live path: tablet taps and camera positions drive the run, the run is save
   const positions = loadFixture("counter-a").positions;
   try {
     await expect.poll(async () => page.getByTestId("btn-inputs").innerText()).toContain("1 tablet, 1 camera");
-    await page.keyboard.press("2");
+    await goView(page, "run");
     await waitForSession(page, "first", "idle");
     await page.keyboard.press("p");
     camera.play(positions);
@@ -147,11 +144,10 @@ test("live path: tablet taps and camera positions drive the run, the run is save
     const check = validateRecording(LIVE_PORT, saved[0]!);
     expect(check.ok, check.report).toBe(true);
 
-    // Trust on what the room just did.
-    await page.keyboard.press("ArrowRight");
-    await expectStep(page, "trust");
+    // Edit uses what the room just did.
+    await goView(page, "play");
     await expect(page.getByTestId("numbers-basis")).toHaveText("Numbers from the run just made in this room.");
-    await expect(page.getByTestId("trust-error").or(page.locator(".st-card .st-warn"))).toBeVisible();
+    await expect(page.getByTestId("time-per-order").or(page.locator(".st-card .st-warn"))).toBeVisible();
   } finally {
     camera.close();
     await tabletContext.close();
@@ -174,7 +170,7 @@ test("scan: a scan posted to /api/scan, and a dropped scan.json, reveal with a s
 
     // A live run on the phone's kitchen with no tablet or camera: no recording of this kitchen stands by,
     // so nothing is spliced in; ended by hand, it saves only what was observed, and it validates.
-    await page.keyboard.press("ArrowRight");
+    await goView(page, "run");
     await waitForSession(page, "first", "idle");
     await expect(page.getByTestId("notice").filter({ hasText: "No recording of this kitchen is standing by" })).toBeVisible();
     await page.keyboard.press("p");
@@ -208,7 +204,7 @@ test("scan: a scan posted to /api/scan, and a dropped scan.json, reveal with a s
 test("P follows the inputs: a prepared live run switched to recorded plays the recording", async ({ page }) => {
   await openStage(page, { port: LIVE_PORT, speed: 32 });
   await setSources(page, { taps: "live", positions: "live" });
-  await page.keyboard.press("2");
+  await goView(page, "run");
   await waitForSession(page, "first", "idle");
   await setSources(page, { taps: "replay", positions: "replay" });
   await expect(page.getByTestId("notice").filter({ hasText: "standing by" })).toHaveCount(0);
@@ -218,9 +214,9 @@ test("P follows the inputs: a prepared live run switched to recorded plays the r
 });
 
 test("Test after a failover gives no verdict; with no matching recording nothing is spliced in", async ({ page }) => {
-  await openStage(page, { port: LIVE_PORT, speed: 32, step: 4 });
+  await openStage(page, { port: LIVE_PORT, speed: 32, step: 2 });
   await page.keyboard.press("m");
-  await page.keyboard.press("ArrowRight");
+  await goView(page, "test");
   await waitForSession(page, "second", "ended");
 
   // The same change, run live; no tablet and no camera, so both inputs fail over to the matching recording.
@@ -236,11 +232,11 @@ test("Test after a failover gives no verdict; with no matching recording nothing
   await expect(page.getByTestId("verdict")).toHaveCount(0);
 
   // A change with no recording: the base run never stands in, so no "before" run is passed off as the "after".
-  await page.keyboard.press("4");
+  await goView(page, "play");
   await page.keyboard.press("Backspace");
   await page.getByTestId(/btn-add-worker-61A93A22/).click();
   await setSources(page, { taps: "live", positions: "live" });
-  await page.keyboard.press("5");
+  await goView(page, "test");
   await waitForSession(page, "second", "idle");
   await page.keyboard.press("p");
   await waitForSession(page, "second", "running");

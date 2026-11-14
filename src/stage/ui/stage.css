@@ -87,6 +87,20 @@
   background: var(--dr-select);
   color: var(--dr-ink);
 }
+.st-results-switch {
+  display: flex;
+  gap: 5px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.st-results-switch .st-step {
+  padding: 7px 10px;
+  font-size: clamp(14px, 1.15vw, 19px);
+  white-space: nowrap;
+}
+.st-strip .st-step {
+  white-space: nowrap;
+}
 
 /* --- the kitchen --------------------------------------------------------- */
 .st-stage {
@@ -919,37 +933,44 @@
 }
 
 /* --- profit and suggestions (Play) ---------------------------------------- */
+/* Profit is the headline of Edit: on top, the biggest numeral in the rail. */
 .st-money {
   display: grid;
-  gap: 8px;
-  padding-top: 10px;
-  border-top: 2px dashed var(--dr-board-edge);
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 2px dashed var(--dr-board-edge);
 }
-.st-money-line {
-  display: flex;
+.st-card.play .st-money .st-num .what {
+  font-size: var(--dr-size-label);
+}
+.st-money {
+  container-type: inline-size;
+}
+/* Sized to the rail's width so "$1,790–$1,930" always fits on one line. */
+.st-card.play .st-money .st-num .value {
+  font-size: clamp(34px, min(12.5cqi, 11vh), 112px);
+}
+/* Walking and time sit side by side under it, a size down. */
+.st-card.play .st-nums.pair {
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+}
+.st-card.play .st-nums.pair .st-num .value {
+  font-size: clamp(32px, min(3.1vw, 6vh), 60px);
+}
+.st-card.play .st-nums.pair .st-num .change {
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 6px 14px;
+  gap: 0 10px;
 }
-.st-money-line .what {
-  font-weight: 800;
-  font-size: var(--dr-size-body);
-}
-.st-money-line .value {
-  font-family: var(--dr-font-display);
-  font-weight: 800;
-  font-size: var(--dr-size-title);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.st-money-line .was {
-  font-size: var(--dr-size-small);
-  font-weight: 700;
-  color: var(--dr-ink-soft);
-  text-decoration: line-through;
-  text-decoration-color: var(--dr-path);
-  text-decoration-thickness: 3px;
-  white-space: nowrap;
+@media (max-height: 820px) {
+  .st-money {
+    gap: 6px;
+    padding-bottom: 8px;
+  }
+  .st-card.play .st-nums.pair .st-num .how,
+  .st-card.play .st-roomy {
+    display: none;
+  }
 }
 .st-suggestions {
   display: grid;

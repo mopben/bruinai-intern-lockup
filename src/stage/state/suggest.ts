@@ -8,7 +8,7 @@ import { suggestSteps, type Suggestion } from "../app/suggest";
 import { dragArea } from "../scene/model";
 import { calibration, firstRunProblem, originalLayout } from "./derive";
 import { economics } from "./economics";
-import { kitchen, playLayout, step } from "./store";
+import { kitchen, playLayout, view } from "./store";
 
 /** Work per slice, milliseconds: short enough that the scene keeps its frame rate. */
 const SLICE_MS = 12;
@@ -87,7 +87,7 @@ export function startSuggest(): void {
     }
     cancelJob = null;
     // The judge changed the board (or left Play) while it searched: their change wins.
-    if (step.value !== "play" || (playLayout.value ?? originalLayout.value) !== start) {
+    if (view.value !== "play" || (playLayout.value ?? originalLayout.value) !== start) {
       suggestState.value = { kind: "idle" };
       return;
     }

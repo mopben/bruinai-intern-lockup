@@ -15,7 +15,7 @@ import {
   type MessageLink,
   type ScanFeed,
 } from "../../inputs";
-import { kitchen, linkState, playLayout, presence, serverInfo, step } from "./store";
+import { kitchen, linkState, playLayout, presence, serverInfo, view } from "./store";
 
 const KITCHEN_DEBOUNCE_MS = 400;
 const INFO_EVERY_MS = 15000;
@@ -35,7 +35,7 @@ export function liveScanFeed(): ScanFeed | null {
 export function currentKitchenMessage(): KitchenMessage | null {
   const k = kitchen.value;
   if (!k) return null;
-  const judging = step.value === "play" || step.value === "test" || step.value === "compare";
+  const judging = view.value === "play" || view.value === "test" || view.value === "compare";
   const layout = judging && playLayout.value ? playLayout.value : k.layout;
   return { type: "kitchen", scan: k.scan, setup: k.setup, layout };
 }
@@ -82,7 +82,7 @@ export function connectStage(): void {
   effect(() => {
     void kitchen.value;
     void playLayout.value;
-    void step.value;
+    void view.value;
     if (timer !== undefined) clearTimeout(timer);
     timer = setTimeout(sendKitchen, KITCHEN_DEBOUNCE_MS);
   });
