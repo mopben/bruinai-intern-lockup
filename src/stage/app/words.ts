@@ -4,8 +4,6 @@
 import { checkPrediction, formatRange, formatSeconds, mean, peakQueue, summariseRun, type PredictionCheck, type Range, type RunTrace } from "../../core";
 
 const EN_DASH = "–";
-/** A miss under this percent of the range edge is "just" outside; anything more is plainly outside. */
-export const JUST_OUTSIDE_PCT = 5;
 
 /** A measured mean, one decimal: "9.9 s". */
 export function formatMeasured(s: number): string {
@@ -17,11 +15,31 @@ export function formatRangeExact(r: Range): string {
   return `${r.p10.toFixed(1)}${EN_DASH}${r.p90.toFixed(1)} s`;
 }
 
-/** "Inside the range." / "Just outside the range: 0.3 s slower than predicted." */
+/** A miss in seconds, never "0.0 s" for a miss that is not zero. */
+export function formatMiss(s: number): string {
+  return s > 0 && s < 0.05 ? "less than 0.1 s" : `${s.toFixed(1)} s`;
+}
+
+/** "Inside the range." / "Outside the range: 0.3 s slower than predicted." A miss is a miss, however small. */
 export function verdictSentence(check: PredictionCheck): string {
   if (check.inside) return "Inside the range.";
-  const by = `${check.missByS.toFixed(1)} s ${check.side === "above" ? "slower" : "faster"} than predicted`;
-  return check.missByPct < JUST_OUTSIDE_PCT ? `Just outside the range: ${by}.` : `Outside the range: ${by}.`;
+  return `Outside the range: ${formatMiss(check.missByS)} ${check.side === "above" ? "slower" : "faster"} than predicted.`;
+}
+
+/**
+ * What a range means, from the percentiles it carries (its "pNN" fields), so
+ * the sentence follows the core if the percentiles change:
+ * "The range is where we expect 8 runs in 10 to land."
+ */
+export function rangeMeaning(r: Range): string {
+  const qs = Object.keys(r)
+    .map((k) => /^p(\d+)$/.exec(k))
+    .filter((m): m is RegExpExecArray => m !== null)
+    .map((m) => Number(m[1]));
+  if (qs.length < 2) return "";
+  const share = (Math.max(...qs) - Math.min(...qs)) / 10;
+  const runs = Number.isInteger(share) ? String(share) : share.toFixed(1);
+  return `The range is where we expect ${runs} runs in 10 to land.`;
 }
 
 export interface TestOutcome {
@@ -35,6 +53,8 @@ export interface TestOutcome {
   readonly change: string | null;
   readonly completed: number;
   readonly total: number;
+  /** "The range is where we expect 8 runs in 10 to land." */
+  readonly meaning: string;
 }
 
 /**
@@ -60,6 +80,7 @@ export function testOutcome(predicted: Range, second: RunTrace, firstMeasuredS: 
         : `Before ${formatMeasured(firstMeasuredS)} → after ${formatMeasured(measured)}. Predicted about ${formatSeconds(predicted.p50)}.`,
     completed: s.completed,
     total: s.total,
+    meaning: rangeMeaning(predicted),
   };
 }
 

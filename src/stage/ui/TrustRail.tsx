@@ -5,6 +5,7 @@
 import { describeTrustError, formatPercent, type TrustResult } from "../../core";
 import { firstRunProblem, trust } from "../state/derive";
 import { palette } from "../theme/tokens";
+import { NumbersBasis, PartlyRecorded, TrustExtras } from "./Basis";
 
 const ROW = 30;
 const LEFT = 52;
@@ -65,7 +66,15 @@ function Pairs(props: { readonly result: TrustResult }) {
 export function TrustRail() {
   const t = trust.value;
   if (!t) return <div class="st-card"><h1>Can we trust the model?</h1><p class="st-note">{firstRunProblem.value}</p></div>;
-  if (!t.ok) return <div class="st-card"><h1>Can we trust the model?</h1><p class="st-warn">{t.message}</p></div>;
+  if (!t.ok)
+    return (
+      <div class="st-card">
+        <h1>Can we trust the model?</h1>
+        <p class="st-warn">{t.message}</p>
+        <PartlyRecorded />
+        <NumbersBasis />
+      </div>
+    );
   const r = t.value;
   return (
     <div class="st-card">
@@ -80,11 +89,14 @@ export function TrustRail() {
           {describeTrustError(r.errorPct)}
         </p>
       </div>
+      <TrustExtras result={r} />
+      <PartlyRecorded />
       {r.pairs.length > 0 ? <Pairs result={r} /> : null}
       <p class="st-small">
         Learned from every other order, checked on the rest ({r.calibratedOn.length} learned, {r.checkedOn.length} checked).
       </p>
       {r.caveat ? <p class="st-note">{r.caveat}</p> : null}
+      <NumbersBasis />
     </div>
   );
 }

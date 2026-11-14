@@ -60,6 +60,8 @@ export interface FrameOptions {
   readonly margin?: number;
   /** 1 = as framed; 2 = twice as close. */
   readonly zoom?: number;
+  /** Where spare height goes when the points are wider than the view: "center" (default) or "bottom" (content sits on the bottom edge, slack above). */
+  readonly alignV?: "center" | "bottom";
 }
 
 /**
@@ -102,7 +104,8 @@ export function framePoints(points: readonly V3[], aspect: number, opts: FrameOp
   // Start from the points' centroid and slide it in the screen plane to the extent centre.
   const base = { x: sx / points.length, y: sy / points.length, z: sz / points.length };
   const du = (minU + maxU) / 2 - dot(base, right);
-  const dv = (minV + maxV) / 2 - dot(base, up);
+  const centreV = opts.alignV === "bottom" ? minV + halfH * usable : (minV + maxV) / 2;
+  const dv = centreV - dot(base, up);
   const target = {
     x: base.x + right.x * du + up.x * dv,
     y: base.y + right.y * du + up.y * dv,

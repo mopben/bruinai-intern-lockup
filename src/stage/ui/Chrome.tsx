@@ -69,17 +69,25 @@ export function InputsChip() {
   const src = sources.value;
   const bad = new Set(health.value.filter((h) => h.state !== "ok").map((h) => h.input as string));
   const roles = presence.value;
+  const keys = Object.keys(LABEL) as (keyof typeof LABEL)[];
+  // All three the same: say it once ("Scan · Taps · Positions recorded"), so the chip stays on one line.
+  const same = keys.every((k) => src[k] === src.scan) && bad.size === 0;
+  const word = (k: keyof typeof LABEL) => (src[k] === "live" ? "live" : "recorded");
+  const anyLive = keys.some((k) => src[k] === "live");
   return (
     <button type="button" class="st-inputs-chip" data-testid="btn-inputs" onClick={() => (drawerOpen.value = !drawerOpen.value)}>
-      {(Object.keys(LABEL) as (keyof typeof LABEL)[]).map((k) => (
-        <span key={k} class={`st-src${src[k] === "live" ? " live" : ""}${bad.has(k) ? " bad" : ""}`} data-testid={`chip-source-${k}`}>
+      {keys.map((k) => (
+        <span key={k} class={`st-src${src[k] === "live" ? " live" : ""}${bad.has(k) ? " bad" : ""}`} data-testid={`chip-source-${k}`} data-source={src[k]}>
           <i />
-          {LABEL[k]} {src[k] === "live" ? "live" : "recorded"}
+          {same ? LABEL[k] : `${LABEL[k]} ${word(k)}`}
         </span>
       ))}
-      <span>
-        {roles.tablet} tablet{roles.tablet === 1 ? "" : "s"}, {roles.camera} camera{roles.camera === 1 ? "" : "s"}
-      </span>
+      {same ? <span>{word("scan")}</span> : null}
+      {anyLive ? (
+        <span>
+          {roles.tablet} tablet{roles.tablet === 1 ? "" : "s"}, {roles.camera} camera{roles.camera === 1 ? "" : "s"}
+        </span>
+      ) : null}
       <Key k="I" />
     </button>
   );

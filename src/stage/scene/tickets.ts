@@ -10,7 +10,7 @@ import { easeOutCubic } from "./smoothing";
 
 /** Tickets drawn per pile; the badge shows the real count beyond this. */
 export const MAX_VISIBLE_TICKETS = 14;
-const TICKET_H = 0.085;
+const TICKET_H = 0.1;
 const DROP_S = 0.38;
 const LEAVE_S = 0.35;
 
@@ -27,7 +27,7 @@ function wobble(i: number): { dx: number; dz: number; rot: number } {
   const b = Math.sin(i * 78.233) * 12345.6789;
   const fa = a - Math.floor(a) - 0.5;
   const fb = b - Math.floor(b) - 0.5;
-  return { dx: fa * 0.03, dz: fb * 0.03, rot: fa * 0.5 };
+  return { dx: fa * 0.03, dz: fb * 0.03, rot: fa * 0.4 };
 }
 
 export class TicketPile {
@@ -42,15 +42,16 @@ export class TicketPile {
     private readonly alertMat: THREE.Material,
   ) {}
 
-  setCount(n: number, alertAt: number, now: number): void {
+  /** `alert`: this station is the bottleneck now (decided by pile-alert.ts across all stations). */
+  setCount(n: number, alert: boolean, now: number): void {
     const count = Math.max(0, Math.floor(n));
     this.count = count;
-    this.alert = count >= alertAt;
+    this.alert = alert;
     const visible = Math.min(MAX_VISIBLE_TICKETS, count);
     const live = this.tickets.filter((t) => t.leavingAt < 0);
     for (let i = live.length; i < visible; i++) {
       const w = wobble(i);
-      const mesh = new THREE.Mesh(this.geo.roundedBox(0.36, TICKET_H - 0.012, 0.28, 0.02), this.paperMat);
+      const mesh = new THREE.Mesh(this.geo.roundedBox(0.44, TICKET_H - 0.014, 0.34, 0.024), this.paperMat);
       mesh.castShadow = true;
       mesh.position.set(w.dx, i * TICKET_H + TICKET_H / 2, w.dz);
       mesh.rotation.y = w.rot;

@@ -2,6 +2,7 @@
  * Small shared pieces: a button with its key, a big number, a plain message.
  */
 import type { ComponentChildren } from "preact";
+import { useEffect, useRef } from "preact/hooks";
 
 export function Key(props: { readonly k: string }) {
   return <span class="st-key" aria-hidden="true">{props.k}</span>;
@@ -67,4 +68,21 @@ export function BigNum(props: {
 export function clock(t: number): string {
   const s = Math.max(0, Math.floor(t));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+/**
+ * A block that scrolls itself into view inside the rail when it first appears,
+ * so a result (the verdict, the run story) is never hidden below the fold on a
+ * small projector.
+ */
+export function Reveal(props: { readonly children: ComponentChildren; readonly class?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.scrollIntoView({ block: "nearest", behavior: "auto" });
+  }, []);
+  return (
+    <div ref={ref} class={`st-reveal${props.class ? ` ${props.class}` : ""}`}>
+      {props.children}
+    </div>
+  );
 }

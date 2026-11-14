@@ -15,9 +15,6 @@ import { mainScene, setMainScene } from "../state/scene-ref";
 import { kitchen, moveInScan, playLayout, scanState, selectedId, session, step, testPlan } from "../state/store";
 import { createKitchenScene, type KitchenSceneHandle, type PathInput } from "../scene";
 
-/** Tickets at one station from which it glows as the bottleneck. */
-export const PILE_ALERT_AT = 3;
-
 /** The layout each step shows. */
 function shownLayout(): Layout | null {
   const k = kitchen.value;
@@ -26,8 +23,10 @@ function shownLayout(): Layout | null {
     case "play":
       return playLayout.value ?? k.layout;
     case "test":
-    case "compare":
-      return testPlan.value?.layout ?? playLayout.value ?? k.layout;
+    case "compare": {
+      const plan = testPlan.value;
+      return plan && plan.judgeLayout === playLayout.value ? plan.layout : playLayout.value ?? k.layout;
+    }
     case "trust":
       return originalLayout.value ?? k.layout;
     default:
@@ -103,7 +102,6 @@ export function SceneHost(props: { readonly hidden: boolean }) {
     if (!el) return;
     const scene = createKitchenScene(el, {
       initialLabels: "scan",
-      pileAlertAt: PILE_ALERT_AT,
       onLayoutChange: (layout) => {
         if (step.value === "play") playLayout.value = layout;
       },

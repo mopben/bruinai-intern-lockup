@@ -10,10 +10,12 @@ import { boot } from "./state/boot";
 import { enterStep } from "./state/flow";
 import { step } from "./state/store";
 import { watchScans } from "./state/input-actions";
+import { installTestHook } from "./state/test-hook";
 import { App } from "./ui/App";
 
 const root = document.getElementById("app");
 if (root) {
+  installTestHook();
   render(<App />, root);
   void boot(parseParams(globalThis.location.search)).then(() => {
     watchScans();

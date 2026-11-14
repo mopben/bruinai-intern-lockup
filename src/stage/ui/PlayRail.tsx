@@ -9,6 +9,7 @@ import { baselineNumbers, firstRunProblem, originalLayout, playNumbers } from ".
 import { applyRehearsed, resetPlay } from "../state/flow";
 import { candidates, kitchen, playLayout } from "../state/store";
 import { BigNum, Btn } from "./bits";
+import { ExtrapolationNote, NumbersBasis } from "./Basis";
 
 function Staffing() {
   const k = kitchen.value;
@@ -92,17 +93,19 @@ export function PlayRail() {
       </div>
       {problem ? <p class="st-note">{problem}</p> : null}
       {time ? (
-        <p class="st-say">
+        <p class="st-say st-predict">
           Next run with this kitchen: orders should take <span data-testid="prediction-range">{formatRange(time.meanOrderTime)}</span> on average.
         </p>
       ) : null}
       <Staffing />
       <Rehearsed />
+      <ExtrapolationNote prediction={time} />
       {time ? (
         <p class="st-small" data-testid="assumption">
           {time.assumption}
         </p>
       ) : null}
+      <NumbersBasis />
     </div>
   );
 }

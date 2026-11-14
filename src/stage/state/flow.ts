@@ -8,11 +8,12 @@ import { loadRunBundle } from "../../inputs";
 import { freezePredictions } from "../app/frozen";
 import { runFitsKitchen } from "../app/kitchen-edit";
 import { changeKind, layoutsMatch, matchRecordedRun, type Candidate } from "../app/layout-match";
-import type { StepId } from "../app/steps";
+import { stepIndex, type StepId } from "../app/steps";
 import { runStory, testOutcome } from "../app/words";
 import { calibration, firstMeasuredS, originalLayout, usableFirstRun } from "./derive";
 import { settleReveal } from "./kitchen-actions";
-import { beginRun, currentPlayer, nextRunIsLive } from "./runs";
+import { preloadedBundle } from "./preload";
+import { beginRun, currentPlayer, nextRunIsLive, startLive } from "./runs";
 import {
   base,
   candidates,
@@ -30,6 +31,7 @@ import {
   storyText,
   testPlan,
   type MeasuredRun,
+  type TestPlan,
 } from "./store";
 
 /** Freezes the prediction for the judge's layout (and every recorded layout) from the first run. */
@@ -77,6 +79,11 @@ export function beginFirstRun(): void {
         storyText.value = runStory(reconstructRun(now.setup, run.taps), nameOf).sentence;
       });
     },
+    // A second run made later is linked to the saved first run, so it is listed under it.
+    onSaved: (id) => {
+      const run = firstRun.value;
+      if (run && run.origin === "live" && !run.savedId) firstRun.value = { ...run, savedId: id };
+    },
   });
 }
 
@@ -98,6 +105,12 @@ function finishTest(run: MeasuredRun, setupFrom: RunBundle["setup"]): void {
   const entry = plan.matched || !plan.candidate ? f.judge : f.candidates[plan.candidate.id];
   batch(() => {
     secondRun.value = run;
+    if (run.replaced.length > 0) {
+      // A failover mixed a recording into the room's run: comparing it with the prediction would be no test at all.
+      outcome.value = null;
+      outcomeProblem.value = `Part of this run came from a recording (${run.replaced.join(" and ")}), so it is not a real test of the prediction. Run it again with the tablet and camera connected.`;
+      return;
+    }
     if (!entry || !entry.prediction) {
       outcome.value = null;
       outcomeProblem.value = entry?.message ?? "There was no prediction for this layout.";
@@ -132,17 +145,22 @@ export async function beginTest(): Promise<void> {
     return;
   }
   const layout = live || !pick || pick.matched ? f.judge.layout : pick.candidate.layout;
-  testPlan.value = { candidate: pick?.candidate ?? null, matched: live || (pick?.matched ?? false), live, layout, bundle: null, loadError: null };
-  let bundle: RunBundle | null = live && !pick ? base.value : null;
+  const plan0: TestPlan = { candidate: pick?.candidate ?? null, matched: live || (pick?.matched ?? false), live, layout, judgeLayout: f.judge.layout, bundle: null, loadError: null };
+  testPlan.value = plan0;
+  // The base run is never a standby for a second run: a failover would play the "before" run as the "after".
+  let bundle: RunBundle | null = null;
   if (pick) {
+    const ready = preloadedBundle(pick.candidate.id);
     try {
-      bundle = await loadRunBundle(pick.candidate.url ?? `/fixtures/${encodeURIComponent(pick.candidate.id)}/`);
+      bundle = ready ?? (await loadRunBundle(pick.candidate.url ?? `/fixtures/${encodeURIComponent(pick.candidate.id)}/`));
     } catch (error) {
-      testPlan.value = { ...testPlan.value, loadError: error instanceof Error ? error.message : String(error) };
+      testPlan.value = { ...plan0, loadError: error instanceof Error ? error.message : String(error) };
       if (!live) return;
-      bundle = base.value;
     }
   }
+  // Only a recording of the very layout being tested may stand in for the live inputs.
+  const standbyAllowed = bundle !== null && (pick?.matched ?? false);
+  bundle ??= live ? base.value : null;
   if (!bundle || step.value !== "test") return;
   const plan = testPlan.value;
   if (!plan) return;
@@ -154,9 +172,17 @@ export async function beginTest(): Promise<void> {
     kitchen: { ...k, layout },
     label: "Live run after the change",
     change: pick?.matched ? pick.candidate.meta.change ?? pick.candidate.meta.title : "The judge's change",
-    baseRunId: firstRun.value?.label,
+    baseRunId: firstRunId(),
+    standbyAllowed: !live || standbyAllowed,
     onEnd: (run) => finishTest(run, run.origin === "live" ? k.setup : standby.setup),
   });
+}
+
+/** The id a second run is saved under as its base: the saved live first run, or the recorded one. */
+function firstRunId(): string | undefined {
+  const run = firstRun.value;
+  if (!run) return undefined;
+  return run.origin === "live" ? run.savedId : run.label;
 }
 
 /** Sets the judge's layout to a recorded run's layout exactly ("m": moved things, "w": added people). */
@@ -184,7 +210,19 @@ export function goTo(next: StepId): void {
     step.value = next;
     selectedId.value = null;
   });
+  rememberStep(next);
   enterStep(next);
+}
+
+/** Keeps ?step= in the address, so a reload (or a crashed tab reopened) comes back to the same step. */
+function rememberStep(next: StepId): void {
+  try {
+    const url = new URL(globalThis.location.href);
+    url.searchParams.set("step", String(stepIndex(next) + 1));
+    globalThis.history.replaceState(globalThis.history.state, "", url);
+  } catch {
+    // No history API (tests in node): nothing to remember.
+  }
 }
 
 /** What a step does on arrival (also used when the page opens on a step). */
@@ -196,4 +234,27 @@ export function enterStep(next: StepId): void {
   }
   if (next === "test") void beginTest();
   if (next === "play" && !playLayout.value) playLayout.value = originalLayout.value;
+}
+
+/**
+ * P in Run or Test, and the Start / Play again buttons. Follows the inputs as
+ * they are now: a prepared live run starts only if the inputs are still live;
+ * otherwise the run is prepared (or played) again from the current sources.
+ */
+export function startOrReplay(purpose: "first" | "second"): void {
+  const s = session.value;
+  if (s && s.purpose === purpose && s.status === "idle" && !s.replay && nextRunIsLive()) {
+    startLive();
+    return;
+  }
+  if (purpose === "first") beginFirstRun();
+  else void beginTest();
+}
+
+/** After an input switch: a run that is prepared but not started is prepared again from the new sources. */
+export function reprepareIdleRun(): void {
+  const s = session.value;
+  if (!s || s.status !== "idle") return;
+  if (s.purpose === "first" && step.value === "run") beginFirstRun();
+  if (s.purpose === "second" && step.value === "test") void beginTest();
 }

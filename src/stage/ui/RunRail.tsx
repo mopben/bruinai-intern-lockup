@@ -2,14 +2,15 @@
  * Step 2. The run plays: dots from the camera log, tickets from the taps.
  * Also the run controls the Test step reuses.
  */
+import type { ComponentChildren } from "preact";
 import { formatSeconds, reconstructRun, summariseRun } from "../../core";
-import { beginFirstRun, beginTest } from "../state/flow";
+import { startOrReplay } from "../state/flow";
 import { firstRunProblem, usableFirstRun } from "../state/derive";
-import { skipToEnd, startLive, toggleFaster } from "../state/runs";
+import { skipToEnd, toggleFaster } from "../state/runs";
 import { base, kitchen, session, storyText, type Session } from "../state/store";
 import { runFitsKitchen } from "../app/kitchen-edit";
 import { formatMeasured } from "../app/words";
-import { Btn, clock } from "./bits";
+import { Btn, Reveal, clock } from "./bits";
 
 function SaveLine(props: { readonly s: Session }) {
   const save = props.s.save;
@@ -24,29 +25,29 @@ function SaveLine(props: { readonly s: Session }) {
   return <p class="st-warn">Could not save the run ({save.error}). Press S to try again.</p>;
 }
 
-export function RunControls(props: { readonly purpose: Session["purpose"]; readonly compact?: boolean }) {
+export function RunControls(props: { readonly purpose: Session["purpose"]; readonly compact?: boolean; readonly beside?: ComponentChildren }) {
   const s = session.value;
   const mine = s && s.purpose === props.purpose ? s : null;
-  const again = props.purpose === "first" ? beginFirstRun : () => void beginTest();
-  if (!mine) return null;
+  const again = () => startOrReplay(props.purpose);
+  if (!mine) return props.beside ? <div class="st-runline">{props.beside}</div> : null;
   const fast = mine.speed > 1;
   return (
     <>
-      <div class="st-nums">
+      <div class="st-runline">
+        {props.beside}
         <div class="st-num">
-          <span class="what">Run time</span>
+          <span class="what">Run time{mine.replay && fast ? `, ${mine.speed}× speed` : ""}</span>
           <span class={`value${props.compact ? " mid" : ""}`}>
             <span data-testid="run-clock">{clock(mine.t)}</span>
-            {mine.replay && fast ? <span class="dir">{mine.speed}× speed</span> : null}
           </span>
         </div>
         <p class="st-say" data-testid="orders-done">
           {mine.done} of {mine.total} orders done
         </p>
       </div>
-      <div class="st-row">
+      <div class="st-row st-controls">
         {mine.status === "idle" ? (
-          <Btn label="Start run" k="P" kind="primary" onClick={startLive} testId="btn-play" />
+          <Btn label="Start run" k="P" kind="primary" onClick={again} testId="btn-play" />
         ) : mine.replay || mine.status === "ended" ? (
           <Btn label={mine.replay ? "Play again" : "Run again"} k="P" onClick={again} testId="btn-play" kind={mine.status === "ended" ? "primary" : "plain"} />
         ) : null}
@@ -77,10 +78,8 @@ export function RunRail() {
           The recorded run was made in the recorded kitchen, not in this scan. Press I and switch taps and positions to live to run this kitchen, or switch the scan back to recorded.
         </p>
       ) : null}
-      <RunControls purpose="first" />
       {ended && storyText.value ? (
-        <>
-          <hr class="st-sep" />
+        <Reveal>
           <p class="st-say" data-testid="run-story">
             {storyText.value}
           </p>
@@ -89,8 +88,9 @@ export function RunRail() {
               {measured.completed} of {measured.total} orders finished, {formatMeasured(measured.meanOrderTimeS)} each on average, the last at {formatSeconds(measured.lastFinishS ?? 0)}.
             </p>
           ) : null}
-        </>
+        </Reveal>
       ) : null}
+      <RunControls purpose="first" />
     </div>
   );
 }

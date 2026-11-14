@@ -44,8 +44,6 @@ export interface KitchenSceneOptions {
   readonly allowOrbit?: boolean;
   /** Start with scan labels and raw paint (before a reveal). Default "names". */
   readonly initialLabels?: LabelMode;
-  /** Pile size at which a station starts to pulse as a bottleneck. Default 4. */
-  readonly pileAlertAt?: number;
   /** Override the "Fixed: power" hint for a locked item. */
   readonly lockHint?: (item: { readonly id: string; readonly name: string; readonly category: string }) => string;
   /**
@@ -56,6 +54,10 @@ export interface KitchenSceneOptions {
   readonly view?: { readonly azimuth: number; readonly elevation: number };
   /** Allow rotating the held or selected item by 90 degrees (R key, double-click). Default true. */
   readonly allowRotate?: boolean;
+  /** Put spare height above the room instead of around it (side-by-side halves sit on their numbers). Default "center". */
+  readonly alignV?: "center" | "bottom";
+  /** Areas (CSS px inside the container) name tags must not cover, e.g. a "Before" label. Read every frame. */
+  readonly labelKeepOut?: () => readonly { readonly l: number; readonly r: number; readonly t: number; readonly b: number }[];
 }
 
 export interface KitchenSceneHandle {
@@ -85,4 +87,32 @@ export interface KitchenSceneHandle {
   reframe(): void;
   /** Stop rendering and free GPU memory, listeners and DOM. */
   dispose(): void;
+  /**
+   * TEST HOOK, read-only: what the scene holds now, for the acceptance test
+   * (e2e/). Never used for display.
+   */
+  debug(): SceneDebug;
+}
+
+/** TEST HOOK: a read-only snapshot of one scene (see KitchenSceneHandle.debug). */
+export interface SceneDebug {
+  readonly items: readonly { readonly id: string; readonly name: string; readonly role: string; readonly locked: boolean; readonly x: number; readonly z: number; readonly h: number }[];
+  /** Tickets per box id, as last set. */
+  readonly queues: Readonly<Record<string, number>>;
+  /** Box ids whose pile shows the bottleneck alert now. */
+  readonly alerts: readonly string[];
+  readonly workers: readonly { readonly id: string; readonly x: number; readonly z: number }[];
+  /** Frames actually drawn, and when the last one was (performance.now() ms). */
+  readonly renders: number;
+  readonly lastRenderAt: number;
+  /** Times the WebGL context was lost and restored. */
+  readonly contextLost: number;
+  readonly contextRestored: number;
+  /** CSS size of the scene and the canvas's drawing-buffer size. */
+  readonly width: number;
+  readonly height: number;
+  readonly bufferWidth: number;
+  readonly bufferHeight: number;
+  /** Viewport (client) position of the top centre of a box, for pointer tests. */
+  readonly screen: Readonly<Record<string, { readonly x: number; readonly y: number }>>;
 }

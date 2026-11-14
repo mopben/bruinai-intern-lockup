@@ -41,6 +41,7 @@ export type {
   KitchenSceneOptions,
   LabelMode,
   PathInput,
+  SceneDebug,
   WorkerInput,
 } from "./api";
 export { sampleKitchen, sampleScan, sampleSetup, sampleLayout, SAMPLE_IDS } from "./sample-kitchen";

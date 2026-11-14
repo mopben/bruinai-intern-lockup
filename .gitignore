@@ -1,7 +1,7 @@
 node_modules/
 dist/
 recordings/
-coverage/
+/coverage/
 test-results/
 playwright-report/
 .DS_Store
@@ -9,3 +9,4 @@ playwright-report/
 xcuserdata/
 DerivedData/
 ios/build/
+e2e/screenshots/

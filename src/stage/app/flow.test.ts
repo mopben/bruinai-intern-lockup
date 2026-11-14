@@ -23,7 +23,7 @@ import { addWorker, removeWorker } from "./kitchen-edit";
 import { changeKind, matchRecordedRun, type Candidate } from "./layout-match";
 import { layoutNumbers } from "./numbers";
 import { alongPolyline, homePositions, indexMovements, latestPositions, simulatedWorkers } from "./playback";
-import { runStory, testOutcome, verdictSentence } from "./words";
+import { rangeMeaning, runStory, testOutcome, verdictSentence } from "./words";
 
 const root = join(__dirname, "../../../fixtures");
 const jsonl = <T>(text: string) =>
@@ -157,9 +157,11 @@ describe("the Test verdict", () => {
   });
 
   it("words each case", () => {
-    const base = { missByPct: 0, offMedianS: 0 };
+    const base = { missByPct: 0, offMedianS: 0, missText: "" };
     expect(verdictSentence({ ...base, inside: true, side: null, missByS: 0 })).toBe("Inside the range.");
-    expect(verdictSentence({ ...base, inside: false, side: "above", missByS: 0.3, missByPct: 3 })).toBe("Just outside the range: 0.3 s slower than predicted.");
+    expect(verdictSentence({ ...base, inside: false, side: "above", missByS: 0.3, missByPct: 3 })).toBe("Outside the range: 0.3 s slower than predicted.");
+    expect(verdictSentence({ ...base, inside: false, side: "below", missByS: 0.02, missByPct: 0.2 })).toBe("Outside the range: less than 0.1 s faster than predicted.");
+    expect(rangeMeaning({ p10: 8, p50: 9, p90: 10 })).toBe("The range is where we expect 8 runs in 10 to land.");
     expect(verdictSentence({ ...base, inside: false, side: "below", missByS: 4, missByPct: 30 })).toBe("Outside the range: 4.0 s faster than predicted.");
   });
 

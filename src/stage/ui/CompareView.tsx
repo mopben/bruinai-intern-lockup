@@ -7,11 +7,11 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { DEFAULT_SEED, formatMetres, formatRange, simulateRun, type Layout, type RunTrace, type World } from "../../core";
 import { explainError, layoutNumbers, tryWorld, type LayoutNumbers } from "../app/numbers";
 import { indexMovements, ordersDoneBy, simulatedWorkers, ticketsAtTime } from "../app/playback";
-import { calibration, firstRunProblem, originalLayout } from "../state/derive";
+import { calibration, firstRunProblem, originalLayout, usableFirstRun } from "../state/derive";
+import { registerScene } from "../state/scene-ref";
 import { compareCommand, kitchen, params, playLayout, testPlan } from "../state/store";
 import { createKitchenScene, type KitchenSceneHandle } from "../scene";
 import { BigNum, Btn, clock } from "./bits";
-import { PILE_ALERT_AT } from "./SceneHost";
 
 const FAST = 4;
 const TAIL_S = 1.5;
@@ -43,6 +43,24 @@ function buildSide(label: Side["label"], layout: Layout): Side | null {
   }
 }
 
+/**
+ * The "after" kitchen: the layout in Play now. The Test step's layout is used
+ * only when that Test was made for this same Play layout (it may be the
+ * nearest recorded run's layout when nothing matched).
+ */
+function sidesKey(before: Layout | null, after: Layout | null): string {
+  const run = usableFirstRun.value;
+  const k = kitchen.value;
+  const cal = calibration.value;
+  return JSON.stringify([before, after, k?.scan.capturedAt, k?.setup, run?.label, run?.origin, run?.taps.length, run?.positions.length, cal?.ok]);
+}
+
+export function currentAfterLayout(): Layout | null {
+  const plan = testPlan.value;
+  const judge = playLayout.value;
+  return plan && plan.judgeLayout === judge ? plan.layout : judge;
+}
+
 function Half(props: { readonly side: Side; readonly t: number; readonly onScene: (h: KitchenSceneHandle | null) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const { side } = props;
@@ -50,10 +68,19 @@ function Half(props: { readonly side: Side; readonly t: number; readonly onScene
     const el = ref.current;
     const k = kitchen.value;
     if (!el || !k) return;
-    const h = createKitchenScene(el, { view: SIDE_VIEW, pileAlertAt: PILE_ALERT_AT });
+    const label = el.querySelector<HTMLElement>(".label");
+    const keepOut = () => {
+      if (!label) return [];
+      const c = el.getBoundingClientRect();
+      const r = label.getBoundingClientRect();
+      return [{ l: r.left - c.left, r: r.right - c.left, t: r.top - c.top, b: r.bottom - c.top }];
+    };
+    const h = createKitchenScene(el, { view: SIDE_VIEW, labelKeepOut: keepOut, alignV: "bottom" });
     h.setKitchen({ scan: k.scan, setup: k.setup, layout: side.layout });
     props.onScene(h);
+    registerScene(`compare-${side.label.toLowerCase()}`, h);
     return () => {
+      registerScene(`compare-${side.label.toLowerCase()}`, null);
       props.onScene(null);
       h.dispose();
     };
@@ -83,7 +110,7 @@ function Half(props: { readonly side: Side; readonly t: number; readonly onScene
 
 export function CompareView() {
   const before = originalLayout.value;
-  const after = testPlan.value?.layout ?? playLayout.value;
+  const after = currentAfterLayout();
   const [sides, setSides] = useState<readonly Side[]>([]);
   const [t, setT] = useState(0);
   const [speed, setSpeed] = useState(params.value.speed);
@@ -95,7 +122,9 @@ export function CompareView() {
     const list = [buildSide("Before", before), buildSide("After", after)].filter((s): s is Side => s !== null);
     setSides(list);
     clockRef.current = { ...clockRef.current, t: 0, end: Math.max(0, ...list.map((s) => s.trace?.endT ?? 0)) + TAIL_S };
-  }, [before, after, kitchen.value, calibration.value]);
+    // Keyed on content, not object identity: the first run finishing again in the background (same
+    // recording, new objects) must not rebuild both scenes mid-Compare.
+  }, [sidesKey(before, after)]);
 
   useEffect(() => {
     let raf = 0;

@@ -6,6 +6,8 @@ import { formatRange } from "../../core";
 import { firstRunProblem } from "../state/derive";
 import { frozen, outcome, outcomeProblem, session, testPlan } from "../state/store";
 import { RunControls } from "./RunRail";
+import { Reveal } from "./bits";
+import { ExtrapolationNote, NumbersBasis } from "./Basis";
 
 export function TestRail() {
   const f = frozen.value;
@@ -33,36 +35,47 @@ export function TestRail() {
         </p>
       )}
       {plan?.loadError ? <p class="st-warn">Could not load the recorded run: {plan.loadError}</p> : null}
-      <div class="st-num">
-        <span class="what">Predicted time per order</span>
-        <span class="value mid">
-          <span data-testid="prediction-range">{predicted ? formatRange(predicted) : "—"}</span>
-        </span>
-        <span class="how">Frozen when you left Play, from the first run only.</span>
-      </div>
       {entry && !entry.prediction ? <p class="st-warn">{entry.message}</p> : null}
-      <RunControls purpose="second" compact />
+      <RunControls
+        purpose="second"
+        compact
+        beside={
+          <div class="st-num">
+            <span class="what">Predicted per order</span>
+            <span class="value mid">
+              <span data-testid="prediction-range">{predicted ? formatRange(predicted) : "—"}</span>
+            </span>
+          </div>
+        }
+      />
+      <p class="st-small">The prediction was frozen when you left Play, from the first run only.</p>
+      <ExtrapolationNote prediction={entry?.prediction ?? null} />
       {ended && result ? (
-        <>
-          <hr class="st-sep" />
+        <Reveal>
           <p class="st-say" data-testid="measured-result">
             {result.headline}
           </p>
-          <p class="st-say" data-testid="verdict" style={{ fontSize: "var(--dr-size-title)" }}>
+          <p class="st-say st-verdict" data-testid="verdict">
             {result.verdict}
           </p>
-          {result.change ? (
-            <p class="st-small" data-testid="before-after">
-              {result.change}
-            </p>
-          ) : null}
-          <p class="st-small">
-            A short run has few orders ({result.completed} of {result.total} finished), so its average is itself uncertain.
+          <p class="st-small" data-testid="range-meaning">
+            {result.meaning}
           </p>
-        </>
+        </Reveal>
+      ) : null}
+      {ended && result?.change ? (
+        <p class="st-small" data-testid="before-after">
+          {result.change}
+        </p>
+      ) : null}
+      {ended && result ? (
+        <p class="st-small">
+          A short run has few orders ({result.completed} of {result.total} finished), so its average is itself uncertain.
+        </p>
       ) : null}
       {ended && problem ? <p class="st-warn">{problem}</p> : null}
       {!plan && problem ? <p class="st-note">{problem}</p> : null}
+      <NumbersBasis />
     </div>
   );
 }

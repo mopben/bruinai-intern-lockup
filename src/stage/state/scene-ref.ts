@@ -25,3 +25,15 @@ export function withScene(fn: (h: KitchenSceneHandle) => void): void {
   if (handle) fn(handle);
   else waiting.add(fn);
 }
+
+/** Other live scenes (the two Compare halves), by name. Read only by the test hook. */
+const others = new Map<string, KitchenSceneHandle>();
+
+export function registerScene(name: string, h: KitchenSceneHandle | null): void {
+  if (h) others.set(name, h);
+  else others.delete(name);
+}
+
+export function namedScenes(): ReadonlyMap<string, KitchenSceneHandle> {
+  return others;
+}

@@ -9,6 +9,7 @@ import type { Candidate } from "../app/layout-match";
 import type { StageParams } from "../app/params";
 import { useRecordedKitchen, waitForLiveScan } from "./kitchen-actions";
 import { connectStage } from "./link";
+import { preloadSecondRuns } from "./preload";
 import { stopAllPlayback } from "./runs";
 import { addNotice, base, bootError, candidates, catalog, firstRun, loading, params, secondChoice, sources, step } from "./store";
 
@@ -57,11 +58,15 @@ export async function loadBase(runId: string): Promise<void> {
         taps: bundle.taps,
         positions: bundle.positions,
         origin: "recorded",
+        title: bundle.meta.title,
+        replaced: [],
       };
       params.value = { ...params.value, runId };
     });
     if (sources.value.scan === "replay") useRecordedKitchen(step.value === "scan");
     else waitForLiveScan();
+    // Whole second runs in memory now, so Test needs no server later.
+    await preloadSecondRuns(loaded);
   } catch (error) {
     bootError.value = `Could not load the run "${runId}": ${error instanceof Error ? error.message : String(error)}`;
   } finally {

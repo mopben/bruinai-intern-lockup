@@ -33,7 +33,7 @@ The stage has six steps. Move with → and ←, or jump with 1 to 6.
 5. **Test.** The run after the change, against the prediction frozen when you left Play. A miss is said plainly.
 6. **Compare.** Before and after, side by side, on the same orders.
 
-All keys are in the runbook. Press **I** for the inputs drawer.
+All keys are in the runbook. Press **I** for the inputs drawer, **Shift+F** for full screen.
 
 ## The three inputs
 
@@ -71,6 +71,7 @@ A camera run can also be recorded on the camera page (**Record**, then **Stop an
 | `npm run test:coverage` | Unit tests with coverage |
 | `npm run typecheck` | TypeScript check, no output files |
 | `npm run acceptance` | The acceptance test in a real browser (Playwright). Starts its own servers on ports 5191 and 5192. Needs Playwright's Chromium once: `npx playwright install chromium` (internet) |
+| `npm run check` | Typecheck, unit tests and the acceptance test, in that order |
 | `npm run fixtures` | Rebuild the three bundled runs in `fixtures/` from the world generator |
 | `npm run build` | Build only (into `dist/`) |
 | `npm run serve` | Serve only, without building |

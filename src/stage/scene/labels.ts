@@ -144,6 +144,8 @@ export class Overlay {
   private hintUntil = 0;
   private fontPx = 24;
   private pathTags: Placed[] = [];
+  private width = 1;
+  private height = 1;
 
   constructor(container: HTMLElement) {
     injectStyle();
@@ -156,6 +158,8 @@ export class Overlay {
   /** Label size follows the scene size so two half-width scenes stay balanced. */
   /** Returns true when the size changed (callers then re-measure their tags). */
   resize(w: number, h: number): boolean {
+    this.width = w;
+    this.height = h;
     const px = Math.round(Math.min(30, Math.max(18, Math.min(h * 0.027, w * 0.0205))));
     if (px === this.fontPx && this.el.style.fontSize) return false;
     this.fontPx = px;
@@ -173,8 +177,11 @@ export class Overlay {
   }
 
   /**
-   * Place name tags centred above their anchor; nudge later tags upward so they
-   * do not sit on top of earlier ones. Tags are processed front to back.
+   * Place name tags centred above their anchor, front to back, never on top of
+   * an earlier tag, a badge or a keep-out area (e.g. a "Before" label), and
+   * always inside the scene (never up under the step strip or off the side).
+   * Order of tries: nudged up; shifted sideways; below the anchor; and only if
+   * all fail, clamped inside the scene even if it overlaps.
    */
   layoutTags(
     items: readonly { placed: Placed; x: number; y: number; depth: number; visible: boolean }[],
@@ -183,6 +190,7 @@ export class Overlay {
   ): void {
     const sorted = [...items].sort((a, b) => b.depth - a.depth);
     const boxes: { l: number; r: number; t: number; b: number }[] = [...blockers];
+    const pad = 4;
     for (const it of sorted) {
       const p = it.placed;
       if (!it.visible) {
@@ -191,19 +199,47 @@ export class Overlay {
       }
       p.el.style.display = "";
       measure(p);
-      const l = it.x - p.w / 2;
-      let t = it.y - p.h;
-      for (let pass = 0; pass < 6; pass++) {
-        const hit = boxes.find((bx) => l < bx.r + 4 && l + p.w > bx.l - 4 && t < bx.b + 3 && t + p.h > bx.t - 3);
-        if (!hit) break;
-        t = hit.t - p.h - 4;
-      }
+      const { l, t } = this.findSpot(p, it.x, it.y, boxes, pad);
       boxes.push({ l, r: l + p.w, t, b: t + p.h });
       // Fade a tag that sits over a worker's head so the hat stays visible.
       const covers = see.some((q) => q.x > l && q.x < l + p.w && q.y > t - 6 && q.y < t + p.h + 6);
       p.el.classList.toggle("over-pawn", covers);
       p.el.style.transform = `translate(${Math.round(l)}px, ${Math.round(t)}px)`;
     }
+  }
+
+  private findSpot(p: Placed, x: number, y: number, boxes: readonly { l: number; r: number; t: number; b: number }[], pad: number): { l: number; t: number } {
+    const maxL = Math.max(pad, this.width - p.w - pad);
+    const clampL = (l: number) => Math.min(maxL, Math.max(pad, l));
+    const hitAt = (l: number, t: number) => boxes.find((bx) => l < bx.r + 4 && l + p.w > bx.l - 4 && t < bx.b + 3 && t + p.h > bx.t - 3);
+    const inside = (t: number) => t >= pad && t + p.h <= this.height - pad;
+    const upFrom = (l: number, t0: number): number | null => {
+      let t = t0;
+      for (let pass = 0; pass < 6; pass++) {
+        const hit = hitAt(l, t);
+        if (!hit) return inside(t) ? t : null;
+        t = hit.t - p.h - 4;
+      }
+      return null;
+    };
+    const l0 = clampL(x - p.w / 2);
+    const t0 = Math.min(y - p.h, this.height - pad - p.h);
+    const up = upFrom(l0, t0);
+    if (up !== null) return { l: l0, t: up };
+    for (const dx of [p.w / 2 + 6, -(p.w / 2 + 6), p.w + 8, -(p.w + 8)]) {
+      const l = clampL(l0 + dx);
+      const t = upFrom(l, Math.max(pad, t0));
+      if (t !== null) return { l, t };
+    }
+    // Below the anchor point, stepping down past anything in the way.
+    let t = Math.max(pad, y + 6);
+    for (let pass = 0; pass < 6; pass++) {
+      const hit = hitAt(l0, t);
+      if (!hit) break;
+      t = hit.b + 4;
+    }
+    if (inside(t) && !hitAt(l0, t)) return { l: l0, t };
+    return { l: l0, t: Math.min(this.height - pad - p.h, Math.max(pad, t0)) };
   }
 
   /** Centre an element on (x, y); returns its screen rect, or null when hidden. */

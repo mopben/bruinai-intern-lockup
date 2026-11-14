@@ -4,7 +4,7 @@
  */
 import * as THREE from "three";
 import { FORMAT_VERSION, LAYOUT_FORMAT, type Layout } from "../../core/types";
-import type { KitchenInput, KitchenSceneHandle, KitchenSceneOptions, LabelMode, PathInput, WorkerInput } from "./api";
+import type { KitchenInput, KitchenSceneHandle, KitchenSceneOptions, LabelMode, PathInput, SceneDebug, WorkerInput } from "./api";
 import { Board } from "./board";
 import { resolveMove, overlaps } from "./collision";
 import { GhostLayer, PathLayer } from "./floor-marks";
@@ -17,6 +17,7 @@ import {
   withPlacement, type Rect, type SceneItem,
 } from "./model";
 import { Pawns } from "./pawns";
+import { NO_ALERT, nextAlert, type AlertState } from "./pile-alert";
 import { TicketPile, ticketMaterials } from "./tickets";
 import { Tweens } from "./tweens";
 import { Viewport } from "./viewport";
@@ -40,12 +41,13 @@ export function createKitchenScene(container: HTMLElement, options: KitchenScene
   const tweens = new Tweens();
   vp.scene.add(board.group, ghosts.group, paths.group, world, pawns.group);
   const homeView = options.view ?? vp.view;
+  vp.alignV = options.alignV ?? "center";
   vp.view = homeView;
 
   const views = new Map<string, ItemView>();
   const tags = new Map<string, TagView>();
   const piles = new Map<string, PileEntry>();
-  const alertAt = options.pileAlertAt ?? 4;
+  let alertState: AlertState = NO_ALERT;
   let input: KitchenInput | null = null;
   let layout: Layout = EMPTY_LAYOUT;
   let items: readonly SceneItem[] = [];
@@ -60,6 +62,7 @@ export function createKitchenScene(container: HTMLElement, options: KitchenScene
   let dragId: string | null = null;
   let ghostLayout: Layout | null = null;
   let queues: Readonly<Record<string, number>> = {};
+  let shownWorkers: readonly WorkerInput[] = [];
   let dirty = true;
   let disposed = false;
   let raf = 0;
@@ -68,11 +71,16 @@ export function createKitchenScene(container: HTMLElement, options: KitchenScene
 
   const now = () => performance.now() / 1000;
   const markDirty = () => { dirty = true; };
+  let ready = false;
   vp.onResize = () => {
     if (overlay.resize(vp.width, vp.height)) for (const t of tags.values()) t.placed.measured = false;
     markDirty();
+    // Resizing clears the canvas. Draw now, before the browser paints, so a
+    // projector changing mode never shows an empty table for a frame.
+    if (ready && !disposed) drawNow();
   };
   vp.onResize();
+  vp.onWake = markDirty;
 
   function itemById(id: string): SceneItem | undefined {
     return items.find((i) => i.id === id);
@@ -249,10 +257,26 @@ export function createKitchenScene(container: HTMLElement, options: KitchenScene
         piles.set(id, entry);
       }
       if (entry.pile.group.parent !== v.root) v.root.add(entry.pile.group);
-      entry.pile.setCount(queues[id] ?? 0, alertAt, t);
+      entry.pile.setCount(queues[id] ?? 0, alertState.on === id, t);
       entry.badge.set(entry.pile.count, entry.pile.alert);
     }
+    updateAlert(t);
     markDirty();
+  }
+
+  /** Re-decides the bottleneck (stations only) and repaints the piles whose alert changed. */
+  function updateAlert(t: number): boolean {
+    const counts: Record<string, number> = {};
+    for (const it of items) if (it.role === "station") counts[it.id] = queues[it.id] ?? 0;
+    const next = nextAlert(alertState, counts, t);
+    const changed = next.on !== alertState.on;
+    alertState = next;
+    if (!changed) return false;
+    for (const [id, e] of piles) {
+      e.pile.setCount(e.pile.count, alertState.on === id, t);
+      e.badge.set(e.pile.count, e.pile.alert);
+    }
+    return true;
   }
 
   const headBuf: THREE.Vector3[] = [];
@@ -287,7 +311,8 @@ export function createKitchenScene(container: HTMLElement, options: KitchenScene
       const p = vp.project(v.labelAnchor(v3));
       list.push({ placed: tag.placed, x: p.x, y: p.y, depth: p.depth, visible: !hidden && v.appear > 0.6 });
     }
-    overlay.layoutTags(list, blockers, see);
+    const keepOut = options.labelKeepOut?.() ?? [];
+    overlay.layoutTags(list, [...keepOut, ...blockers], see);
     const placed = overlay.setPathTags(paths.labels.filter((_, i) => paths.midpoints[i]));
     let k = 0;
     paths.midpoints.forEach((m) => {
@@ -304,6 +329,7 @@ export function createKitchenScene(container: HTMLElement, options: KitchenScene
     const dt = Math.min(0.05, Math.max(0, t - last));
     last = t;
     let busy = tweens.tick(t);
+    if (updateAlert(t)) busy = true;
     for (const v of views.values()) {
       const pile = piles.get(v.item.id)?.pile;
       const pulse = pile?.alert && v.item.role === "station" ? 0.5 + 0.5 * Math.sin(t * 4.5) : 0;
@@ -314,12 +340,17 @@ export function createKitchenScene(container: HTMLElement, options: KitchenScene
     if (pawns.tick(t, dt)) busy = true;
     if (overlay.tick(t)) busy = true;
     if (!dirty && !busy) return;
+    drawNow();
+  }
+
+  function drawNow(): void {
     dirty = false;
     world.updateMatrixWorld();
     layoutOverlay();
     vp.render();
   }
   raf = requestAnimationFrame(frame);
+  ready = true;
   void document.fonts?.ready.then(() => {
     if (disposed) return;
     if (room) board.redrawText(room);
@@ -353,12 +384,35 @@ export function createKitchenScene(container: HTMLElement, options: KitchenScene
     showScanLabels: () => { mode = "scan"; paintMix = 0; applyPaint(); },
     setEditable: (on) => { editable = on; interaction.refresh(); applyPaint(); },
     setSelected,
-    setWorkers: (ws: readonly WorkerInput[]) => { pawns.set(ws, now()); markDirty(); },
+    setWorkers: (ws: readonly WorkerInput[]) => { shownWorkers = ws; pawns.set(ws, now()); markDirty(); },
     setQueues,
     setPaths: (ps: readonly PathInput[]) => { paths.set(ps); markDirty(); },
     setGhost: (l) => { ghostLayout = l; refreshGhost(); },
     projectToScreen: (x, y, z) => { const p = vp.project(v3.set(x, y, z)); return Number.isFinite(p.x) ? { x: p.x, y: p.y } : null; },
     reframe: () => { vp.view = homeView; vp.zoom = 1; vp.applyFrame(); markDirty(); },
+    debug: (): SceneDebug => {
+      const rect = container.getBoundingClientRect();
+      const screen: Record<string, { x: number; y: number }> = {};
+      for (const it of items) {
+        const p = vp.project(v3.set(it.x, it.size.h, it.z));
+        screen[it.id] = { x: rect.left + p.x, y: rect.top + p.y };
+      }
+      return {
+        items: items.map((i) => ({ id: i.id, name: i.name, role: i.role, locked: i.locked, x: i.x, z: i.z, h: i.size.h })),
+        queues: { ...queues },
+        alerts: [...piles].filter(([, e]) => e.pile.alert).map(([id]) => id),
+        workers: shownWorkers.map((w) => ({ id: w.id, x: w.x, z: w.z })),
+        renders: vp.renders,
+        lastRenderAt: vp.lastRenderAt,
+        contextLost: vp.contextLost,
+        contextRestored: vp.contextRestored,
+        width: vp.width,
+        height: vp.height,
+        bufferWidth: vp.renderer.domElement.width,
+        bufferHeight: vp.renderer.domElement.height,
+        screen,
+      };
+    },
     dispose: () => {
       if (disposed) return;
       disposed = true;

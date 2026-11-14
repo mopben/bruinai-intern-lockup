@@ -26,10 +26,16 @@ export class Viewport {
   height = 1;
   view: ViewAngles = DEFAULT_VIEW;
   zoom = 1;
+  alignV: "center" | "bottom" = "center";
   private room: Rect = { minX: -2, maxX: 2, minZ: -1.5, maxZ: 1.5 };
   /** Extra points to keep in frame (box tops plus tag room), set by the scene. */
   contentPoints: readonly V3[] = [];
   onResize: (() => void) | null = null;
+  /** TEST HOOK counters (KitchenSceneHandle.debug). */
+  renders = 0;
+  lastRenderAt = 0;
+  contextLost = 0;
+  contextRestored = 0;
 
   constructor(readonly container: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
@@ -57,8 +63,55 @@ export class Viewport {
 
     this.observer = new ResizeObserver(() => this.resize());
     this.observer.observe(container);
+    canvas.addEventListener("webglcontextlost", this.onContextLost);
+    canvas.addEventListener("webglcontextrestored", this.onContextRestored);
+    window.addEventListener("resize", this.onWindowChange);
+    document.addEventListener("visibilitychange", this.onWindowChange);
+    document.addEventListener("fullscreenchange", this.onWindowChange);
+    this.watchPixelRatio();
+    // Safety net: a size change that no event reported (seen on some projectors) is caught within a second.
+    this.watchdog = setInterval(() => this.resize(), 1000);
     this.resize();
   }
+
+  /** Called when the view must be drawn again although nothing in the scene changed (tab shown, context restored). */
+  onWake: (() => void) | null = null;
+  private readonly watchdog: ReturnType<typeof setInterval>;
+  private dprQuery: MediaQueryList | null = null;
+  private lost = false;
+
+  private readonly onWindowChange = (): void => {
+    if (document.visibilityState === "hidden") return;
+    this.resize();
+    this.onWake?.();
+  };
+
+  private readonly onDprChange = (): void => {
+    this.watchPixelRatio();
+    this.onWindowChange();
+  };
+
+  /** devicePixelRatio changes (window moved to the projector) fire no resize; a media query does. */
+  private watchPixelRatio(): void {
+    this.dprQuery?.removeEventListener("change", this.onDprChange);
+    this.dprQuery = typeof window.matchMedia === "function" ? window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`) : null;
+    this.dprQuery?.addEventListener("change", this.onDprChange);
+  }
+
+  private readonly onContextLost = (): void => {
+    // three.js calls preventDefault, which asks the browser to restore the context.
+    this.lost = true;
+    this.contextLost += 1;
+  };
+
+  private readonly onContextRestored = (): void => {
+    this.lost = false;
+    this.contextRestored += 1;
+    // three.js re-creates its GL state; buffers and textures upload again on the next draw.
+    this.width = 0;
+    this.resize();
+    this.onWake?.();
+  };
 
   resize(): void {
     const r = this.container.getBoundingClientRect();
@@ -97,7 +150,7 @@ export class Viewport {
     const pad = BOARD_PAD_M + 0.06;
     const board = { minX: this.room.minX - pad, maxX: this.room.maxX + pad, minZ: this.room.minZ - pad, maxZ: this.room.maxZ + pad };
     const points = [...rectCorners(board, -BOARD_THICK_M - 0.05, 0), ...this.contentPoints];
-    const f = framePoints(points, this.width / this.height, { view: this.view, zoom: this.zoom, margin: 0.04 });
+    const f = framePoints(points, this.width / this.height, { view: this.view, zoom: this.zoom, margin: 0.04, alignV: this.alignV });
     const c = this.camera;
     c.left = -f.halfW;
     c.right = f.halfW;
@@ -137,11 +190,22 @@ export class Viewport {
   }
 
   render(): void {
+    if (this.lost) return;
     this.renderer.render(this.scene, this.camera);
+    this.renders += 1;
+    this.lastRenderAt = performance.now();
   }
 
   dispose(): void {
     this.observer.disconnect();
+    clearInterval(this.watchdog);
+    const canvas = this.renderer.domElement;
+    canvas.removeEventListener("webglcontextlost", this.onContextLost);
+    canvas.removeEventListener("webglcontextrestored", this.onContextRestored);
+    window.removeEventListener("resize", this.onWindowChange);
+    document.removeEventListener("visibilitychange", this.onWindowChange);
+    document.removeEventListener("fullscreenchange", this.onWindowChange);
+    this.dprQuery?.removeEventListener("change", this.onDprChange);
     this.renderer.dispose();
     this.renderer.forceContextLoss();
     this.renderer.domElement.remove();

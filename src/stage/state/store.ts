@@ -26,6 +26,12 @@ export interface MeasuredRun {
   readonly taps: readonly TapEvent[];
   readonly positions: readonly PositionSample[];
   readonly origin: "recorded" | "live";
+  /** The run's title for people ("Original counter"), when it has one. */
+  readonly title?: string;
+  /** Inputs that came partly or wholly from a recording during a live run (empty when all live, or for a recording). */
+  readonly replaced: readonly string[];
+  /** The id it was saved under (recordings/<id>/), once saved. */
+  readonly savedId?: string;
 }
 
 export type SaveState =
@@ -65,6 +71,8 @@ export interface TestPlan {
   readonly live: boolean;
   /** The layout actually run and compared: the judge's when matched, else the recorded run's. */
   readonly layout: Layout;
+  /** The judge's layout (from Play) this plan was made for; a different Play layout makes the plan stale. */
+  readonly judgeLayout: Layout;
   readonly bundle: RunBundle | null;
   readonly loadError: string | null;
 }

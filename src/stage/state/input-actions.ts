@@ -6,7 +6,8 @@ import { batch } from "@preact/signals";
 import { parseScan } from "../../inputs";
 import { acceptLiveScan, useRecordedKitchen, waitForLiveScan } from "./kitchen-actions";
 import { liveScanFeed } from "./link";
-import { currentPlayer, liveSwitchable } from "./runs";
+import { reprepareIdleRun } from "./flow";
+import { currentPlayer, liveSwitchable, standbyUsable } from "./runs";
 import { addNotice, dropNotice, latestLiveScan, sources, step, type InputKind, type Source } from "./store";
 
 export function setSource(input: InputKind, source: Source): void {
@@ -21,8 +22,16 @@ export function setSource(input: InputKind, source: Source): void {
     return;
   }
   const sw = liveSwitchable();
-  if (sw && sw.status() !== "ended") {
+  if (sw && sw.status() === "running") {
+    if (source === "replay" && !standbyUsable()) {
+      addNotice({ id: `next-${input}`, text: `There is no recording of this kitchen to switch the ${input} to. It applies to the next run.`, tone: "warn" });
+      return;
+    }
     sw.setSource(input, source);
+    return;
+  }
+  if (sw && sw.status() === "idle") {
+    reprepareIdleRun();
     return;
   }
   const p = currentPlayer();

@@ -63,7 +63,7 @@
   line-height: 1.1;
   cursor: pointer;
   box-shadow: var(--st-hard);
-  transition: transform 160ms var(--dr-ease), background-color 200ms ease;
+  transition: transform 160ms var(--dr-ease), background-color 200ms ease, color 200ms ease;
 }
 .st-step .n {
   display: inline-grid;
@@ -748,4 +748,172 @@
 }
 .st-card.play .st-num .value {
   font-size: clamp(56px, 4.9vw, 94px);
+}
+
+/* --- hardening: small projectors (1280x720, 1024x768) ------------------- */
+/* Big numbers never break mid-value. */
+.st-num .value > span,
+.st-compare-bar .st-say {
+  white-space: nowrap;
+}
+.st-verdict {
+  font-size: var(--dr-size-title);
+}
+.st-reveal {
+  display: grid;
+  gap: 10px;
+  scroll-margin: 12px;
+}
+/* Run time and orders done side by side. */
+.st-runline {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px 22px;
+  flex-wrap: wrap;
+}
+.st-runline .st-say {
+  padding-bottom: 0.2em;
+}
+/* The bottom bar stays one line: hints never wrap, the chip never wraps. */
+.st-bottom {
+  flex-wrap: nowrap;
+}
+.st-hints {
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  gap: clamp(10px, 1vw, 18px);
+}
+.st-inputs-chip {
+  flex: none;
+  white-space: nowrap;
+}
+.st-src {
+  white-space: nowrap;
+}
+/* Compare: three numbers per side on one line each. */
+.st-half .under {
+  gap: clamp(14px, 1.6vw, 28px);
+}
+.st-compare-rail .st-num .what,
+.st-compare-rail .st-num .how {
+  white-space: nowrap;
+}
+.st-compare-rail .st-num .what {
+  font-size: var(--dr-size-small);
+}
+.st-compare-rail .st-num .value {
+  font-size: clamp(30px, 3.1vw, 64px);
+}
+
+@media (max-height: 860px), (max-width: 1100px) {
+  .st-root {
+    --st-rail: clamp(380px, 31vw, 560px);
+  }
+  .st-card {
+    padding: 16px 20px 14px;
+    gap: 10px;
+  }
+  .st-card h1 {
+    font-size: clamp(24px, 4vh, 34px);
+  }
+  .st-lede {
+    margin: -4px 0 0;
+    font-size: var(--dr-size-small);
+    line-height: 1.3;
+  }
+  .st-num .value {
+    font-size: clamp(44px, 9vh, 120px);
+  }
+  .st-num .value.mid {
+    font-size: clamp(30px, 5.2vh, 64px);
+  }
+  .st-num .how,
+  .st-num .what {
+    line-height: 1.25;
+  }
+  .st-num .was,
+  .st-num .dir {
+    font-size: var(--dr-size-body);
+  }
+  .st-rail .st-btn {
+    padding: 5px 11px 3px;
+    font-size: var(--dr-size-small);
+    gap: 7px;
+  }
+  .st-rail .st-row {
+    gap: 8px;
+  }
+  .st-say {
+    font-size: clamp(18px, 2.8vh, 28px);
+  }
+  .st-verdict {
+    font-size: clamp(22px, 3.4vh, 40px);
+  }
+  /* Play: the two numbers side by side, so the controls stay on screen. */
+  .st-card.play .st-nums {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+  }
+  .st-card.play .st-num .value {
+    font-size: clamp(36px, 6.2vh, 94px);
+  }
+  .st-card.play .st-num .change {
+    flex-wrap: wrap;
+    gap: 0 8px;
+  }
+  .st-predict {
+    font-size: var(--dr-size-body);
+  }
+  .st-staff {
+    gap: 4px;
+  }
+  .st-staff .line {
+    gap: 8px;
+    font-size: var(--dr-size-small);
+  }
+  .st-pairs svg {
+    max-height: 30vh;
+  }
+  .st-step {
+    padding: 6px 16px 4px 6px;
+    font-size: clamp(17px, 1.6vw, 28px);
+  }
+  .st-strip {
+    gap: 8px;
+  }
+  .st-mark small {
+    display: none;
+  }
+}
+.st-basis {
+  margin: 0;
+  font-size: var(--dr-size-small);
+  font-weight: 750;
+  color: var(--dr-ink-soft);
+  border-top: 2px dashed var(--dr-board-edge);
+  padding-top: 8px;
+}
+.st-extras {
+  display: grid;
+  gap: 4px;
+}
+.st-aside {
+  margin: 0;
+  padding: 2px 0 2px 12px;
+  border-left: 4px solid var(--dr-scan);
+  font-size: var(--dr-size-small);
+  font-weight: 750;
+  line-height: 1.35;
+  color: var(--dr-ink);
+}
+.st-card.play .st-num .value {
+  font-size: clamp(56px, 4.4vw, 84px);
+}
+.st-runline > .st-say {
+  flex-basis: 100%;
+}
+.st-runline .st-num .what {
+  white-space: nowrap;
 }

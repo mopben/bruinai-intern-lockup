@@ -16,7 +16,7 @@ import {
   type SwitchableRunFeed,
 } from "../../inputs";
 import type { Kitchen } from "../app/kitchen-edit";
-import { runFitsKitchen } from "../app/kitchen-edit";
+import { standbyFits } from "../app/standby";
 import { createPlayer, type Player } from "./player";
 import { stageLink } from "./link";
 import { addNotice, dropNotice, health, params, presence, session, sources, step, type MeasuredRun, type SaveState, type Session } from "./store";
@@ -28,7 +28,19 @@ const NO_TABLET_S = 5;
 let player: Player | null = null;
 let switchable: SwitchableRunFeed | null = null;
 let saveState: SaveState = { kind: "none" };
-let pendingSave: { readonly delivered: Delivered; readonly context: RecordingContext; readonly feed: SwitchableRunFeed } | null = null;
+let pendingSave: {
+  readonly delivered: Delivered;
+  readonly context: RecordingContext;
+  readonly feed: SwitchableRunFeed;
+  readonly onSaved?: (id: string) => void;
+} | null = null;
+/** False while a live run has no recording of this kitchen standing by (failover is off). */
+let standbyOk = true;
+
+/** True when the live run (if any) has a recording of the same kitchen to fall back to. */
+export function standbyUsable(): boolean {
+  return standbyOk;
+}
 
 export function currentPlayer(): Player | null {
   return player;
@@ -52,6 +64,7 @@ export function stopAllPlayback(): void {
   player?.dispose();
   player = null;
   switchable = null;
+  standbyOk = true;
   health.value = [];
   session.value = null;
   saveState = { kind: "none" };
@@ -85,6 +98,10 @@ export interface RunPlan {
   readonly label: string;
   readonly change?: string;
   readonly baseRunId?: string;
+  /** False: the recording must not stand in for this run's inputs (e.g. a second run with no matching recording). */
+  readonly standbyAllowed?: boolean;
+  /** Called with the recording id once a live run is saved. */
+  readonly onSaved?: (id: string) => void;
 }
 
 function workersOf(...lists: readonly (readonly WorkerDef[])[]): readonly WorkerDef[] {
@@ -111,6 +128,8 @@ function playRecording(plan: RunPlan): void {
         taps: plan.recording.taps,
         positions: plan.recording.positions,
         origin: "recorded",
+        title: plan.recording.meta.title,
+        replaced: [],
       }),
   });
   player.start();
@@ -126,13 +145,22 @@ function prepareLive(plan: RunPlan): void {
   }
   const setup: Setup = plan.kitchen.setup;
   const live = createLiveFeed({ link, setup, workers: plan.kitchen.layout.workers });
-  const fits = runFitsKitchen(plan.recording, plan.kitchen);
-  if (!fits) addNotice({ id: "standby", text: "The recording standing by is from another kitchen; if an input fails it will not line up.", tone: "warn" });
+  // A recording stands by only if it is a run of this same kitchen; otherwise a failover would splice
+  // another kitchen's events into this run. Then the live inputs stay live and their trouble is shown.
+  const usable = plan.standbyAllowed !== false && standbyFits(plan.recording, plan.kitchen);
+  standbyOk = usable;
+  if (!usable)
+    addNotice({
+      id: "standby",
+      text: "No recording of this kitchen is standing by: if a live input fails, its trouble is shown and nothing is filled in.",
+      tone: "warn",
+    });
   const feed = createSwitchableFeed({
     live,
     recorded: createReplayFeed(plan.recording),
     link,
-    sources: { taps: sources.value.taps, positions: sources.value.positions },
+    autoFailover: usable,
+    sources: usable ? { taps: sources.value.taps, positions: sources.value.positions } : { taps: "live", positions: "live" },
   });
   switchable = feed;
   feed.onHealth((list) => {
@@ -140,7 +168,7 @@ function prepareLive(plan: RunPlan): void {
     healthNotice(list);
     // A replaced input stays on the recording for the next run too, until the operator switches it back.
     const replaced = list.filter((h) => h.source === "replay");
-    if (replaced.length > 0) sources.value = { ...sources.value, ...Object.fromEntries(replaced.map((h) => [h.input, "replay"])) };
+    if (replaced.length > 0 && usable) sources.value = { ...sources.value, ...Object.fromEntries(replaced.map((h) => [h.input, "replay"])) };
   });
   health.value = feed.health();
   const context: RecordingContext = {
@@ -161,8 +189,9 @@ function prepareLive(plan: RunPlan): void {
     onSession: publish,
     onEnd: (delivered) => {
       live.dispose();
-      plan.onEnd({ label: "live run", kitchen: plan.kitchen, taps: delivered.taps, positions: delivered.positions, origin: "live" });
-      pendingSave = { delivered, context, feed };
+      const replaced = feed.health().filter((h) => h.source === "replay" || h.state === "replaced").map((h) => h.input);
+      plan.onEnd({ label: "live run", kitchen: plan.kitchen, taps: delivered.taps, positions: delivered.positions, origin: "live", replaced });
+      pendingSave = { delivered, context, feed, ...(plan.onSaved ? { onSaved: plan.onSaved } : {}) };
       void save();
     },
   });
@@ -173,6 +202,7 @@ function prepareLive(plan: RunPlan): void {
 export function beginRun(plan: RunPlan): void {
   stopAllPlayback();
   dropNotice("failover");
+  dropNotice("standby");
   if (allRecorded()) playRecording(plan);
   else prepareLive(plan);
 }
@@ -198,10 +228,15 @@ function watchTablets(): void {
     if (feed.sources().taps !== "live") return;
     if (presence.value.tablet > 0) {
       since = null;
+      dropNotice("notablet");
       return;
     }
     since ??= performance.now();
     if (performance.now() - since >= NO_TABLET_S * 1000) {
+      if (!standbyOk) {
+        addNotice({ id: "notablet", text: "No tablet is connected, so nobody can tap. Open the tablet page, or press E to end the run.", tone: "warn" });
+        return;
+      }
       feed.setSource("taps", "replay");
       sources.value = { ...sources.value, taps: "replay" };
       addNotice({ id: "notablet", text: `Showing the recorded taps (no tablet connected for ${NO_TABLET_S} s)`, tone: "calm" });
@@ -209,20 +244,23 @@ function watchTablets(): void {
   }, 500);
 }
 
-export function toggleFaster(): void {
+/** Returns false when there is no recording playing to speed up. */
+export function toggleFaster(): boolean {
   const r = player?.replay;
-  if (!r || r.status() === "ended") return;
+  if (!r || r.status() === "ended") return false;
   const slow = params.value.speed >= FAST_SPEED ? 1 : params.value.speed;
   const fast = Math.max(FAST_SPEED, params.value.speed);
   r.setSpeed(r.speed() >= fast ? slow : fast);
   player?.redraw();
+  return true;
 }
 
-export function skipToEnd(): void {
+/** Returns false when no run is playing. */
+export function skipToEnd(): boolean {
   const p = player;
-  if (!p) return;
-  if (p.replay) p.finish();
-  else if (p.feed.status() === "running") p.finish();
+  if (!p || p.feed.status() !== "running") return false;
+  p.finish();
+  return true;
 }
 
 async function save(): Promise<void> {
@@ -233,6 +271,7 @@ async function save(): Promise<void> {
     setSave({ kind: "saving", attempt: i + 1 });
     try {
       const receipt = await saveRecording(job.feed, job.context);
+      job.onSaved?.(receipt.id);
       batch(() => {
         setSave({ kind: "saved", where: `recordings/${receipt.id}/` });
         dropNotice("save");
@@ -249,6 +288,9 @@ async function save(): Promise<void> {
   }
 }
 
-export function retrySave(): void {
-  if (pendingSave && saveState.kind === "failed") void save();
+/** Returns false when there is nothing waiting to be saved. */
+export function retrySave(): boolean {
+  if (!pendingSave || saveState.kind !== "failed") return false;
+  void save();
+  return true;
 }

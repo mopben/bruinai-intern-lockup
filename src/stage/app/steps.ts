@@ -98,7 +98,7 @@ export function keyHints(step: StepId, live: boolean): readonly { readonly keys:
   const common = [{ keys: "I", does: "inputs" }];
   switch (step) {
     case "scan":
-      return [...nav, { keys: "P", does: "replay the scan" }, ...common];
+      return [...nav, { keys: "P", does: "replay the scan" }, ...common, { keys: "⇧F", does: "full screen" }];
     case "run":
     case "test":
       return live
@@ -107,7 +107,7 @@ export function keyHints(step: StepId, live: boolean): readonly { readonly keys:
     case "trust":
       return [...nav, ...common];
     case "play":
-      return [...nav, { keys: "M", does: "rehearsed move" }, { keys: "W", does: "rehearsed extra worker" }, { keys: "⌫", does: "reset" }, ...common];
+      return [...nav, { keys: "M", does: "rehearsed move" }, { keys: "W", does: "rehearsed worker" }, { keys: "⌫", does: "reset" }, ...common];
     case "compare":
       return [{ keys: "←", does: "back" }, { keys: "P", does: "play again" }, { keys: "F", does: "faster" }, ...common];
     default:

@@ -12,7 +12,7 @@ One page. Keys work on the stage page (the laptop browser). Press **I** at any t
 ## Set up on stage (about 30 minutes)
 
 - [ ] **Network.** Laptop, tablet and both phones on **one Wi-Fi you control** (a travel router or a phone hotspot). No internet is needed. Venue guest Wi-Fi often blocks devices from reaching each other.
-- [ ] **Laptop.** `npm start`. Stage on the projector, browser full screen. Press **I**: the drawer lists the Tablet, Camera and Scan upload addresses.
+- [ ] **Laptop.** `npm start`. Stage on the projector; press **Shift+F** for full screen (or the browser's own). Press **I**: the drawer lists the Tablet, Camera and Scan upload addresses.
 - [ ] **Tablet.** Open the Tablet address. It must say **Connected**. The stage footer then counts "1 tablet".
 - [ ] **Scan phone.** Type the laptop address in the app (port 5179 is added).
 - [ ] **Scan first, then the camera.** Do the real scan now and send it. The camera calibration belongs to one scan: a new sweep needs a new calibration (about a minute). On stage, send this same scan again (Review screen, **Send again**) and say it was taken before.
@@ -42,14 +42,14 @@ Live path first; **from recordings** in brackets. Numbers shown are the recordin
 | Tablet disconnected | Nothing. It retries and resends taps. After 5 s with no tablet, the stage uses recorded taps | "Showing the recorded taps (no tablet connected for 5 s)" |
 | Camera lost | Nothing. After 4 s the stage uses recorded positions | "Showing the recorded run (positions: …)" |
 | Dots wrong | **I**, Positions: **Recorded** | Recorded dots, run continues |
-| The live run is a mess | **I**, set all three to **Recorded**, Esc. **E** if a run is still going, then **P**, then **F** | The recorded run plays |
+| The live run is a mess | **I**, set all three to **Recorded**, Esc. A run not yet started then plays the recording at once (**P** if it is over); a running one switches over. **F** for 4× | The recorded run plays |
 | Judge freezes at the drag | **M** (fridge next to the espresso machine) or **W** (fourth worker). **Backspace** resets | Numbers jump to the rehearsed change |
-| Prediction misses | Nothing. Say: "Outside the range by a second. Ten orders is a short run, and this is why we test it." | "Just outside the range: 0.3 s slower…" |
+| Prediction misses | Nothing. Say: "Outside the range by a second. Ten orders is a short run, and this is why we test it." | "Outside the range: 0.3 s slower than predicted." |
 | Save failed | **S** | "Saved on this laptop in recordings/…" |
-| Laptop or browser dies | `npm start` again, then **1–6** to jump. It reopens in replay. Use **M** or **W** again | The recorded demo |
+| Laptop or browser dies | Reload, or `npm start` again: it reopens on the same step (the address keeps it), in replay. Use **M** or **W** again | The recorded demo |
 
-With a fresh phone scan, the recordings come from another kitchen: they will not line up (the stage says so). Then the only fallback is all three on **Recorded**.
+With a fresh phone scan, the recordings come from another kitchen, so none stands by: a failed live input shows its trouble and nothing is filled in (the stage says so). Then the only fallback is all three on **Recorded**.
 
 ## Honest state of the prediction
 
-On the bundled recordings both changes land **just above** the range: fridge moved, predicted 8.8–9.7 s, measured 9.9 s; fourth worker, predicted 12.3–13.3 s, measured 14.3 s. Keep step 5 only if rehearsal shows the prediction holds. To skip it: in Play press **6** (straight to Compare). Do this from a fresh page load: if Test ran earlier in the same page, Compare shows that Test's layout.
+On the bundled recordings both changes land **just above** the range: fridge moved, predicted 8.8–9.7 s, measured 9.9 s; fourth worker, predicted 12.3–13.3 s, measured 14.3 s. Keep step 5 only if rehearsal shows the prediction holds. To skip it: in Play press **6** (straight to Compare).
