@@ -88,6 +88,26 @@ It must say `OK`. Then load the run on the stage as usual.
 
 **The steps one at a time** (same flags): `track` (video to `tracks.jsonl`), `positions` (`tracks.jsonl` to `positions.jsonl`), `actions` (a run folder with `positions.jsonl` to `actions.jsonl`), `label` (adds labels to an `actions.jsonl`; with `--tracks` and `--calibration` it finds the workers exactly as `positions` does). `run --tracks runs/.../tracks.jsonl` reuses an earlier tracking, which saves the slow step when you only change the calibration or the offset.
 
+## A handheld video: stabilise first
+
+The calibration is made on one picture, so it fits a video only if the camera never moves. If the video was filmed handheld (the picture drifts by tens of pixels), first warp every frame onto one reference frame, then track, calibrate and render on the steadied video:
+
+```
+uv run dryrun-vision stabilise ~/Movies/run.mov --out runs/run/stable.mp4 \
+  --report runs/run/stable.json --tracks runs/run/tracks.jsonl \
+  --region runs/run/region.json --viewer-out runs/run/stable.viewer.mp4
+```
+
+- **What it assumes.** The camera stays at one spot and only turns (pans, tilts, rolls) or zooms. Then one homography per frame, found from the still background (SIFT features, RANSAC, every frame straight to the reference frame, so no drift and no added lag), puts each frame back onto the reference frame. **A phone that walks around the room cannot be fixed this way.** A hand that moves a few centimetres while holding the phone makes near and far things shift by different amounts (parallax), and no single warp fits them all.
+- **`--region`** (recommended): a JSON file of polygons in reference-frame pixels, `{"format": "dryrun.stabilisation-region", "version": 1, "polygons": [[{"x": 0, "y": 780}, ...]]}`. Only features inside it are fitted. Draw it over the counters and the floor where people work, leaving out far rooms and windows. The working area then holds still; things far from it (the room behind, the garden) will wobble by a few pixels. That is expected. The report says by how much (`outsideMedianPx`).
+- **`--tracks`**: the tracks of the same video (made by `track` on the shaky video), so people are left out of the features.
+- **`--reference-frame N`** (default 0): calibrate on this frame of the stabilised video.
+- **The two videos.** `--out` is in the reference frame's pixels, with black at the edges where the camera looked elsewhere: track, calibrate and render on this one. `--viewer-out` is the same cropped to the rectangle that 99 % of frames fill, for watching only (its pixel `(u, v)` is reference pixel `(x + u, y + v)` for the `viewerCrop` in the report).
+- **The report** (`--report`) has, per frame, the homography to the reference frame, the matches and inliers, the residual of the fit in pixels (inside the region), how far the corners moved, and how far the picture outside the region is off.
+- **When it refuses.** A frame with fewer than 40 agreeing features, a residual over 2.5 px, or a warp that moves the picture by more than a quarter of its diagonal is poor. A few poor frames (up to 5 %) borrow the last good frame's warp and are listed as a warning; more than that and nothing is written but the report, with the reason.
+
+Tested on generated clips with a known shake (each frame's warp recovered within 0.75 px without compression, 1.0 px through an mp4 file) and with two depth layers (with a region the near layer is recovered within 1.0 px and the far layer's parallax is reported). On the first real kitchen clip (2026-11-14, a phone held up at about 2 m): see "The first real kitchen" below.
+
 ## Checking it by eye
 
 ```
@@ -182,6 +202,17 @@ On 2026-11-14 `track` and `render` were run again on the barista clip (4296, 9.5
 **End to end, automated** (`vision/tests/test_vision_end_to_end.py`): synthetic tracks of `counter-a` through `run --label` with a fake label provider on a small generated video, then the product's own validator on a folder of the bundled run's scan, setup, layout and taps with the new `positions.jsonl` and `actions.jsonl`. It prints `OK: ... can be loaded (10 orders, 88.6 s, 3 workers tracked, 2527 position samples, 52 action segments)`. Everything in that chain is real code; the boxes, the video and the label model are stand-ins.
 
 **Never verified:** any real café run end to end (video, scan and calibration of one kitchen); a high camera tilted down indoors; counters hiding the lower body with the head anchor; workers sharing a station (told apart only by the order they are listed in `layout.json`); customers leaning over the counter into the working area; variable-frame-rate phone video (frame times are assumed evenly spaced); labels on café footage with either provider.
+
+**The first real kitchen** (2026-11-14, `recordings/kitchen-combo-1`, working files in `vision/runs/kitchen/`; a 37 s handheld phone video, 2 people making a drink + chips combo at one island, 6 people at the dining table, 3 outside the glass door, 1 walking through). What happened, in short:
+
+- `stabilise` with a region over the island, counter and floor: 1121 of 1121 frames registered (median 358 inliers, at least 73), residual inside the region 1.1 px median, 1.7 px at worst; the camera had moved by up to 177 px. The island region holds within 0.5 px median at most times and 3.5 px at worst (the unlocked first version jumped by up to 10 px between depth layers); the dining room behind moves by up to 25 px, as expected.
+- No camera page: the calibration was made by hand from 9 picked scan corners (worktop corners at 1.0/0.97 m and the floor under three vertical cabinet edges); a pinhole fit misses them by 29 px rms (1920 x 1080 frame), the package's solver by 9 cm rms on the floor. RoomPlan's island and counter do not fit the picture better than that.
+- **The camera was only about 2.0 m up, 0.2-0.3 m above the workers' heads.** That makes the head anchor useless: 5 cm of head height moves the floor point by about 1.9 m. With `--anchor head`, no worker was found. The foot anchor works where feet are visible; the worker behind the island has hidden feet. The positions were made with a clip-specific workaround (a person whose feet are hidden by a worktop is put 0.25 m past its far long side) and a hand-checked track-to-worker assignment, both in `vision/runs/kitchen/tools/`, not in the package: the automatic identity, given those positions, named the woman at the window counter as a worker.
+- Against one reviewer's eyeballing every second: the floor position is in the right third of the island 54 of 67 times; the action kind is right 36 of 76 times (the worker behind the island looks like walking because his estimated point jitters); 2 of 3 drink hand-overs were found as carry trips; Gemini's labels were right 9 times and wrong 17 times on labelled seconds (21 requests, 110,000 tokens).
+
+**Correcting actions by hand.** `uv run dryrun-vision review-table <actions.jsonl> --run <folder> --out review.csv` writes one row per segment; fill in `correct_kind` (or `delete`), `correct_box`, `correct_label` (or `-` to remove the label), `correct_t0`/`correct_t1` and `note`, then `uv run dryrun-vision apply-review <actions.jsonl> review.csv --out <actions.jsonl>`. It refuses a row that would break the format (overlap, unknown kind, a work/fetch/carry without a box) and names the row. `actions.jsonl` keeps its format: a label a person wrote gets confidence 1, and `actions.provenance.json` beside it says, per segment, whether the kind came from the zones or a person and the label from the model, a person or nobody, with counts.
+
+A camera for this pipeline should be on a tripod well above head height (2.5 m or more), see the feet of every worker, and not move.
 
 ## Known issues
 

@@ -44,7 +44,7 @@ const drawingRun = computed(() => {
   const s = view.value;
   const sess = session.value;
   if (!sess || sess.status === "idle") return false;
-  return (s === "run" && sess.purpose === "first") || (s === "test" && sess.purpose === "second");
+  return (s === "filmed" && sess.purpose === "first") || (s === "test" && sess.purpose === "second");
 });
 
 function syncScene(scene: KitchenSceneHandle): () => void {

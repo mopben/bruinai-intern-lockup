@@ -20,13 +20,16 @@ from dryrun_vision.commands import (
     label_cmd,
     positions_cmd,
     render_cmd,
+    review_cmd,
     run_cmd,
+    stabilise_cmd,
     track_cmd,
 )
 from dryrun_vision.errors import DryRunError
 
 COMMANDS: tuple[ModuleType, ...] = (actions_cmd, eval_cmd, label_cmd, eval_labels_cmd)
-COMMANDS += (track_cmd, positions_cmd, run_cmd, render_cmd, eval_tracking_cmd)
+COMMANDS += (track_cmd, positions_cmd, run_cmd, render_cmd, eval_tracking_cmd, stabilise_cmd)
+COMMANDS += (review_cmd,)
 
 
 def build_parser() -> argparse.ArgumentParser:

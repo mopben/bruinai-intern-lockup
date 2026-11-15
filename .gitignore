@@ -23,3 +23,8 @@ __pycache__/
 .env
 .env.*
 !.env.example
+
+# Demo page build outputs (vision/demo/build_demo.py)
+vision/demo/data/
+vision/demo/media/
+vision/demo/.check/

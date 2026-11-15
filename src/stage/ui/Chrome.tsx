@@ -69,6 +69,7 @@ export function ResultsSwitch() {
   const choices = [
     { id: "compare", label: "Compare scenarios" },
     { id: "run", label: "Run scenario" },
+    { id: "filmed", label: "Filmed run" },
   ] as const;
   return (
     <nav class="st-results-switch" aria-label="Results views">

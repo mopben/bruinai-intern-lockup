@@ -7,6 +7,7 @@ import type { Candidate } from "../app/layout-match";
 import { kitchenForShift, shiftOrders, type ShiftOrders } from "../app/scenarios";
 import { withDemoRecipes } from "../app/recipes";
 import { demoShift } from "../app/demo-shift";
+import { hasCafeMenu, runShift } from "../app/run-shift";
 import { calibration } from "./derive";
 import { storedEconomics, workersOpen, costsOpen } from "./economics";
 import { stopAllPlayback } from "./runs";
@@ -14,7 +15,7 @@ import { cancelOptimize } from "./optimize";
 import { enterStep } from "./flow";
 import {
   activeSetupId, activeShiftId, addNotice, base, candidates, firstRun, frozen,
-  importOpen, kitchen, kitchenOrigin, orderCount, outcome, outcomeProblem, playLayout,
+  importOpen, kitchen, kitchenOrigin, orderCount, params, outcome, outcomeProblem, playLayout,
   scanNotes, scanState, secondRun, selectedId, sources, storyText, testPlan, view, workspaceReady,
   type MeasuredRun,
 } from "./store";
@@ -161,7 +162,7 @@ export function createShift(duplicate = false): void {
     ...shiftOrders(k, cal?.ok ? cal.value : null),
     durationSeconds: current?.durationSeconds ?? 6 * 3600,
     prices: { ...(current?.prices ?? storedEconomics.peek()?.menu ?? {}) },
-  } : demoShift(k.setup);
+  } : hasCafeMenu(k.setup) ? demoShift(k.setup) : runShift(k, cal?.ok ? cal.value : null);
   const shift: SavedShift = {
     ...orders, id: crypto.randomUUID(), name: `Shift ${savedShifts.peek().length + 1}`,
   };
@@ -197,8 +198,21 @@ export function saveWorkspace(): void {
   } catch { workspaceProblem.value = "Browser storage is full or unavailable. Changes are kept in this tab until it closes."; }
 }
 
+/** Selects the saved setup made from this run, or adds one named after it. Other setups are kept. */
+function adoptRun(run: RunBundle, k: Kitchen, measured: MeasuredRun | null): void {
+  const existing = savedSetups.peek().find((entry) => entry.recording?.meta.id === run.meta.id);
+  const saved: SavedSetup = existing ?? { id: crypto.randomUUID(), name: run.meta.title, kitchen: k, measured, recording: run, economics: null, origin: "recorded", candidates: candidates.peek() };
+  batch(() => {
+    if (!existing) savedSetups.value = [...savedSetups.peek(), saved];
+    activeShiftId.value = null;
+  });
+  selectSetup(saved.id);
+}
+
 /** Install only after boot has loaded the starting kitchen. */
 export function initializeWorkspace(): () => void {
+  // An explicit ?run= wins: keep what boot loaded, before a saved setup replaces it.
+  const asked = params.peek().explicitRun ? { run: base.peek(), k: kitchen.peek(), measured: firstRun.peek() } : null;
   try {
     const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
     if (raw) {
@@ -209,8 +223,9 @@ export function initializeWorkspace(): () => void {
         scenarioChoices.value = data.choices;
         activeShiftId.value = data.activeShiftId;
       });
-      if (data.activeSetupId) selectSetup(data.activeSetupId);
+      if (data.activeSetupId && !asked?.run) selectSetup(data.activeSetupId);
     }
+    if (asked?.run && asked.k) adoptRun(asked.run, asked.k, asked.measured);
   } catch { workspaceProblem.value = "Saved setups could not be loaded. Your previous browser data has been left in place."; }
   workspaceReady.value = true;
   const offSnapshot = effect(() => {

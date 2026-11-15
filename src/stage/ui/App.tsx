@@ -13,6 +13,8 @@ import { STEPS, stepIndex } from "../app/steps";
 import { ActivityBar, KeyHints, Notices, ResultsSwitch, Sash } from "./Chrome";
 import { CompareView } from "./CompareView";
 import { PlayRail } from "./PlayRail";
+import { RunRail } from "./RunRail";
+import { FilmedActions } from "./FilmedActions";
 import { OrdersRail } from "./OrdersRail";
 import { ImportMenu } from "./ImportMenu";
 import { UploadIcon } from "./icons";
@@ -45,6 +47,8 @@ function Rail() {
       return <ScenarioControls single />;
     case "compare":
       return <ScenarioControls />;
+    case "filmed":
+      return <><RunRail /><FilmedActions /></>;
     default:
       return null;
   }
