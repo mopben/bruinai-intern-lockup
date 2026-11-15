@@ -127,7 +127,14 @@ export function SceneHost(props: { readonly hidden: boolean }) {
         setMenu({ ...point, left: Math.max(8, Math.min(client.x, window.innerWidth - 246)), top: Math.max(8, Math.min(client.y, window.innerHeight - 352)) });
       },
       onLayoutChange: (layout) => {
-        if (view.value === "play") playLayout.value = layout;
+        // The scene already moves the held box. Publishing every pointer move
+        // also runs pathfinding, predictions, profit and persistence effects.
+        // Preview only the workers here; publish the layout once on drop.
+        if (view.value !== "play") return;
+        const k = kitchen.peek();
+        if (!k) return;
+        const world = tryWorld(k.scan, k.setup, layout);
+        scene.setWorkers(world.ok ? standingWorkers(world.value) : []);
       },
       onLayoutCommit: (layout) => {
         if (view.value === "scan") editKitchen((k) => ({ ...k, layout }));

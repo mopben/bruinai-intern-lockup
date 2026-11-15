@@ -1,4 +1,4 @@
-import { exampleTimeline, skipEmptyTime } from "../app/example-playback";
+import { exampleTimeline } from "../app/example-playback";
 import { estimateShiftProfit, type ShiftProfit } from "../../core/shift-profit";
 /**
  * Two independent shift/setup scenarios, with synchronized playback clocks.
@@ -16,7 +16,7 @@ import { resolvedChoice, savedSetups, savedShifts } from "../state/workspace";
 import { createKitchenScene, type KitchenSceneHandle } from "../scene";
 import { Btn, clock } from "./bits";
 
-const FAST = 4;
+const FAST = 16;
 const TAIL_S = 1.5;
 /** More frontal and higher than the main view, so each half is filled top to bottom. */
 const SIDE_VIEW = { azimuth: 0.14, elevation: 1.06 };
@@ -138,7 +138,7 @@ export function CompareView({ single = false }: { single?: boolean }) {
       const c = clockRef.current;
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
-      const nextT = skipEmptyTime(Math.min(c.end, c.t + dt * c.speed), timeline.current.segments, c.end);
+      const nextT = Math.min(c.end, c.t + dt * c.speed);
       clockRef.current = { ...c, t: nextT };
       sides.forEach((s, i) => {
         const h = scenes.current[i];
@@ -198,7 +198,7 @@ export function CompareView({ single = false }: { single?: boolean }) {
         {example ? <>
         <Btn small label="Skip to end" k="E" onClick={() => (clockRef.current = { ...clockRef.current, t: clockRef.current.end })} testId="btn-skip" />
         <Btn small label={speed > 1 ? "Normal speed" : "Faster"} k="F" kind={speed > 1 ? "on" : "plain"} onClick={() => compareCommand.value = { kind: "faster", n: (compareCommand.value?.n ?? 0) + 1 }} testId="btn-faster" />
-        <Btn small label="Reset example" onClick={() => { setExample(false); setT(0); clockRef.current = { ...clockRef.current, t: 0 }; }} />
+        <Btn small label="Reset example" onClick={() => { setExample(false); setT(0); setSpeed(1); clockRef.current = { ...clockRef.current, t: 0, speed: 1 }; }} />
         </> : null}
       </div>
       <div class="st-profit-grid">

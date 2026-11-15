@@ -22,7 +22,7 @@ import { stageLink } from "./link";
 import { addNotice, dropNotice, health, params, presence, session, sources, view, type MeasuredRun, type SaveState, type Session } from "./store";
 
 const SAVE_DELAYS_MS: readonly number[] = [0, 1000, 3000];
-const FAST_SPEED = 4;
+const FAST_SPEED = 16;
 const NO_TABLET_S = 5;
 
 let player: Player | null = null;

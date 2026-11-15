@@ -76,7 +76,7 @@ export const baselineNumbers = computed<LayoutNumbers | null>(() => {
   return layoutNumbers(k.scan, k.setup, layout, cal(), simReleases.value);
 });
 
-/** Both numbers for the judge's layout, recomputed on every drag move. */
+/** Both numbers for the judge's committed layout, recomputed after a drop or edit. */
 export const playNumbers = computed<LayoutNumbers | null>(() => {
   const k = kitchen.value;
   const layout = playLayout.value;
