@@ -216,6 +216,7 @@ export function goTo(next: ViewId): void {
     freezeNow();
   }
   if (prev === "orders") freezeNow();
+  if (prev === "filmed") stopAllPlayback();
   batch(() => {
     view.value = next;
     selectedId.value = null;
@@ -242,6 +243,7 @@ function rememberStep(next: ViewId): void {
 export function enterStep(next: ViewId): void {
   if (workspaceReady.value && !activeSetupId.value) return;
   if (next === "run" || next === "compare" || next === "test") stopAllPlayback();
+  if (next === "filmed") beginFirstRun();
   if (next === "play" && !playLayout.value) playLayout.value = originalLayout.value;
 }
 

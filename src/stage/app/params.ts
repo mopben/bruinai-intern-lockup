@@ -17,6 +17,8 @@ export interface StageParams {
   readonly mode: Mode;
   readonly speed: number;
   readonly view: ViewId;
+  /** True when the URL names a run itself (?run=): that run's kitchen is shown, not the saved setup. */
+  readonly explicitRun?: boolean;
 }
 
 export const DEFAULT_RUN_ID = "counter-a";
@@ -33,8 +35,9 @@ export function parseParams(search: string): StageParams {
   const requested = q.get("view");
   return {
     runId: SAFE_ID.test(run) ? run : DEFAULT_RUN_ID,
+    ...(SAFE_ID.test(run) ? { explicitRun: true } : {}),
     mode: q.get("mode") === "live" ? "live" : "replay",
     speed: Number.isFinite(speed) && speed >= MIN_SPEED && speed <= MAX_SPEED ? speed : 1,
-    view: chosen === "results" && requested === "test" ? "run" : chosen === "results" && (requested === "compare" || requested === "run") ? requested : defaultView(chosen),
+    view: chosen === "results" && requested === "test" ? "run" : chosen === "results" && (requested === "compare" || requested === "run" || requested === "filmed") ? requested : defaultView(chosen),
   };
 }

@@ -33,7 +33,7 @@ describe("steps and views", () => {
     expect(stepIndex("build")).toBe(0);
     expect(defaultView("build")).toBe("play");
     expect(keyHints("run", true).some((h) => h.does.includes("scenarios"))).toBe(true);
-    expect(STEPS[2].views).toEqual(["compare", "run"]);
+    expect(STEPS[2].views).toEqual(["compare", "run", "filmed"]);
     expect(keyHints("compare", false).some((h) => h.does.includes("scenarios"))).toBe(true);
   });
   it("has no inputs key: i does nothing, no hint mentions I, step 3 is Run", () => {
@@ -52,7 +52,7 @@ describe("params", () => {
     expect(parseParams("")).toEqual({ runId: "counter-a", mode: "replay", speed: 1, view: "play" });
   });
   it("reads steps and result views, ignoring invalid values", () => {
-    expect(parseParams("?run=counter-b&mode=live&speed=8&step=1&view=test")).toEqual({ runId: "counter-b", mode: "live", speed: 8, view: "play" });
+    expect(parseParams("?run=counter-b&mode=live&speed=8&step=1&view=test")).toEqual({ runId: "counter-b", mode: "live", speed: 8, view: "play", explicitRun: true });
     expect(parseParams("?step=2").view).toBe("orders");
     expect(parseParams("?step=3").view).toBe("compare");
     expect(parseParams("?step=3&view=run").view).toBe("run");

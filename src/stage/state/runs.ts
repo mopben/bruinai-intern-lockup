@@ -119,7 +119,7 @@ function playRecording(plan: RunPlan): void {
     setup: plan.recording.setup,
     workers: plan.recording.layout.workers,
     purpose: plan.purpose,
-    visible: () => view.value === (plan.purpose === "first" ? "run" : "test"),
+    visible: () => view.value === (plan.purpose === "first" ? "filmed" : "test"),
     onSession: publish,
     onEnd: () =>
       plan.onEnd({
@@ -185,7 +185,7 @@ function prepareLive(plan: RunPlan): void {
     setup,
     workers: workersOf(plan.kitchen.layout.workers, plan.recording.layout.workers),
     purpose: plan.purpose,
-    visible: () => view.value === (plan.purpose === "first" ? "run" : "test"),
+    visible: () => view.value === (plan.purpose === "first" ? "filmed" : "test"),
     onSession: publish,
     onEnd: (delivered) => {
       live.dispose();

@@ -1275,3 +1275,23 @@
   .st-profit-results .st-profit-grid { flex: 0 0 auto; grid-template-columns: minmax(0, 1fr); }
   .st-profit-results .scene { height: 65dvh; }
 }
+
+/* --- the filmed run: what each worker is doing ---------------------------- */
+.st-filmed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 28px 24px;
+}
+.st-filmed-line {
+  display: grid;
+  grid-template-columns: 4.5em 1fr;
+  gap: 10px;
+  /* Two lines always, so a longer action does not move what is below. */
+  min-height: 2.4em;
+  overflow-wrap: anywhere;
+}
+.st-filmed-line.quiet .does {
+  color: var(--dr-ink-soft);
+  font-weight: 500;
+}

@@ -50,6 +50,9 @@ function play(): void {
     case "compare":
       sendCompare("replay");
       return;
+    case "filmed":
+      startOrReplay("first");
+      return;
     case "test":
       startOrReplay("second");
       return;
@@ -89,7 +92,7 @@ export function perform(action: KeyAction): void {
       return;
     case "skip":
       if (here === "compare" || here === "run") sendCompare("skip");
-      else if (here !== "test") keyHint("E skips to the end in Run (step 3).");
+      else if (here !== "test" && here !== "filmed") keyHint("E skips to the end in Run (step 3).");
       else if (!skipToEnd()) keyHint("No run is playing. Press P to start one.");
       return;
     case "escape":

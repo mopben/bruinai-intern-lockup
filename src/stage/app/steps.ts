@@ -5,7 +5,7 @@
 export const STEPS = [
   { id: "build", name: "Setup", views: ["play", "scan"] },
   { id: "orders", name: "Orders", views: ["orders"] },
-  { id: "results", name: "Run", views: ["compare", "run"] },
+  { id: "results", name: "Run", views: ["compare", "run", "filmed"] },
 ] as const;
 
 export type StepId = (typeof STEPS)[number]["id"];
@@ -102,7 +102,7 @@ export function keyAction(key: string): KeyAction | null {
 
 /** The view after a navigation action, or the same view for anything else. */
 export function navigate(current: ViewId, action: KeyAction): ViewId {
-  const i = VIEW_ORDER.indexOf(current === "scan" ? "play" : current);
+  const i = VIEW_ORDER.indexOf(current === "scan" ? "play" : current === "filmed" ? "run" : current);
   if (action.type === "next") return viewAt(i + 1);
   if (action.type === "back") return viewAt(i - 1);
   if (action.type === "jump") return defaultView(action.step);
@@ -130,6 +130,8 @@ export function keyHints(view: ViewId, live: boolean): readonly { readonly keys:
     case "run":
     case "compare":
       return [...nav, { keys: "P", does: "replay scenarios" }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }];
+    case "filmed":
+      return [...nav, { keys: "P", does: "play again" }, { keys: "F", does: "faster" }, { keys: "E", does: "skip to end" }];
     default:
       return nav;
   }
