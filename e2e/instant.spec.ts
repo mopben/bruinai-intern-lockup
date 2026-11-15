@@ -34,6 +34,7 @@ test("dragging previews geometry and commits the layout only on drop", async ({ 
   const dropped = (await mainDebug(page)).items.find(i => i.id === BOX.fridge)!;
   expect([dropped.x, dropped.z]).toEqual([preview.x, preview.z]);
 
+  await page.getByTestId("btn-panel-done").click();
   await page.getByTestId("btn-reset").click();
   await expect.poll(async () => {
     const item = (await mainDebug(page)).items.find(i => i.id === BOX.fridge)!;
