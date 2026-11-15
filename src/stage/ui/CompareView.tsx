@@ -1,3 +1,4 @@
+import { exampleTimeline, skipEmptyTime } from "../app/example-playback";
 import { estimateShiftProfit, type ShiftProfit } from "../../core/shift-profit";
 /**
  * Two independent shift/setup scenarios, with synchronized playback clocks.
@@ -110,6 +111,7 @@ export function CompareView({ single = false }: { single?: boolean }) {
   const key = scenariosKey.value;
   const [example, setExample] = useState(false);
   const [sides, setSides] = useState<readonly Side[]>([]);
+  const timeline = useRef<ReturnType<typeof exampleTimeline>>({ start: 0, segments: [] });
   const [t, setT] = useState(0);
   const [speed, setSpeed] = useState(params.value.speed);
   const scenes = useRef<(KitchenSceneHandle | null)[]>([null, null]);
@@ -121,6 +123,7 @@ export function CompareView({ single = false }: { single?: boolean }) {
     setExample(false);
     setT(0);
     clockRef.current = { ...clockRef.current, t: 0, end: Math.max(0, ...list.map((s) => Math.min(s.trace?.endT ?? 0, s.financial?.durationSeconds ?? Infinity))) + TAIL_S };
+    timeline.current = exampleTimeline(list.flatMap(side => side.trace ? [side.trace] : []), clockRef.current.end);
     // Keyed on content, not object identity: the first run finishing again in the background (same
     // recording, new objects) must not rebuild both scenes mid-Compare.
   }, [key, single]);
@@ -135,7 +138,7 @@ export function CompareView({ single = false }: { single?: boolean }) {
       const c = clockRef.current;
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
-      const nextT = Math.min(c.end, c.t + dt * c.speed);
+      const nextT = skipEmptyTime(Math.min(c.end, c.t + dt * c.speed), timeline.current.segments, c.end);
       clockRef.current = { ...c, t: nextT };
       sides.forEach((s, i) => {
         const h = scenes.current[i];
@@ -161,7 +164,7 @@ export function CompareView({ single = false }: { single?: boolean }) {
         const cmd = compareCommand.value;
         if (!cmd) return;
         const c = clockRef.current;
-        if (cmd.kind === "replay") { setExample(true); clockRef.current = { ...c, t: 0 }; }
+        if (cmd.kind === "replay") { setExample(true); clockRef.current = { ...c, t: timeline.current.start }; }
         if (cmd.kind === "skip") clockRef.current = { ...c, t: c.end };
         if (cmd.kind === "faster") {
           const slow = params.value.speed >= FAST ? 1 : params.value.speed;
@@ -191,7 +194,7 @@ export function CompareView({ single = false }: { single?: boolean }) {
           {clock(t)}
         </span>
         </> : null}
-        <Btn small label={example ? "Restart example" : "Watch example"} k="P" onClick={() => { setExample(true); clockRef.current = { ...clockRef.current, t: 0 }; }} testId="btn-play" />
+        <Btn small label={example ? "Restart example" : "Watch example"} k="P" onClick={() => { setExample(true); clockRef.current = { ...clockRef.current, t: timeline.current.start }; }} testId="btn-play" disabled={!sides.some(side => side.trace?.orders.length)} />
         {example ? <>
         <Btn small label="Skip to end" k="E" onClick={() => (clockRef.current = { ...clockRef.current, t: clockRef.current.end })} testId="btn-skip" />
         <Btn small label={speed > 1 ? "Normal speed" : "Faster"} k="F" kind={speed > 1 ? "on" : "plain"} onClick={() => compareCommand.value = { kind: "faster", n: (compareCommand.value?.n ?? 0) + 1 }} testId="btn-faster" />
