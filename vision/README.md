@@ -12,7 +12,7 @@ uv sync --extra ml         # + detector, tracker, video, SigLIP labeller (torch,
 uv sync --extra gemini     # + the Gemini label provider (google-genai)
 ```
 
-The command is `uv run dryrun-vision <command>`; `uv run dryrun-vision --help` lists them.
+The command is `uv run dryrun-vision <command>`; `uv run dryrun-vision --help` lists them: `stabilise` (handheld video onto one reference frame, before anything else), `track`, `positions`, `actions`, `label`, `run` (track to actions in one go), `render`, `eval-actions`, `eval-tracking`, `eval-labels`, `review-table` and `apply-review` (a person corrects actions.jsonl; where each kind and label came from is kept in `actions.provenance.json` beside it).
 
 ## Layout
 
@@ -23,13 +23,16 @@ src/dryrun_vision/
   formats/         every file format (product files shared with the TS app, plus tracks.jsonl)
   geometry/        camera model from the /camera calibration, floor and path geometry
   kitchen/         scan + setup + layout resolved; menu legs; task graphs (port of src/core/tasks.ts)
-  video/           reading video: read_frames (every Nth frame, tracker) and VideoFrames (frames at times, labeller)
+  video/           reading video: read_frames (every Nth frame, tracker) and VideoFrames (frames at times, labeller); writer.py
+  stabilise/       `stabilise`: register each frame of a handheld video to a reference frame (SIFT + RANSAC homography,
+                   optional region of interest), judge the fit, write the warped video, a cropped viewer copy and a report
   detect/ track/   RF-DETR person boxes and ByteTrack ids -> tracks.jsonl
   identity/        tracks -> people: floor points, stitching fragments, assigning workers, dropping customers
   positions/       people -> 10 Hz positions.jsonl
   actions/         positions -> zone segments (work, fetch, carry, walk, idle)
   labels/          zero-shot labels on work/idle segments (providers: siglip, gemini); vocabularies/ ships the label lists
   render/          draws boxes, names and actions on the video, to check by eye
+  review/          review.csv to correct actions by hand, apply-review, and the provenance sidecar
   evaluate/ mot/   eval-actions (vs taps), eval-tracking (vs MOTChallenge ground truth)
 tests/             pytest; labelling/ for the labeller; ml/ for opt-in real-model tests
 scripts/           fetch_data.sh and data.sha256

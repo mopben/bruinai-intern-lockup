@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video to Actions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+:root {
+  /* Plan: a bench instrument. Five named tokens:
+     paper   - the cool grey-white of a panel face (page background)
+     ink     - near-black graphite for text and axes (ink-soft for secondary text)
+     rule    - hairline grey for grids, borders and scale marks
+     signal  - petrol blue: links, focus, our own measurements
+     marker  - amber: the playhead and "now" readouts
+     Type: Barlow Semi Condensed for headings and scale labels (narrow, like panel lettering),
+     IBM Plex Sans for reading, IBM Plex Mono for every number that changes.
+     Categorical c1-c9 are for identities, action kinds and labels; each one always also carries
+     text, a number or a pattern so colour is never the only cue. */
+  color-scheme: light;
+  --paper: #eef0ec;
+  --panel: #f9faf7;
+  --ink: #1b2226;
+  --ink-soft: #4f5b62;
+  --rule: #c3c9cb;
+  --signal: #0a6688;
+  --marker: #b25500;
+  --c1: #1f6fb4; --c2: #c4501b; --c3: #12806a; --c4: #b0408a; --c5: #9a7400;
+  --c6: #5a49ae; --c7: #2b8aa3; --c8: #7a5a3a; --c9: #5d7a00;
+  --idle: #8b979d;
+  --font-display: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #121619; --panel: #1a2024; --ink: #e4e8ea; --ink-soft: #a3adb3; --rule: #3a444b;
+    --signal: #5cb8de; --marker: #f2a541;
+    --c1: #6aaee8; --c2: #f08a5d; --c3: #4fc79e; --c4: #e383c3; --c5: #e0b84a;
+    --c6: #a597f0; --c7: #62c6d9; --c8: #c79d74; --c9: #a9c75a; --idle: #7d898f;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #121619; --panel: #1a2024; --ink: #e4e8ea; --ink-soft: #a3adb3; --rule: #3a444b;
+  --signal: #5cb8de; --marker: #f2a541;
+  --c1: #6aaee8; --c2: #f08a5d; --c3: #4fc79e; --c4: #e383c3; --c5: #e0b84a;
+  --c6: #a597f0; --c7: #62c6d9; --c8: #c79d74; --c9: #a9c75a; --idle: #7d898f;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 16px/1.55 var(--font-body); overflow-x: hidden;
+}
+a { color: var(--signal); }
+:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.15; margin: 0; }
+h1 { font-size: 2.1rem; letter-spacing: 0.01em; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.2rem; }
+p { margin: 0 0 0.8em; }
+.prose { max-width: 65ch; }
+.mono, .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.soft { color: var(--ink-soft); }
+.small { font-size: 0.875rem; }
+
+/* Masthead */
+.top { border-bottom: 1px solid var(--rule); padding: 28px 0 22px; }
+.top-row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+.kicker { font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-soft); letter-spacing: 0.04em; }
+.lead { margin-top: 14px; font-size: 1.05rem; }
+button, .btn {
+  font: 500 0.9rem var(--font-body); color: var(--ink); background: var(--panel);
+  border: 1px solid var(--rule); border-radius: 3px; padding: 6px 12px; cursor: pointer; min-height: 34px;
+}
+button:hover { border-color: var(--ink-soft); }
+button[aria-pressed="true"] { border-color: var(--marker); }
+
+/* Stage strip */
+.stages { list-style: none; margin: 20px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); border: 1px solid var(--rule); background: var(--panel); }
+.stages li { border-right: 1px solid var(--rule); position: relative; }
+.stages li:last-child { border-right: 0; }
+.stages a { display: block; padding: 10px 14px 12px; text-decoration: none; color: var(--ink); height: 100%; }
+.stages a:hover { background: var(--paper); }
+.stages .step { font-family: var(--font-mono); font-size: 0.72rem; color: var(--signal); }
+.stages b { display: block; font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; }
+.stages span.d { display: block; font-size: 0.8rem; color: var(--ink-soft); line-height: 1.35; }
+.stages li:not(:last-child)::after {
+  content: ""; position: absolute; right: -6px; top: 50%; width: 10px; height: 10px; margin-top: -5px;
+  border-top: 1px solid var(--rule); border-right: 1px solid var(--rule); background: var(--panel);
+  transform: rotate(45deg); z-index: 1;
+}
+
+/* Sections */
+section.part { padding: 40px 0 36px; border-bottom: 1px solid var(--rule); }
+.part-head { display: grid; grid-template-columns: 56px 1fr; gap: 0 12px; margin-bottom: 14px; }
+.part-no { font-family: var(--font-mono); font-size: 1.5rem; color: var(--ink-soft); line-height: 1.2; }
+.tag { display: inline-block; font: 500 0.75rem var(--font-mono); letter-spacing: 0.03em; padding: 2px 7px; border: 1px solid currentColor; border-radius: 2px; margin-top: 6px; }
+.tag.real { color: var(--signal); }
+.tag.synthetic { color: var(--marker); }
+.part-body { margin-left: 68px; }
+.status { border-left: 3px solid var(--marker); padding: 8px 12px; background: var(--panel); max-width: 65ch; }
+.failed .needs-data { display: none; }
+
+/* Figures */
+.fig { margin: 16px 0; }
+.two { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.vid { position: relative; width: 100%; background: #000; border: 1px solid var(--rule); }
+.vid video, .vid canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.vid video { object-fit: fill; }
+.panel { background: var(--panel); border: 1px solid var(--rule); }
+.cap { font-size: 0.85rem; color: var(--ink-soft); margin-top: 6px; max-width: 65ch; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; }
+.controls input[type="range"] { flex: 1 1 200px; min-width: 140px; accent-color: var(--marker); }
+.controls .readout { font-family: var(--font-mono); font-size: 0.82rem; font-variant-numeric: tabular-nums; color: var(--ink-soft); min-width: 15ch; }
+.check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; }
+.check input { accent-color: var(--signal); width: 16px; height: 16px; }
+canvas.plot { display: block; width: 100%; }
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--rule); background: var(--panel); }
+.scroll canvas { display: block; }
+
+/* Numbers */
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 2px solid var(--ink); margin: 18px 0 8px; }
+.stats div { padding: 10px 12px 10px 0; border-bottom: 1px solid var(--rule); }
+.stats dt { font-size: 0.82rem; color: var(--ink-soft); }
+.stats dd { margin: 0; font: 500 1.6rem var(--font-mono); font-variant-numeric: tabular-nums; }
+table.res { border-collapse: collapse; margin: 12px 0; font-size: 0.92rem; }
+table.res th .soft { font-weight: 400; margin-left: 6px; }
+table.res th, table.res td { text-align: left; padding: 6px 14px 6px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+table.res thead th { border-bottom: 2px solid var(--ink); font-weight: 600; }
+table.res td.n { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+table.res th.n { text-align: right; }
+.table-scroll { overflow-x: auto; }
+
+/* Legends */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.84rem; margin: 8px 0; padding: 0; list-style: none; }
+.legend li { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 26px; height: 12px; border: 1px solid var(--ink-soft); display: inline-block; flex: none; }
+.sw.work { background: var(--c1); }
+.sw.fetch { background: repeating-linear-gradient(45deg, var(--c5) 0 3px, var(--panel) 3px 6px); }
+.sw.carry { background: repeating-linear-gradient(45deg, var(--c2) 0 2px, transparent 2px 5px), repeating-linear-gradient(-45deg, var(--c2) 0 2px, var(--panel) 2px 5px); }
+.sw.walk { background: radial-gradient(circle, var(--c3) 1.6px, var(--panel) 1.8px) 0 0 / 5px 5px; }
+.sw.idle { background: var(--panel); border-style: dashed; }
+.sw.tap { width: 2px; height: 14px; border: 0; background: var(--ink); }
+.sw.ring { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink-soft); background: transparent; }
+.sw.dot { width: 12px; height: 12px; border-radius: 50%; border: 0; background: var(--c1); }
+.sw.sil { background: repeating-linear-gradient(-45deg, var(--idle) 0 1px, var(--panel) 1px 5px); }
+
+/* Kitchen */
+.kitchen-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.now-list { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--ink); }
+.now-list li { display: grid; grid-template-columns: 1.6em 1fr; gap: 4px 8px; padding: 8px 0; border-bottom: 1px solid var(--rule); font-size: 0.92rem; }
+.now-list .who { font-family: var(--font-mono); font-weight: 500; }
+.now-list .what { font-family: var(--font-mono); font-size: 0.85rem; color: var(--ink-soft); grid-column: 2; }
+.badge { display: inline-flex; width: 1.5em; height: 1.5em; border-radius: 50%; align-items: center; justify-content: center; font: 600 0.75rem var(--font-mono); color: var(--paper); }
+
+/* Clips */
+.clip { padding: 18px 0 20px; border-top: 1px solid var(--rule); }
+.clip:first-of-type { border-top: 0; }
+.clip-body { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 16px; align-items: start; margin-top: 10px; }
+.clip h3 .verdict { font-family: var(--font-body); font-size: 0.85rem; font-weight: 500; color: var(--ink-soft); margin-left: 8px; }
+dl.now { margin: 0; border-top: 2px solid var(--ink); }
+dl.now div { display: grid; grid-template-columns: 9.5em 1fr; padding: 6px 0; border-bottom: 1px solid var(--rule); gap: 8px; }
+dl.now dt { font-size: 0.88rem; color: var(--ink-soft); }
+dl.now dd { margin: 0; font-family: var(--font-mono); font-size: 0.9rem; }
+dl.now .agree { color: var(--c3); font-size: 0.78rem; margin-left: 6px; }
+dl.now .differ { color: var(--c2); font-size: 0.78rem; margin-left: 6px; }
+
+ul.limits { padding-left: 1.2em; max-width: 65ch; }
+ul.limits li { margin-bottom: 4px; }
+footer { padding: 28px 0 48px; font-size: 0.85rem; color: var(--ink-soft); }
+footer p { max-width: 80ch; }
+
+@media (max-width: 900px) {
+  .two, .kitchen-grid, .clip-body { grid-template-columns: minmax(0, 1fr); }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stages { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .stages span.d { display: none; }
+}
+@media (max-width: 640px) {
+  .wrap { padding: 0 16px; }
+  h1 { font-size: 1.7rem; }
+  .part-head { grid-template-columns: 1fr; }
+  .part-body { margin-left: 0; }
+  .stages { grid-template-columns: 1fr; }
+  .stages li { border-right: 0; border-bottom: 1px solid var(--rule); }
+  .stages li:last-child { border-bottom: 0; }
+  .stages li::after { display: none; }
+  .stages a { display: grid; grid-template-columns: 2.4em 7em 1fr; align-items: baseline; padding: 6px 10px; }
+  .stages b { font-size: 1rem; }
+  .stages span.d { display: block; }
+  dl.now div { grid-template-columns: 7.5em 1fr; }
+  table.res { min-width: 0; width: 100%; font-size: 0.85rem; }
+  table.res th, table.res td { padding-right: 8px; }
+  table.res th .soft { display: block; font-weight: 400; margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="top-row">
+      <span class="kicker">DRY RUN / VISION PIPELINE / DEMO BUILT 2026-11-14</span>
+      <button type="button" id="theme-toggle" aria-label="Colour theme: follows the system. Click to change.">Theme: system</button>
+    </div>
+    <h1 style="margin-top:10px">Video to actions</h1>
+    <p class="lead prose">The pipeline in <span class="mono">vision/</span> takes a filmed video of café workers, finds and follows each person, puts them on the floor in metres and cuts their time into actions such as work, fetch and carry. A vision-language model can then name the action. Below, each stage runs on the best data we have, and says how well it did.</p>
+    <ol class="stages" aria-label="Pipeline stages">
+      <li><a href="#s1"><span class="step">1</span><b>Video</b><span class="d">fixed camera, filmed after the run</span></a></li>
+      <li><a href="#s1"><span class="step">2</span><b>Tracks</b><span class="d">RF-DETR finds people, ByteTrack follows them</span></a></li>
+      <li><a href="#s1"><span class="step">3</span><b>Positions</b><span class="d">floor point in metres, 10 times a second</span></a></li>
+      <li><a href="#s2"><span class="step">4</span><b>Actions</b><span class="d">work, fetch, carry, walk, idle</span></a></li>
+      <li><a href="#s3"><span class="step">5</span><b>Labels</b><span class="d">optional words from a model; experimental</span></a></li>
+    </ol>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section class="part" id="s0" aria-labelledby="s0-h">
+  <div class="part-head">
+    <span class="part-no">00</span>
+    <div><h2 id="s0-h">Our kitchen</h2><span class="tag real">REAL VIDEO: OUR TEAM, 2026-11-14</span></div>
+  </div>
+  <div class="part-body">
+    <p class="prose">Two of us make a drink + chips combo at a kitchen island: the drink worker pours juice at the door end and walks each drink over to the chips worker, who puts chips on plates at the dining end. The video is a handheld phone, held up about 2 m, steadied afterwards. The boxes are the tracker's, drawn live; we gave the two workers their names by hand for this clip, and the people at the table and outside are left out. There was no tablet, so there are no taps.</p>
+    <p class="prose small soft">Floor positions are not shown: the camera was only 20 to 30 cm above the workers' heads, so a few centimetres of head height moves a point on the floor by metres, and the worker behind the island never shows his feet.</p>
+    <p class="status" id="s0-status" hidden></p>
+    <div class="needs-data">
+      <div class="fig">
+        <div class="vid" style="aspect-ratio: 1920 / 1080">
+          <video id="ok-video" src="media/our-kitchen.mp4" poster="media/our-kitchen.jpg" muted playsinline preload="metadata"></video>
+          <canvas id="ok-overlay" role="img" aria-label="The two workers' boxes with name, action kind and label over the kitchen video"></canvas>
+        </div>
+        <div class="controls">
+          <button type="button" id="ok-play" aria-pressed="false">Play</button>
+          <input type="range" id="ok-scrub" min="0" max="37.37" step="0.01" value="0" aria-label="Video time, our kitchen">
+          <span class="readout" id="ok-readout">0.0 s</span>
+        </div>
+      </div>
+      <div class="controls" role="group" aria-label="Which actions to show">
+        <button type="button" id="ok-view-pipeline" aria-pressed="true">As the pipeline wrote it</button>
+        <button type="button" id="ok-view-corrected" aria-pressed="false">After hand corrections (provisional)</button>
+        <span class="readout" id="ok-counts" aria-live="polite"></span>
+      </div>
+      <ul class="legend" aria-label="Action kinds and label sources">
+        <li><span class="sw work"></span>work</li>
+        <li><span class="sw carry"></span>carry</li>
+        <li><span class="sw walk"></span>walk</li>
+        <li><span class="sw idle"></span>idle</li>
+        <li><span class="mono small">model:</span>&nbsp;label from Gemini</li>
+        <li><span class="mono small">person:</span>&nbsp;label or kind set by a person</li>
+      </ul>
+      <div class="scroll"><canvas id="ok-lanes" role="img" aria-label="One timeline lane per worker: action kinds with their labels and where each label came from"></canvas></div>
+      <ul class="now-list" id="ok-now" aria-label="What each worker is doing now" style="margin-top:12px"></ul>
+      <p class="cap">Click or tap a lane to jump there.</p>
+    </div>
+    <p class="prose" style="margin-top:12px">As the pipeline wrote it, the drink worker's two later hand-overs are found as carry trips and the first shows as walk; the chips worker's estimated position jitters, so much of his time shows as walk. The corrections on the "after" view are one reviewer's eyeballing, not yet confirmed by the team: they keep 6 of 13 model labels, change 7, add 9 by hand and change the kind of 12 segments. They are in <span class="mono">recordings/kitchen-combo-1/review.suggested.csv</span>; the pipeline's own file is unchanged.</p>
+  </div>
+</section>
+
+<section class="part" id="s1" aria-labelledby="s1-h">
+  <div class="part-head">
+    <span class="part-no">01</span>
+    <div><h2 id="s1-h">Find and follow people</h2><span class="tag real">REAL VIDEO: PETS09-S2L1</span></div>
+  </div>
+  <div class="part-body">
+    <p class="prose">A public test video: an outdoor campus seen from a fixed camera about 7 m up, 795 frames at 7 frames a second. The boxes and numbers are our tracks, drawn live over the video (they are not in the video file). The map shows the same people from above, each at the floor point under the bottom of their box.</p>
+    <p class="status" id="s1-status" hidden></p>
+    <div class="needs-data">
+      <div class="fig two">
+        <div>
+          <div class="vid" style="aspect-ratio: 768 / 576">
+            <video id="pets-video" src="media/pets.mp4" poster="media/pets.jpg" muted playsinline preload="metadata"></video>
+            <canvas id="pets-overlay" role="img" aria-label="Tracked boxes with track numbers over the PETS video"></canvas>
+          </div>
+        </div>
+        <div>
+          <div class="panel"><canvas class="plot" id="pets-map" role="img" aria-label="Floor map in metres: one dot per tracked person with a short trail"></canvas></div>
+          <ul class="legend" aria-label="Map legend">
+            <li><span class="sw dot"></span>our floor point, with track number</li>
+            <li><span class="sw ring"></span>hand-labelled floor point</li>
+          </ul>
+        </div>
+      </div>
+      <div class="controls">
+        <button type="button" id="pets-play" aria-pressed="false">Play</button>
+        <label class="check" for="pets-gt"><input type="checkbox" id="pets-gt">Show ground-truth floor points</label>
+        <input type="range" id="pets-scrub" min="0" max="113.57" step="0.01" value="0" aria-label="Video time, PETS clip">
+        <span class="readout" id="pets-readout" aria-live="off">0.0 s</span>
+      </div>
+      <p class="cap">Trails show the last 3 s. Colours repeat after nine tracks; the number is the identity.</p>
+    </div>
+    <dl class="stats">
+      <div><dt>people found (recall, box overlap 0.5)</dt><dd>96%</dd></div>
+      <div><dt>our boxes that are people (precision)</dt><dd>91%</dd></div>
+      <div><dt>identity kept (IDF1, 1 is perfect)</dt><dd>IDF1 0.83</dd></div>
+      <div><dt>median floor error</dt><dd>20 cm</dd></div>
+    </dl>
+    <p class="prose small soft">Measured against the dataset's hand-drawn boxes over all 795 frames. The tracker used 28 track ids for 19 people: a person who is hidden for a while often comes back with a new number. The floor error mostly measures how our box edges and the hand-drawn ones disagree: the ground truth comes from those boxes, and in this scene one pixel of box edge is worth about 7 cm on the ground. It does not test a café camera indoors.</p>
+  </div>
+</section>
+
+<section class="part" id="s2" aria-labelledby="s2-h">
+  <div class="part-head">
+    <span class="part-no">02</span>
+    <div><h2 id="s2-h">Positions become actions</h2><span class="tag synthetic">SYNTHETIC RUN: NO VIDEO</span></div>
+  </div>
+  <div class="part-body">
+    <p class="prose">This is <span class="mono">counter-a</span>, the bundled computer-generated run: three workers making ten lattes in 88.6 s. Its positions were made by a simulation, not by a camera. The pipeline's <span class="mono">actions</span> step turns them into segments from where each worker stands and where they go, and we compare those with the "done" taps on the tablet.</p>
+    <p class="status" id="s2-status" hidden></p>
+    <div class="needs-data">
+      <div class="fig kitchen-grid">
+        <div class="panel"><canvas class="plot" id="kitchen-plan" role="img" aria-label="Synthetic kitchen from above with boxes, stand points and the three workers"></canvas></div>
+        <div>
+          <ul class="now-list" id="kitchen-now" aria-label="What each worker is doing now"></ul>
+          <ul class="legend" aria-label="Plan legend">
+            <li><span class="sw" style="width:10px;height:10px;border:0;background:none;font:600 0.9rem var(--font-mono);line-height:10px;color:var(--ink-soft)">+</span>stand point</li>
+            <li><span class="sw" style="background:var(--ink-soft);border:0"></span>wall</li>
+          </ul>
+        </div>
+      </div>
+      <ul class="legend" aria-label="Action kinds">
+        <li><span class="sw work"></span>work: still at a station</li>
+        <li><span class="sw fetch"></span>fetch: round trip to storage</li>
+        <li><span class="sw carry"></span>carry: trip to pickup or next station</li>
+        <li><span class="sw walk"></span>walk: moving, no known trip</li>
+        <li><span class="sw idle"></span>idle: still, away from stations</li>
+        <li><span class="sw tap"></span>"done" tap on the tablet</li>
+      </ul>
+      <div class="scroll"><canvas id="kitchen-lanes" role="img" aria-label="One timeline lane per worker showing action segments and done taps over 88.6 seconds"></canvas></div>
+      <div class="controls">
+        <button type="button" id="kitchen-play" aria-pressed="false">Play</button>
+        <button type="button" id="kitchen-speed" aria-label="Playback speed">Speed 1x</button>
+        <input type="range" id="kitchen-scrub" min="0" max="88.58" step="0.1" value="6" aria-label="Run time, synthetic run">
+        <span class="readout" id="kitchen-readout">6.0 s</span>
+      </div>
+      <p class="cap">Click or tap a lane to jump there.</p>
+    </div>
+    <p class="prose">The step found 46 action segments. 23 of 30 "done" taps fall inside the tapping worker's work segment at that station, and 7 more come within 2 s after one ends. Two limits are built into the method: Ana at the till never moves, so she is <em>work</em> for 100% of the run, as positions cannot tell waiting from working; and a fetch shorter than 0.5 m shows as <em>walk</em>.</p>
+  </div>
+</section>
+
+<section class="part" id="s3" aria-labelledby="s3-h">
+  <div class="part-head">
+    <span class="part-no">03</span>
+    <div><h2 id="s3-h">Naming the action</h2><span class="tag real">REAL VIDEO: BREAKFAST ACTIONS</span></div>
+  </div>
+  <div class="part-body">
+    <p class="prose">Positions say <em>where</em> someone works, not <em>what</em> they do. The optional label step shows a model a few frames from each 2 s window and asks it to pick from a short list. We tested two models on 26 home-kitchen clips of people making coffee, tea and milk drinks, tuned on half the people and scored on the other half (P16, P23, P50). Here are three of those held-out clips: the one Gemini did best on, a typical one and the one it did worst on.</p>
+    <p class="status" id="s3-status" hidden></p>
+    <ul class="legend needs-data" id="bf-legend" aria-label="Action labels"></ul>
+
+    <article class="clip needs-data" id="clip-0">
+      <h3>P50 makes coffee <span class="verdict">Gemini's best held-out clip</span></h3>
+      <p class="small soft" style="margin:4px 0 0">Frames labelled right: Gemini <b class="num">90.3%</b>, SigLIP <b class="num">0.0%</b>. Camera webcam02, 320x180, 46.1 s.</p>
+      <div class="clip-body">
+        <div class="vid" style="aspect-ratio: 320 / 180"><video id="bf-video-0" src="media/P50_webcam02_P50_coffee.mp4" poster="media/P50_webcam02_P50_coffee.jpg" muted playsinline preload="metadata"></video></div>
+        <dl class="now" id="bf-now-0"></dl>
+      </div>
+      <div class="scroll" style="margin-top:10px"><canvas id="bf-time-0" role="img" aria-label="Timeline: truth, Gemini and SigLIP labels for P50 coffee"></canvas></div>
+      <div class="controls">
+        <button type="button" id="bf-play-0" aria-pressed="false">Play</button>
+        <input type="range" id="bf-scrub-0" min="0" max="46.13" step="0.01" value="0" aria-label="Video time, P50 coffee">
+        <span class="readout" id="bf-readout-0">0.0 s</span>
+      </div>
+    </article>
+
+    <article class="clip needs-data" id="clip-1">
+      <h3>P23 makes tea <span class="verdict">typical: close to Gemini's overall score</span></h3>
+      <p class="small soft" style="margin:4px 0 0">Frames labelled right: Gemini <b class="num">68.1%</b>, SigLIP <b class="num">28.0%</b>. Camera cam01, 320x240, 47.7 s.</p>
+      <div class="clip-body">
+        <div class="vid" style="aspect-ratio: 320 / 240"><video id="bf-video-1" src="media/P23_cam01_P23_tea.mp4" poster="media/P23_cam01_P23_tea.jpg" muted playsinline preload="metadata"></video></div>
+        <dl class="now" id="bf-now-1"></dl>
+      </div>
+      <div class="scroll" style="margin-top:10px"><canvas id="bf-time-1" role="img" aria-label="Timeline: truth, Gemini and SigLIP labels for P23 tea"></canvas></div>
+      <div class="controls">
+        <button type="button" id="bf-play-1" aria-pressed="false">Play</button>
+        <input type="range" id="bf-scrub-1" min="0" max="47.67" step="0.01" value="0" aria-label="Video time, P23 tea">
+        <span class="readout" id="bf-readout-1">0.0 s</span>
+      </div>
+    </article>
+
+    <article class="clip needs-data" id="clip-2">
+      <h3>P16 makes a milk drink <span class="verdict">Gemini's worst held-out clip</span></h3>
+      <p class="small soft" style="margin:4px 0 0">Frames labelled right: Gemini <b class="num">36.3%</b>, SigLIP <b class="num">17.8%</b>. Camera cam01, 320x240, 59.1 s.</p>
+      <div class="clip-body">
+        <div class="vid" style="aspect-ratio: 320 / 240"><video id="bf-video-2" src="media/P16_cam01_P16_milk.mp4" poster="media/P16_cam01_P16_milk.jpg" muted playsinline preload="metadata"></video></div>
+        <dl class="now" id="bf-now-2"></dl>
+      </div>
+      <div class="scroll" style="margin-top:10px"><canvas id="bf-time-2" role="img" aria-label="Timeline: truth, Gemini and SigLIP labels for P16 milk"></canvas></div>
+      <div class="controls">
+        <button type="button" id="bf-play-2" aria-pressed="false">Play</button>
+        <input type="range" id="bf-scrub-2" min="0" max="59.07" step="0.01" value="0" aria-label="Video time, P16 milk">
+        <span class="readout" id="bf-readout-2">0.0 s</span>
+      </div>
+    </article>
+
+    <h3 style="margin-top:18px">All 15 held-out clips</h3>
+    <div class="table-scroll">
+      <table class="res">
+        <thead><tr><th scope="col">Labeller</th><th scope="col" class="n">Frames right</th><th scope="col" class="n">Actions found</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Gemini 3.8 Flash <span class="soft small">online, Google's API</span></th><td class="n">68.6%</td><td class="n">40 of 52</td></tr>
+          <tr><th scope="row">SigLIP 2 <span class="soft small">local, on the laptop</span></th><td class="n">27.1%</td><td class="n">4 of 52</td></tr>
+          <tr><th scope="row">Always the most common action <span class="soft small">baseline, no model</span></th><td class="n">26.9%</td><td class="n">-</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="prose small soft">Each model was offered the 4 to 6 labels of the clip's drink and saw the whole frame. Labels are smoothed over neighbouring windows (Gemini 5, SigLIP 3, each chosen on the tuning half). An action counts as found when a predicted segment with the same label overlaps it by at least half. Gemini cost 633 requests, 3.36 million tokens and 30 minutes (4 requests at a time) to label all 26 clips, 20.9 minutes of video. SigLIP is about as good as always guessing the most common action. Gemini is much better here, but still wrong on about a third of frames, and neither was measured on café footage.</p>
+  </div>
+</section>
+
+<section class="part" id="s4" aria-labelledby="s4-h">
+  <div class="part-head">
+    <span class="part-no">04</span>
+    <div><h2 id="s4-h">A real café clip</h2><span class="tag real">REAL VIDEO: QUALITATIVE ONLY</span></div>
+  </div>
+  <div class="part-body">
+    <p class="prose">A 9.5 s stock clip of two people behind a bar. The tracker found both and kept their numbers. We then asked both models what each person was doing. There is no scan or calibration of this bar, so the action segments the labels attach to are stand-ins: one 9.4 s <em>idle</em> segment per person, made by hand.</p>
+    <p class="status" id="s4-status" hidden></p>
+    <div class="needs-data">
+      <div class="fig">
+        <div class="vid" style="aspect-ratio: 1280 / 720">
+          <video id="cafe-video" src="media/cafe-4296.mp4" poster="media/cafe-4296.jpg" muted playsinline preload="metadata"></video>
+          <canvas id="cafe-overlay" role="img" aria-label="Tracked boxes and the Gemini label of each person over the café clip"></canvas>
+        </div>
+        <div class="controls">
+          <button type="button" id="cafe-play" aria-pressed="false">Play</button>
+          <input type="range" id="cafe-scrub" min="0" max="9.5" step="0.01" value="0" aria-label="Video time, café clip">
+          <span class="readout" id="cafe-readout">0.0 s</span>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="res" id="cafe-table">
+          <thead><tr><th scope="col">Person</th><th scope="col">What they do, by eye</th><th scope="col">Gemini now</th><th scope="col">SigLIP now</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="scroll"><canvas id="cafe-time" role="img" aria-label="Timeline of Gemini and SigLIP labels for both people over 9.5 seconds"></canvas></div>
+    </div>
+    <p class="prose" style="margin-top:12px">Gemini gets the man right after 4 s ("talking") and misses the woman: she is drying glasses with a cloth, which it calls "talking". SigLIP says "waiting" for both throughout. Two people for 9 s is an anecdote, not a measurement. The clip also pans slightly, which a real setup must not. <strong>No real café run with a scan and a calibration exists yet</strong>, so the full chain from video to positions and actions has only run on synthetic tracks.</p>
+  </div>
+</section>
+
+<section class="part" id="s5" aria-labelledby="s5-h">
+  <div class="part-head">
+    <span class="part-no" aria-hidden="true"></span>
+    <div><h2 id="s5-h">What is not verified</h2></div>
+  </div>
+  <div class="part-body">
+    <ul class="limits">
+      <li>Any real café run end to end: video, scan and calibration of one kitchen.</li>
+      <li>A high camera tilted down indoors.</li>
+      <li>Counters hiding the lower body, with the floor point taken from the top of the head.</li>
+      <li>Workers sharing a station (told apart only by the order they are listed in).</li>
+      <li>Customers leaning over the counter into the working area.</li>
+      <li>Phone video with a variable frame rate (frames are assumed evenly spaced).</li>
+      <li>Labels on café footage, with either model.</li>
+    </ul>
+    <p class="prose small soft">From <span class="mono">docs/VISION.md</span>, "How it was tested (and what was not)".</p>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><b>Sources and licences.</b> PETS 2009 S2L1 via MOTChallenge 3D MOT 2015 (Leal-Taixé et al.; PETS 2009 by Ferryman and Shahrokni), CC BY-NC-SA 3.0, non-commercial use only. Breakfast Actions (Kuehne, Arslan and Serre, CVPR 2014), CC BY 4.0. Café clip 4296 "Barista and bartenders working at the bar" from Mixkit, Mixkit Free licence. The synthetic run is part of this repository.</p>
+    <p>Numbers come from <span class="mono">vision/runs/pets/eval-tracks-rerun-2026-11-14b.json</span>, <span class="mono">vision/runs/eval-labels/*-activity-whole.json</span>, the <span class="mono">counter-a</span> run itself and <span class="mono">docs/VISION.md</span>. Rebuild with <span class="mono">vision/demo/build_demo.py</span>.</p>
+  </div>
+</footer>
+
+<script>
+"use strict";
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const TOKENS = ["paper", "panel", "ink", "ink-soft", "rule", "signal", "marker", "idle",
+    "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9"];
+  const PALETTE = ["c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9"];
+  const C = {};
+  const redrawers = [];
+  const players = [];
+  const MONO = '"IBM Plex Mono", ui-monospace, monospace';
+  const DISPLAY = '"Barlow Semi Condensed", "Arial Narrow", sans-serif';
+
+  function readColours() {
+    const cs = getComputedStyle(document.documentElement);
+    TOKENS.forEach((t) => { C[t] = cs.getPropertyValue("--" + t).trim(); });
+  }
+  function redrawAll() { readColours(); redrawers.forEach((f) => f()); }
+
+  /* ---------- theme ---------- */
+  const themeBtn = $("theme-toggle");
+  const THEMES = ["system", "light", "dark"];
+  let themeIx = 0;
+  themeBtn.addEventListener("click", () => {
+    themeIx = (themeIx + 1) % THEMES.length;
+    const th = THEMES[themeIx];
+    if (th === "system") delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = th;
+    themeBtn.textContent = "Theme: " + th;
+    themeBtn.setAttribute("aria-label", "Colour theme: " + th + ". Click to change.");
+    requestAnimationFrame(redrawAll);
+  });
+  if (window.matchMedia) {
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => requestAnimationFrame(redrawAll));
+  }
+
+  /* ---------- helpers ---------- */
+  function prep(canvas, w, h, setHeight) {
+    const d = Math.min(window.devicePixelRatio || 1, 2);
+    const W = Math.max(1, Math.round(w * d)), H = Math.max(1, Math.round(h * d));
+    if (canvas.width !== W) canvas.width = W;
+    if (canvas.height !== H) canvas.height = H;
+    if (setHeight) { canvas.style.height = h + "px"; }
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(d, 0, 0, d, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    return ctx;
+  }
+  function fail(sectionId, message) {
+    const sec = $(sectionId);
+    sec.classList.add("failed");
+    const st = $(sectionId + "-status");
+    st.textContent = message;
+    st.hidden = false;
+  }
+  async function loadJSON(name) {
+    const res = await fetch("data/" + name + ".json");
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  }
+  function idColour(id) { return C[PALETTE[(Math.abs(id) - 1 + PALETTE.length * 10) % PALETTE.length]]; }
+  function pretty(label) { return label == null ? "no label" : label === "SIL" ? "SIL (nothing)" : label.replace(/_/g, " "); }
+  function fmtT(t) { return t.toFixed(1) + " s"; }
+  function niceStep(span, target) {
+    const raw = span / target, p = Math.pow(10, Math.floor(Math.log10(raw)));
+    const m = raw / p;
+    return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p;
+  }
+  function tag(ctx, text, x, y, bg, fg, font, maxW) {
+    ctx.font = font;
+    const size = parseFloat((font.match(/(\d+(?:\.\d+)?)px/) || [0, 12])[1]);
+    const w = ctx.measureText(text).width + 8, h = size + 6;
+    const bx = Math.max(0, Math.min(x, maxW - w));
+    const by = Math.max(0, y - h);
+    ctx.fillStyle = bg; ctx.fillRect(bx, by, w, h);
+    ctx.fillStyle = fg; ctx.textBaseline = "middle"; ctx.fillText(text, bx + 4, by + h / 2 + 0.5);
+  }
+  function patternFor(ctx, kind, colour) {
+    const c = document.createElement("canvas");
+    c.width = 8; c.height = 8;
+    const g = c.getContext("2d");
+    g.fillStyle = C.panel; g.fillRect(0, 0, 8, 8);
+    g.strokeStyle = colour; g.fillStyle = colour; g.lineWidth = 2;
+    if (kind === "solid") { g.fillRect(0, 0, 8, 8); }
+    if (kind === "hatch" || kind === "cross") { g.beginPath(); g.moveTo(-2, 10); g.lineTo(10, -2); g.moveTo(-2, 2); g.lineTo(2, -2); g.moveTo(6, 10); g.lineTo(10, 6); g.stroke(); }
+    if (kind === "cross") { g.beginPath(); g.moveTo(-2, -2); g.lineTo(10, 10); g.moveTo(6, -2); g.lineTo(10, 2); g.moveTo(-2, 6); g.lineTo(2, 10); g.stroke(); }
+    if (kind === "dots") { g.beginPath(); g.arc(2, 2, 1.6, 0, 7); g.arc(6, 6, 1.6, 0, 7); g.fill(); }
+    if (kind === "light") { g.lineWidth = 1; g.beginPath(); g.moveTo(0, 8); g.lineTo(8, 0); g.stroke(); }
+    return ctx.createPattern(c, "repeat");
+  }
+  /* A time axis along the top of a lanes canvas: ticks and labels in seconds. */
+  function timeAxis(ctx, x0, x1, top, bottom, dur, step) {
+    ctx.font = "11px " + MONO; ctx.textBaseline = "alphabetic"; ctx.textAlign = "center";
+    for (let s = 0; s <= dur + 1e-6; s += step) {
+      const x = x0 + (s / dur) * (x1 - x0);
+      ctx.strokeStyle = C.rule; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(Math.round(x) + 0.5, top + 4); ctx.lineTo(Math.round(x) + 0.5, bottom); ctx.stroke();
+      ctx.fillStyle = C["ink-soft"]; ctx.fillText(String(Math.round(s)), x, top);
+    }
+    ctx.textAlign = "left";
+  }
+  function playhead(ctx, x, top, bottom) {
+    ctx.strokeStyle = C.marker; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, bottom); ctx.stroke();
+    ctx.fillStyle = C.marker;
+    ctx.beginPath(); ctx.moveTo(x - 5, top - 6); ctx.lineTo(x + 5, top - 6); ctx.lineTo(x, top); ctx.closePath(); ctx.fill();
+  }
+  function pauseOthers(me) { players.forEach((p) => { if (p !== me) p.pause(); }); }
+
+  /* A video drives a section: play/pause button, scrubber, readout, per-frame callback. */
+  function videoPlayer(o) {
+    const v = o.video, dur = o.frames / o.fps;
+    const frameAt = (t) => Math.max(0, Math.min(o.frames - 1, Math.floor(t * o.fps + 1e-3)));
+    let now = (o.startFrame + 0.5) / o.fps;
+    const hasVFC = "requestVideoFrameCallback" in HTMLVideoElement.prototype;
+    o.scrub.max = dur.toFixed(2);
+    function update(t) {
+      now = t;
+      const f = frameAt(t);
+      o.scrub.value = t;
+      o.readout.textContent = fmtT(t) + " / " + fmtT(dur) + "  frame " + f;
+      o.draw(t, f);
+    }
+    function vfc(_n, meta) { update(meta.mediaTime); if (!v.paused && !v.ended) v.requestVideoFrameCallback(vfc); }
+    function raf() { update(v.currentTime); if (!v.paused && !v.ended) requestAnimationFrame(raf); }
+    function setBtn(playing) { o.button.textContent = playing ? "Pause" : "Play"; o.button.setAttribute("aria-pressed", String(playing)); }
+    const me = {
+      pause() { if (!v.paused) v.pause(); },
+      redraw() { update(now); },
+    };
+    v.addEventListener("play", () => { setBtn(true); pauseOthers(me); if (hasVFC) v.requestVideoFrameCallback(vfc); else requestAnimationFrame(raf); });
+    v.addEventListener("pause", () => { setBtn(false); update(v.currentTime); });
+    v.addEventListener("ended", () => { setBtn(false); update(v.currentTime); });
+    v.addEventListener("seeked", () => { if (v.paused) update(v.currentTime); });
+    v.addEventListener("loadedmetadata", () => { if (v.currentTime === 0 && now > 0) v.currentTime = now; });
+    v.addEventListener("error", () => o.onError("The video file " + v.getAttribute("src") + " could not be loaded, so this part cannot play. The rest of the page still works."));
+    o.button.addEventListener("click", () => {
+      if (v.paused || v.ended) {
+        if (v.ended || v.currentTime >= dur - 0.05) v.currentTime = 0;
+        const p = v.play();
+        if (p && p.catch) p.catch((e) => o.onError("The video could not start: " + e.message));
+      } else v.pause();
+    });
+    o.scrub.addEventListener("input", () => { const t = +o.scrub.value; v.currentTime = t; update(t); });
+    me.seek = (t) => { v.currentTime = t; update(t); };
+    if (v.readyState >= 1) v.currentTime = now;
+    players.push(me);
+    return me;
+  }
+  function observe(el, fn) {
+    if ("ResizeObserver" in window) new ResizeObserver(() => fn()).observe(el);
+    else window.addEventListener("resize", fn);
+  }
+
+  /* ---------- 1: PETS ---------- */
+  function initPets(d) {
+    const video = $("pets-video"), overlay = $("pets-overlay"), map = $("pets-map"), gtBox = $("pets-gt");
+    const TRAIL = Math.round(3 * d.fps);
+    const b = d.bounds, spanX = b.x1 - b.x0, spanZ = b.z1 - b.z0;
+    let cur = d.startFrame;
+    function drawOverlay(f) {
+      const w = overlay.clientWidth, h = overlay.clientHeight;
+      const ctx = prep(overlay, w, h, false), s = w / d.w;
+      const font = "600 " + Math.max(10, Math.round(12 * Math.min(1.4, s * 1.2))) + "px " + MONO;
+      d.tracks[f].forEach((r) => {
+        const col = idColour(r[0]);
+        ctx.strokeStyle = col; ctx.lineWidth = 2;
+        ctx.strokeRect(r[1] * s, r[2] * s, r[3] * s, r[4] * s);
+        tag(ctx, String(r[0]), r[1] * s - 1, r[2] * s, col, C.paper, font, w);
+      });
+    }
+    function drawMap(f) {
+      const w = map.clientWidth, pad = { l: 40, r: 10, t: 12, b: 34 };
+      const inner = w - pad.l - pad.r, h = Math.round(inner * spanZ / spanX) + pad.t + pad.b;
+      const ctx = prep(map, w, h, true), k = inner / spanX;
+      const X = (x) => pad.l + (x - b.x0) * k, Z = (z) => pad.t + (z - b.z0) * k;
+      const step = 5;
+      ctx.font = "11px " + MONO; ctx.lineWidth = 1;
+      for (let x = Math.ceil(b.x0 / step) * step; x <= b.x1; x += step) {
+        ctx.strokeStyle = C.rule; ctx.beginPath(); ctx.moveTo(X(x) + 0.5, pad.t); ctx.lineTo(X(x) + 0.5, h - pad.b); ctx.stroke();
+        ctx.fillStyle = C["ink-soft"]; ctx.textAlign = "center"; ctx.fillText(String(x), X(x), h - pad.b + 14);
+      }
+      for (let z = Math.ceil(b.z0 / step) * step; z <= b.z1; z += step) {
+        ctx.strokeStyle = C.rule; ctx.beginPath(); ctx.moveTo(pad.l, Z(z) + 0.5); ctx.lineTo(w - pad.r, Z(z) + 0.5); ctx.stroke();
+        ctx.fillStyle = C["ink-soft"]; ctx.textAlign = "right"; ctx.fillText(String(z), pad.l - 6, Z(z) + 4);
+      }
+      ctx.textAlign = "center"; ctx.fillStyle = C["ink-soft"];
+      ctx.font = "12px " + DISPLAY;
+      ctx.fillText("x (metres)", pad.l + inner / 2, h - 6);
+      ctx.save(); ctx.translate(11, pad.t + (h - pad.t - pad.b) / 2); ctx.rotate(-Math.PI / 2); ctx.fillText("z (metres)", 0, 0); ctx.restore();
+      ctx.textAlign = "left";
+      ctx.save(); ctx.beginPath(); ctx.rect(pad.l, pad.t, inner, h - pad.t - pad.b); ctx.clip();
+      ctx.fillStyle = C["ink-soft"]; ctx.font = "11px " + MONO;
+      ctx.fillText("camera is off the map, lower left", pad.l + 6, h - pad.b - 8);
+      if (gtBox.checked) {
+        ctx.strokeStyle = C["ink-soft"]; ctx.lineWidth = 1.5;
+        d.gt[f].forEach((g) => { ctx.beginPath(); ctx.arc(X(g[1]), Z(g[2]), 7, 0, 7); ctx.stroke(); });
+      }
+      const trails = new Map();
+      for (let i = Math.max(0, f - TRAIL); i <= f; i++) {
+        d.tracks[i].forEach((r) => { if (r[5] != null) { if (!trails.has(r[0])) trails.set(r[0], []); trails.get(r[0]).push([r[5], r[6], i]); } });
+      }
+      trails.forEach((pts, id) => {
+        ctx.strokeStyle = idColour(id); ctx.lineWidth = 1.5; ctx.globalAlpha = 0.7;
+        ctx.beginPath();
+        pts.forEach((p, j) => { const fn = j ? "lineTo" : "moveTo"; ctx[fn](X(p[0]), Z(p[1])); });
+        ctx.stroke(); ctx.globalAlpha = 1;
+      });
+      ctx.font = "600 11px " + MONO;
+      d.tracks[f].forEach((r) => {
+        if (r[5] == null) return;
+        ctx.fillStyle = idColour(r[0]);
+        ctx.beginPath(); ctx.arc(X(r[5]), Z(r[6]), 4.5, 0, 7); ctx.fill();
+        ctx.fillStyle = C.ink; ctx.fillText(String(r[0]), X(r[5]) + 7, Z(r[6]) - 6);
+      });
+      ctx.restore();
+      ctx.strokeStyle = C["ink-soft"]; ctx.lineWidth = 1; ctx.strokeRect(pad.l + 0.5, pad.t + 0.5, inner - 1, h - pad.t - pad.b - 1);
+    }
+    const player = videoPlayer({
+      video, button: $("pets-play"), scrub: $("pets-scrub"), readout: $("pets-readout"),
+      fps: d.fps, frames: d.frames, startFrame: d.startFrame,
+      draw: (_t, f) => { cur = f; drawOverlay(f); drawMap(f); },
+      onError: (m) => fail("s1", m),
+    });
+    gtBox.addEventListener("change", () => drawMap(cur));
+    redrawers.push(() => player.redraw());
+    observe(overlay, () => player.redraw());
+    observe(map, () => drawMap(cur));
+    player.redraw();
+  }
+
+  /* ---------- 2: synthetic kitchen ---------- */
+  const KIND_STYLE = { work: ["solid", "c1"], fetch: ["hatch", "c5"], carry: ["cross", "c2"], walk: ["dots", "c3"], idle: ["light", "idle"] };
+  const WORKER_COLOURS = ["c4", "c6", "c8"];
+  function initKitchen(d) {
+    const plan = $("kitchen-plan"), lanes = $("kitchen-lanes"), list = $("kitchen-now");
+    const btn = $("kitchen-play"), speedBtn = $("kitchen-speed"), scrub = $("kitchen-scrub"), readout = $("kitchen-readout");
+    const [bx0, bx1, bz0, bz1] = d.bounds, dur = d.duration;
+    const SPEEDS = [1, 2, 4];
+    let t = 6, playing = false, speedIx = 0, last = 0;
+    const rows = d.workers.map((w, i) => {
+      const li = document.createElement("li");
+      li.innerHTML = '<span class="badge"></span><span class="who"></span><span class="what"></span>';
+      li.querySelector(".badge").textContent = w.name[0];
+      li.querySelector(".who").textContent = w.name + ", " + w.station;
+      list.appendChild(li);
+      return { li, badge: li.querySelector(".badge"), what: li.querySelector(".what"), i };
+    });
+    const segOf = (wi, tt) => d.segments.find((s) => s[0] === wi && s[1] <= tt && tt < s[2]);
+    function posAt(id, tt) {
+      const arr = d.pos[id], k = Math.floor(tt * d.hz), a = arr[k], b2 = arr[k + 1];
+      if (!a) return null;
+      if (!b2) return a;
+      const u = tt * d.hz - k;
+      return [a[0] + (b2[0] - a[0]) * u, a[1] + (b2[1] - a[1]) * u];
+    }
+    function drawPlan() {
+      const w = plan.clientWidth, pad = 14, inner = w - 2 * pad;
+      const k = inner / (bx1 - bx0), h = Math.round((bz1 - bz0) * k) + 2 * pad;
+      const ctx = prep(plan, w, h, true);
+      const X = (x) => pad + (x - bx0) * k, Z = (z) => pad + (z - bz0) * k;
+      const poly = (p) => { ctx.beginPath(); p.forEach((q, j) => ctx[j ? "lineTo" : "moveTo"](X(q[0]), Z(q[1]))); ctx.closePath(); };
+      ctx.fillStyle = C["ink-soft"];
+      d.walls.forEach((p) => { poly(p); ctx.fill(); });
+      const fs = Math.max(10, Math.min(13, Math.round(w / 48)));
+      d.items.forEach((it) => {
+        poly(it.poly);
+        ctx.fillStyle = C.paper; ctx.fill();
+        ctx.strokeStyle = C.ink; ctx.lineWidth = 1; ctx.setLineDash(it.role === "queue" ? [4, 3] : []); ctx.stroke(); ctx.setLineDash([]);
+        const cx = it.poly.reduce((a, q) => a + q[0], 0) / it.poly.length, cz = it.poly.reduce((a, q) => a + q[1], 0) / it.poly.length;
+        ctx.fillStyle = C.ink; ctx.font = "500 " + fs + "px " + DISPLAY; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        const words = it.name.split(" ");
+        if (words.length > 1 && ctx.measureText(it.name).width > Math.abs(X(it.poly[1][0]) - X(it.poly[0][0])) * 0.95) {
+          const half = Math.ceil(words.length / 2);
+          ctx.fillText(words.slice(0, half).join(" "), X(cx), Z(cz) - fs * 0.55);
+          ctx.fillText(words.slice(half).join(" "), X(cx), Z(cz) + fs * 0.55);
+        } else ctx.fillText(it.name, X(cx), Z(cz));
+        if (["station", "storage", "pickup"].includes(it.role)) {
+          ctx.strokeStyle = C["ink-soft"]; ctx.lineWidth = 1.2;
+          const sx = X(it.stand[0]), sz = Z(it.stand[1]);
+          ctx.beginPath(); ctx.moveTo(sx - 4, sz); ctx.lineTo(sx + 4, sz); ctx.moveTo(sx, sz - 4); ctx.lineTo(sx, sz + 4); ctx.stroke();
+        }
+      });
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      d.workers.forEach((wk, i) => {
+        const col = C[WORKER_COLOURS[i]];
+        ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.globalAlpha = 0.55; ctx.beginPath();
+        let started = false;
+        for (let tt = Math.max(0, t - 2); tt <= t; tt += 1 / d.hz) {
+          const p = posAt(wk.id, tt); if (!p) { started = false; continue; }
+          ctx[started ? "lineTo" : "moveTo"](X(p[0]), Z(p[1])); started = true;
+        }
+        ctx.stroke(); ctx.globalAlpha = 1;
+        const p = posAt(wk.id, t); if (!p) return;
+        ctx.fillStyle = col; ctx.beginPath(); ctx.arc(X(p[0]), Z(p[1]), 10, 0, 7); ctx.fill();
+        ctx.fillStyle = C.paper; ctx.font = "600 11px " + MONO; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(wk.name[0], X(p[0]), Z(p[1]) + 0.5);
+        ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      });
+      ctx.fillStyle = C["ink-soft"]; ctx.font = "11px " + MONO;
+      const scale = 1, sx0 = w - pad - scale * k;
+      ctx.fillRect(sx0, h - 8, scale * k, 2); ctx.fillText("1 m", sx0, h - 12);
+    }
+    const LANE_H = 30, GUTTER = 92, TOP = 26, MIN_W = 720;
+    function drawLanes() {
+      const scroller = lanes.parentElement, w = Math.max(scroller.clientWidth - 2, MIN_W);
+      lanes.style.width = w + "px";
+      const h = TOP + d.workers.length * (LANE_H + 8) + 6;
+      const ctx = prep(lanes, w, h, true), x0 = GUTTER, x1 = w - 14;
+      const X = (s) => x0 + (s / dur) * (x1 - x0);
+      timeAxis(ctx, x0, x1, 12, h - 4, dur, 10);
+      ctx.fillStyle = C["ink-soft"]; ctx.font = "11px " + MONO; ctx.fillText("time (s)", 8, 12);
+      const pats = {};
+      Object.keys(KIND_STYLE).forEach((kd) => { pats[kd] = patternFor(ctx, KIND_STYLE[kd][0], C[KIND_STYLE[kd][1]]); });
+      d.workers.forEach((wk, i) => {
+        const y = TOP + i * (LANE_H + 8);
+        ctx.fillStyle = C.ink; ctx.font = "600 13px " + DISPLAY; ctx.textBaseline = "middle";
+        ctx.fillText(wk.name, 8, y + LANE_H / 2 - 6);
+        ctx.fillStyle = C["ink-soft"]; ctx.font = "11px " + DISPLAY; ctx.fillText(wk.station, 8, y + LANE_H / 2 + 8);
+        d.segments.filter((s) => s[0] === i).forEach((s) => {
+          const kind = d.kinds[s[3]], a = X(s[1]), b2 = X(s[2]);
+          ctx.fillStyle = pats[kind]; ctx.fillRect(a, y + 6, b2 - a, LANE_H - 6);
+          ctx.strokeStyle = C.panel; ctx.lineWidth = 1; ctx.strokeRect(a + 0.5, y + 6.5, b2 - a - 1, LANE_H - 7);
+          ctx.font = "500 11px " + MONO;
+          const tw = ctx.measureText(kind).width + 8;
+          if (b2 - a > tw + 2) {
+            const cx = a + (b2 - a) / 2;
+            ctx.fillStyle = C.panel; ctx.fillRect(cx - tw / 2, y + LANE_H / 2 - 4, tw, 15);
+            ctx.fillStyle = C.ink; ctx.textAlign = "center"; ctx.fillText(kind, cx, y + LANE_H / 2 + 4); ctx.textAlign = "left";
+          }
+        });
+        ctx.strokeStyle = C.ink; ctx.lineWidth = 2;
+        d.taps.filter((tp) => tp[0] === i).forEach((tp) => {
+          const x = Math.round(X(tp[1])); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + 9); ctx.stroke();
+        });
+      });
+      ctx.textBaseline = "alphabetic";
+      playhead(ctx, X(t), TOP - 4, h - 2);
+    }
+    function drawNow() {
+      rows.forEach((r) => {
+        const s = segOf(r.i, t);
+        r.badge.style.background = C[WORKER_COLOURS[r.i]];
+        r.what.textContent = s ? d.kinds[s[3]] + (s[4] ? " at " + s[4] : "") + "  " + s[1].toFixed(1) + "-" + s[2].toFixed(1) + " s" : "no segment";
+      });
+    }
+    function draw() {
+      scrub.value = t; readout.textContent = fmtT(t) + " / " + fmtT(dur);
+      drawPlan(); drawLanes(); drawNow();
+    }
+    function frame(ts) {
+      if (!playing) return;
+      t = Math.min(dur, t + ((ts - last) / 1000) * SPEEDS[speedIx]); last = ts;
+      if (t >= dur) setPlaying(false);
+      draw();
+      if (playing) requestAnimationFrame(frame);
+    }
+    function setPlaying(p) {
+      playing = p; btn.textContent = p ? "Pause" : "Play"; btn.setAttribute("aria-pressed", String(p));
+      if (p) { pauseOthers(me); if (t >= dur) t = 0; last = performance.now(); requestAnimationFrame(frame); }
+    }
+    const me = { pause() { if (playing) setPlaying(false); }, redraw: draw };
+    players.push(me);
+    btn.addEventListener("click", () => setPlaying(!playing));
+    speedBtn.addEventListener("click", () => { speedIx = (speedIx + 1) % SPEEDS.length; speedBtn.textContent = "Speed " + SPEEDS[speedIx] + "x"; });
+    scrub.addEventListener("input", () => { t = +scrub.value; draw(); });
+    lanes.addEventListener("click", (e) => {
+      const r = lanes.getBoundingClientRect(), x = e.clientX - r.left, x1 = r.width - 14;
+      if (x >= GUTTER) { t = Math.max(0, Math.min(dur, ((x - GUTTER) / (x1 - GUTTER)) * dur)); draw(); }
+    });
+    redrawers.push(draw);
+    observe(plan, draw);
+    observe(lanes.parentElement, draw);
+    draw();
+  }
+
+  /* ---------- 3: Breakfast ---------- */
+  function initBreakfast(d) {
+    const ROWS = [["truth", "Truth"], ["gemini", "Gemini 3.8 Flash"], ["siglip", "SigLIP 2"]];
+    const used = [];
+    d.clips.forEach((c) => ROWS.forEach(([k]) => c.rows[k].forEach((r) => { if (r[2] >= 0 && !used.includes(r[2])) used.push(r[2]); })));
+    const bgIx = d.labels.indexOf(d.background);
+    const fg = used.filter((i) => i !== bgIx);
+    const colourOf = (li) => (li === bgIx ? "idle" : PALETTE[fg.indexOf(li) % PALETTE.length]);
+    const legend = $("bf-legend");
+    [bgIx, ...fg].forEach((li) => {
+      const el = document.createElement("li");
+      const sw = document.createElement("span");
+      sw.className = "sw" + (li === bgIx ? " sil" : "");
+      if (li !== bgIx) sw.style.background = "var(--" + colourOf(li) + ")";
+      el.appendChild(sw); el.appendChild(document.createTextNode(pretty(d.labels[li])));
+      legend.appendChild(el);
+    });
+    const axisMax = Math.ceil(Math.max(...d.clips.map((c) => c.frames / c.fps)) / 10) * 10;
+    d.clips.forEach((c, ci) => initClip(c, ci, d, ROWS, colourOf, bgIx, axisMax));
+  }
+  function initClip(c, ci, d, ROWS, colourOf, bgIx, axisMax) {
+    const canvas = $("bf-time-" + ci), nowEl = $("bf-now-" + ci);
+    const ROW_H = 26, GUTTER = 128, TOP = 26, MIN_W = 680;
+    const dts = ROWS.map(([k, name]) => {
+      const div = document.createElement("div");
+      div.innerHTML = "<dt></dt><dd></dd>";
+      div.querySelector("dt").textContent = name;
+      nowEl.appendChild(div);
+      return div.querySelector("dd");
+    });
+    let cur = c.startFrame;
+    const labelAt = (k, f) => { const r = c.rows[k].find((s) => s[0] <= f && f < s[1]); return r ? r[2] : -1; };
+    function drawTimeline(f) {
+      const scroller = canvas.parentElement, w = Math.max(scroller.clientWidth - 2, MIN_W);
+      canvas.style.width = w + "px";
+      const h = TOP + ROWS.length * (ROW_H + 6) + 4;
+      const ctx = prep(canvas, w, h, true), x0 = GUTTER, x1 = w - 16;
+      const X = (s) => x0 + (s / axisMax) * (x1 - x0);
+      timeAxis(ctx, x0, x1, 12, h - 2, axisMax, 10);
+      ctx.fillStyle = C["ink-soft"]; ctx.font = "11px " + MONO; ctx.fillText("time (s)", 8, 12);
+      const pats = {};
+      ROWS.forEach(([k, name], ri) => {
+        const y = TOP + ri * (ROW_H + 6);
+        ctx.fillStyle = C.ink; ctx.font = (ri ? "500 " : "600 ") + "13px " + DISPLAY; ctx.textBaseline = "middle";
+        ctx.fillText(name, 8, y + ROW_H / 2);
+        c.rows[k].forEach((r) => {
+          if (r[2] < 0) return;
+          const a = X(r[0] / c.fps), b = X(r[1] / c.fps), col = colourOf(r[2]);
+          if (!pats[col]) pats[col] = r[2] === bgIx ? patternFor(ctx, "light", C.idle) : C[col];
+          ctx.fillStyle = pats[col]; ctx.fillRect(a, y, b - a, ROW_H);
+          ctx.strokeStyle = C.panel; ctx.lineWidth = 1; ctx.strokeRect(a + 0.5, y + 0.5, b - a - 1, ROW_H - 1);
+          const text = r[2] === bgIx ? "SIL" : pretty(d.labels[r[2]]);
+          ctx.font = "500 11px " + MONO;
+          const tw = ctx.measureText(text).width + 8;
+          if (b - a > tw + 2) {
+            ctx.fillStyle = C.panel; ctx.fillRect(a + 3, y + ROW_H / 2 - 8, tw, 16);
+            ctx.fillStyle = C.ink; ctx.fillText(text, a + 7, y + ROW_H / 2 + 0.5);
+          }
+        });
+        ctx.strokeStyle = C.rule; ctx.strokeRect(X(0) + 0.5, y + 0.5, X(c.frames / c.fps) - X(0) - 1, ROW_H - 1);
+      });
+      ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = C["ink-soft"]; ctx.font = "11px " + MONO;
+      const endX = X(c.frames / c.fps);
+      if (x1 - endX > 70) {
+        const ty = TOP + ROWS.length * (ROW_H + 6) - 10, tw = ctx.measureText("clip ends").width + 6;
+        ctx.fillStyle = C.panel; ctx.fillRect(endX + 3, ty - 10, tw, 14);
+        ctx.fillStyle = C["ink-soft"]; ctx.fillText("clip ends", endX + 6, ty);
+      }
+      playhead(ctx, X(f / c.fps), TOP - 4, h - 2);
+    }
+    function drawNow(f) {
+      const truth = labelAt("truth", f);
+      ROWS.forEach(([k], i) => {
+        const li = labelAt(k, f), dd = dts[i];
+        dd.textContent = li < 0 ? "no label" : pretty(d.labels[li]);
+        if (i > 0) {
+          const s = document.createElement("span");
+          s.className = li === truth ? "agree" : "differ";
+          s.textContent = li === truth ? "agrees" : "differs";
+          dd.appendChild(s);
+        }
+      });
+    }
+    const player = videoPlayer({
+      video: $("bf-video-" + ci), button: $("bf-play-" + ci), scrub: $("bf-scrub-" + ci), readout: $("bf-readout-" + ci),
+      fps: c.fps, frames: c.frames, startFrame: c.startFrame,
+      draw: (_t, f) => { cur = f; drawTimeline(f); drawNow(f); },
+      onError: (m) => fail("s3", m),
+    });
+    canvas.addEventListener("click", (e) => {
+      const r = canvas.getBoundingClientRect(), x = e.clientX - r.left, x1 = r.width - 16;
+      if (x >= GUTTER) player.seek(Math.max(0, Math.min(c.frames / c.fps - 0.01, ((x - GUTTER) / (x1 - GUTTER)) * axisMax)));
+    });
+    redrawers.push(() => player.redraw());
+    observe(canvas.parentElement, () => drawTimeline(cur));
+    player.redraw();
+  }
+
+  /* ---------- 4: café ---------- */
+  function initCafe(d) {
+    const overlay = $("cafe-overlay"), timeline = $("cafe-time"), tbody = document.querySelector("#cafe-table tbody");
+    const dur = d.frames / d.fps;
+    const labelsSeen = [];
+    d.people.forEach((p) => ["gemini", "siglip"].forEach((k) => p[k].forEach((s) => { if (!labelsSeen.includes(s[2])) labelsSeen.push(s[2]); })));
+    const LABEL_COLOURS = ["c6", "c5", "c3", "c1"];
+    const colourOfLabel = (l) => C[LABEL_COLOURS[labelsSeen.indexOf(l) % LABEL_COLOURS.length]];
+    const at = (segs, t) => segs.find((s) => s[0] <= t && t < s[1]);
+    const say = (s) => (s ? s[2] + " (" + s[3].toFixed(2) + ")" : "no label");
+    const cells = d.people.map((p) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = '<th scope="row"></th><td></td><td class="mono"></td><td class="mono"></td>';
+      tr.children[0].textContent = "#" + p.track + " " + p.who;
+      tr.children[1].textContent = p.byEye;
+      tbody.appendChild(tr);
+      return tr;
+    });
+    let cur = d.startFrame;
+    function drawOverlay(t, f) {
+      const w = overlay.clientWidth, h = overlay.clientHeight;
+      const ctx = prep(overlay, w, h, false), s = w / d.w;
+      const font = "600 " + Math.max(11, Math.round(15 * Math.min(1, s * 1.6))) + "px " + MONO;
+      d.tracks[f].forEach((r) => {
+        const col = idColour(r[0]);
+        ctx.strokeStyle = col; ctx.lineWidth = 3;
+        ctx.strokeRect(r[1] * s, r[2] * s, r[3] * s, r[4] * s);
+        const p = d.people.find((q) => q.track === r[0]);
+        const text = "#" + r[0] + (p ? "  Gemini: " + say(at(p.gemini, t)) : "");
+        const lineH = parseFloat(font.match(/(\d+)px/)[1]) + 6;
+        const y = r[2] * s > lineH ? r[2] * s : r[2] * s + lineH + 2;
+        tag(ctx, text, r[1] * s + 2, y, col, C.paper, font, w);
+      });
+    }
+    const ROW_H = 24, GUTTER = 150, TOP = 26, MIN_W = 620;
+    const rowsDef = [];
+    d.people.forEach((p) => { rowsDef.push([p, "gemini", "#" + p.track + " Gemini"]); rowsDef.push([p, "siglip", "#" + p.track + " SigLIP"]); });
+    function drawTimeline(t) {
+      const scroller = timeline.parentElement, w = Math.max(scroller.clientWidth - 2, MIN_W);
+      timeline.style.width = w + "px";
+      const h = TOP + rowsDef.length * (ROW_H + 6) + 4;
+      const ctx = prep(timeline, w, h, true), x0 = GUTTER, x1 = w - 16;
+      const X = (sec) => x0 + (sec / dur) * (x1 - x0);
+      timeAxis(ctx, x0, x1, 12, h - 2, dur, 1);
+      ctx.fillStyle = C["ink-soft"]; ctx.font = "11px " + MONO; ctx.fillText("time (s)", 8, 12);
+      rowsDef.forEach(([p, k, name], ri) => {
+        const y = TOP + ri * (ROW_H + 6);
+        ctx.fillStyle = C.ink; ctx.font = "500 13px " + DISPLAY; ctx.textBaseline = "middle";
+        ctx.fillText(name + ", " + p.who.split(",")[0], 8, y + ROW_H / 2);
+        p[k].forEach((sg) => {
+          const a = X(sg[0]), b = X(sg[1]);
+          ctx.fillStyle = colourOfLabel(sg[2]); ctx.fillRect(a, y, b - a, ROW_H);
+          ctx.strokeStyle = C.panel; ctx.strokeRect(a + 0.5, y + 0.5, b - a - 1, ROW_H - 1);
+          ctx.font = "500 11px " + MONO;
+          const tw = ctx.measureText(sg[2]).width + 8;
+          if (b - a > tw + 4) { ctx.fillStyle = C.panel; ctx.fillRect(a + 3, y + ROW_H / 2 - 8, tw, 16); ctx.fillStyle = C.ink; ctx.fillText(sg[2], a + 7, y + ROW_H / 2 + 0.5); }
+        });
+      });
+      ctx.textBaseline = "alphabetic";
+      playhead(ctx, X(t), TOP - 4, h - 2);
+    }
+    function drawTable(t) {
+      d.people.forEach((p, i) => { cells[i].children[2].textContent = say(at(p.gemini, t)); cells[i].children[3].textContent = say(at(p.siglip, t)); });
+    }
+    let curT = (d.startFrame + 0.5) / d.fps;
+    const player = videoPlayer({
+      video: $("cafe-video"), button: $("cafe-play"), scrub: $("cafe-scrub"), readout: $("cafe-readout"),
+      fps: d.fps, frames: d.frames, startFrame: d.startFrame,
+      draw: (t, f) => { cur = f; curT = t; drawOverlay(t, f); drawTimeline(t); drawTable(t); },
+      onError: (m) => fail("s4", m),
+    });
+    timeline.addEventListener("click", (e) => {
+      const r = timeline.getBoundingClientRect(), x = e.clientX - r.left, x1 = r.width - 16;
+      if (x >= GUTTER) player.seek(Math.max(0, Math.min(dur - 0.01, ((x - GUTTER) / (x1 - GUTTER)) * dur)));
+    });
+    redrawers.push(() => player.redraw());
+    observe(overlay, () => drawOverlay(curT, cur));
+    observe(timeline.parentElement, () => drawTimeline(curT));
+    player.redraw();
+  }
+
+  /* ---------- 0: our kitchen ---------- */
+  const OK_WORKER_COLOURS = ["c2", "c1"];
+  function initOurKitchen(d) {
+    const overlay = $("ok-overlay"), lanes = $("ok-lanes"), list = $("ok-now"), counts = $("ok-counts");
+    const viewBtns = { pipeline: $("ok-view-pipeline"), corrected: $("ok-view-corrected") };
+    const dur = d.frames / d.fps;
+    let view = "pipeline", cur = d.startFrame, curT = (d.startFrame + 0.5) / d.fps;
+    const segs = () => d[view];
+    const at = (w, t) => segs().find((s) => s[0] === w && s[1] <= t && t < s[2]);
+    const source = (s) => (s && s[4] ? (s[5] === "human" ? "person" : "model") : null);
+    const rows = d.workers.map((w, i) => {
+      const li = document.createElement("li");
+      li.innerHTML = '<span class="badge"></span><span class="who"></span><span class="what"></span>';
+      li.querySelector(".badge").textContent = w.name[0];
+      li.querySelector(".who").textContent = w.name + " (" + w.who + ")";
+      list.appendChild(li);
+      return { li, badge: li.querySelector(".badge"), what: li.querySelector(".what"), w, i };
+    });
+    function countsText() {
+      const c = d.counts;
+      return view === "pipeline"
+        ? c.modelLabels + " labels, all from the model"
+        : "model labels kept " + c.kept + " of " + c.modelLabels + ", changed " + c.changed + ", added by a person " + c.added + ", kinds changed " + c.kinds + " (provisional)";
+    }
+    function caption(w, t) {
+      const s = at(w.id, t);
+      if (!s) return [w.name + ": no segment"];
+      const lines = [w.name + ": " + s[3]];
+      if (s[4]) lines.push(source(s) + ": " + s[4]);
+      return lines;
+    }
+    function drawOverlay(t, f) {
+      const w = overlay.clientWidth, h = overlay.clientHeight;
+      const ctx = prep(overlay, w, h, false), s = w / d.w;
+      const size = Math.max(12, Math.round(22 * Math.min(1, s * 1.4)));
+      const font = "600 " + size + "px " + MONO;
+      (d.tracks[f] || []).forEach((r) => {
+        const wk = d.workers[r[0]], col = C[OK_WORKER_COLOURS[r[0]]];
+        ctx.strokeStyle = col; ctx.lineWidth = 3;
+        ctx.strokeRect(r[1] * s, r[2] * s, r[3] * s, r[4] * s);
+        const lines = caption(wk, t), lineH = size + 6;
+        lines.forEach((text, j) => {
+          const y = r[2] * s - (lines.length - 1 - j) * lineH;
+          tag(ctx, text, r[1] * s, Math.max(lineH * (j + 1), y), col, C.paper, font, w);
+        });
+      });
+    }
+    const LANE_H = 46, GUTTER = 92, TOP = 26, MIN_W = 720;
+    function drawLanes(t) {
+      const scroller = lanes.parentElement, w = Math.max(scroller.clientWidth - 2, MIN_W);
+      lanes.style.width = w + "px";
+      const h = TOP + d.workers.length * (LANE_H + 10) + 4;
+      const ctx = prep(lanes, w, h, true), x0 = GUTTER, x1 = w - 14;
+      const X = (sec) => x0 + (sec / dur) * (x1 - x0);
+      timeAxis(ctx, x0, x1, 12, h - 2, dur, 5);
+      ctx.fillStyle = C["ink-soft"]; ctx.font = "11px " + MONO; ctx.fillText("time (s)", 8, 12);
+      const pats = {};
+      Object.keys(KIND_STYLE).forEach((kd) => { pats[kd] = patternFor(ctx, KIND_STYLE[kd][0], C[KIND_STYLE[kd][1]]); });
+      d.workers.forEach((wk, i) => {
+        const y = TOP + i * (LANE_H + 10);
+        ctx.fillStyle = C.ink; ctx.font = "600 14px " + DISPLAY; ctx.textBaseline = "middle";
+        ctx.fillText(wk.name, 8, y + LANE_H / 2);
+        segs().filter((s) => s[0] === wk.id).forEach((s) => {
+          const a = X(s[1]), b = X(s[2]);
+          ctx.fillStyle = pats[s[3]]; ctx.fillRect(a, y, b - a, 18);
+          ctx.strokeStyle = C.panel; ctx.lineWidth = 1; ctx.strokeRect(a + 0.5, y + 0.5, b - a - 1, 17);
+          ctx.font = "500 11px " + MONO;
+          const kw = ctx.measureText(s[3]).width + 6;
+          if (b - a > kw + 2) { ctx.fillStyle = C.panel; ctx.fillRect(a + 2, y + 2, kw, 14); ctx.fillStyle = C.ink; ctx.fillText(s[3], a + 5, y + 9.5); }
+          if (s[4]) {
+            const human = source(s) === "person";
+            ctx.font = (human ? "600 " : "italic 400 ") + "11px " + MONO;
+            const text = (human ? "person: " : "model: ") + s[4];
+            ctx.save(); ctx.beginPath(); ctx.rect(a, y + 19, Math.max(0, b - a - 2), LANE_H - 19); ctx.clip();
+            ctx.fillStyle = human ? C.marker : C["ink-soft"];
+            ctx.fillRect(a, y + 20, 3, LANE_H - 22);
+            ctx.fillStyle = C.ink; ctx.fillText(text, a + 6, y + 32);
+            ctx.restore();
+          }
+        });
+      });
+      ctx.textBaseline = "alphabetic";
+      playhead(ctx, X(t), TOP - 4, h - 2);
+    }
+    function drawNow(t) {
+      rows.forEach((r) => {
+        const s = at(r.w.id, t);
+        r.badge.style.background = C[OK_WORKER_COLOURS[r.i]];
+        r.what.textContent = s
+          ? s[3] + "  " + s[1].toFixed(1) + "-" + s[2].toFixed(1) + " s" + (s[4] ? "  |  " + s[4] + " (" + (source(s) === "person" ? "set by a person, provisional" : "from the model") + ")" : "  |  no label")
+          : "no segment";
+      });
+    }
+    const player = videoPlayer({
+      video: $("ok-video"), button: $("ok-play"), scrub: $("ok-scrub"), readout: $("ok-readout"),
+      fps: d.fps, frames: d.frames, startFrame: d.startFrame,
+      draw: (t, f) => { cur = f; curT = t; drawOverlay(t, f); drawLanes(t); drawNow(t); },
+      onError: (m) => fail("s0", m),
+    });
+    function setView(v) {
+      view = v;
+      Object.entries(viewBtns).forEach(([k, b]) => b.setAttribute("aria-pressed", String(k === v)));
+      counts.textContent = countsText();
+      player.redraw();
+    }
+    viewBtns.pipeline.addEventListener("click", () => setView("pipeline"));
+    viewBtns.corrected.addEventListener("click", () => setView("corrected"));
+    lanes.addEventListener("click", (e) => {
+      const r = lanes.getBoundingClientRect(), x = e.clientX - r.left, x1 = r.width - 14;
+      if (x >= GUTTER) player.seek(Math.max(0, Math.min(dur - 0.01, ((x - GUTTER) / (x1 - GUTTER)) * dur)));
+    });
+    redrawers.push(() => player.redraw());
+    observe(overlay, () => drawOverlay(curT, cur));
+    observe(lanes.parentElement, () => drawLanes(curT));
+    setView("pipeline");
+  }
+
+  /* ---------- start ---------- */
+  readColours();
+  const SECTIONS = [["ourkitchen", "s0", initOurKitchen], ["pets", "s1", initPets], ["kitchen", "s2", initKitchen], ["breakfast", "s3", initBreakfast], ["cafe", "s4", initCafe]];
+  const start = () => SECTIONS.forEach(([name, sec, init]) => {
+    loadJSON(name)
+      .then((d) => init(d))
+      .catch((e) => {
+        fail(sec, "Could not load data/" + name + ".json (" + e.message + "), so this part cannot be shown. The rest of the page still works.");
+        if (window.console) console.warn("demo section " + sec + ":", e);
+      });
+  });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(start, start); else start();
+})();
+</script>
+</body>
+</html>

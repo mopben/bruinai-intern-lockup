@@ -20,6 +20,16 @@ def positive_int(text: str) -> int:
     return value
 
 
+def non_negative_int(text: str) -> int:
+    try:
+        value = int(text)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(f'"{text}" is not a whole number.') from exc
+    if value < 0:
+        raise argparse.ArgumentTypeError(f"must be 0 or more, not {value}.")
+    return value
+
+
 def positive_float(text: str) -> float:
     try:
         value = float(text)

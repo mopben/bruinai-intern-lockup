@@ -9,11 +9,9 @@ from pathlib import Path
 
 from dryrun_vision.formats import Detection
 from dryrun_vision.render.draw import BoxLabel, draw_labels
-from dryrun_vision.video import VideoError, probe_video, read_frames
+from dryrun_vision.video import probe_video, read_frames
 from dryrun_vision.video.reader import cv2_module
-
-CODECS = ("avc1", "mp4v")
-"""H.264 first (plays everywhere); OpenCV builds without it fall back to MPEG-4 Part 2."""
+from dryrun_vision.video.writer import open_writer
 
 LabelsFor = Callable[[int, float, Sequence[Detection]], tuple[BoxLabel, ...]]
 """(frame index, video time, that frame's detections) -> what to draw."""
@@ -23,16 +21,6 @@ LabelsFor = Callable[[int, float, Sequence[Detection]], tuple[BoxLabel, ...]]
 class RenderStats:
     frames: int
     codec: str
-
-
-def _writer(out: Path, fps: float, size: tuple[int, int]) -> tuple[object, str]:
-    cv2 = cv2_module()
-    for codec in CODECS:
-        w = cv2.VideoWriter(str(out), cv2.VideoWriter.fourcc(*codec), fps, size)
-        if w.isOpened():
-            return w, codec
-        w.release()
-    raise VideoError(f"Could not write {out}: OpenCV has no usable mp4 encoder ({', '.join(CODECS)}).")
 
 
 def render_video(
@@ -50,7 +38,7 @@ def render_video(
     for d in detections:
         by_frame[d.frame].append(d)
     cv2 = cv2_module()
-    writer, codec = _writer(out, info.fps, (info.width, info.height))
+    writer, codec = open_writer(out, info.fps, (info.width, info.height))
     n = 0
     try:
         for frame in read_frames(video, max_seconds=max_seconds):

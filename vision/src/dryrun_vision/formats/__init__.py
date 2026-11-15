@@ -48,6 +48,17 @@ from dryrun_vision.formats.positions import (
     write_positions,
 )
 from dryrun_vision.formats.run_folder import RunFolder, read_run_folder
+from dryrun_vision.formats.stabilisation import (
+    CropRect,
+    FrameRegistration,
+    StabilisationRegion,
+    StabilisationReport,
+    StabilisationSummary,
+    StabilisationThresholds,
+    read_region,
+    read_stabilisation,
+    write_stabilisation,
+)
 from dryrun_vision.formats.taps import DoneEvent, EndEvent, OrderEvent, TapsFile, TapsHeader, read_taps
 from dryrun_vision.formats.tracks import (
     Detection,
@@ -68,9 +79,11 @@ __all__ = [
     "BoxSide",
     "BoxSize",
     "CalibrationFile",
+    "CropRect",
     "Detection",
     "DoneEvent",
     "EndEvent",
+    "FrameRegistration",
     "ImagePoint",
     "ImageSize",
     "ItemRole",
@@ -86,6 +99,10 @@ __all__ = [
     "Scan",
     "ScanBox",
     "Setup",
+    "StabilisationRegion",
+    "StabilisationReport",
+    "StabilisationSummary",
+    "StabilisationThresholds",
     "TapsFile",
     "TapsHeader",
     "TracksFile",
@@ -98,14 +115,17 @@ __all__ = [
     "read_calibration",
     "read_layout",
     "read_positions",
+    "read_region",
     "read_run_folder",
     "read_run_meta",
     "read_scan",
     "read_setup",
+    "read_stabilisation",
     "read_taps",
     "read_tracks",
     "sort_segments",
     "write_actions",
     "write_positions",
+    "write_stabilisation",
     "write_tracks",
 ]
