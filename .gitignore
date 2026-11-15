@@ -10,3 +10,16 @@ xcuserdata/
 DerivedData/
 ios/build/
 e2e/screenshots/
+
+# ML vision pipeline (Python)
+vision/data/
+vision/runs/
+vision/.venv/
+__pycache__/
+.pytest_cache/
+*.egg-info/
+
+# Secrets
+.env
+.env.*
+!.env.example

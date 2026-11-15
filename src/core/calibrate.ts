@@ -9,11 +9,21 @@ import type { OrderTrace, StepTrace } from "./trace";
 import { planItems, type ItemPlan, type StepPlan } from "./plan";
 import { estimatePace, walkSeconds, type Pace, type PaceMethod } from "./pace";
 import type { Trip } from "./trips";
+import { isChainKitchen, itemTasks, workerCovers } from "./tasks";
+import { replayTaskWork } from "./task-work";
 
 export { DEFAULT_WALK_SPEED_MPS, estimateWalkSpeed, MOVING_THRESHOLD_MPS, SPEED_WINDOW_S, type SpeedEstimate } from "./speed";
 
 /** Work-time samples are clamped up to this (a step cannot take no time). */
 export const MIN_WORK_S = 0.5;
+
+/** A task with fewer samples than this uses all samples of its station. */
+export const MIN_TASK_SAMPLES = 3;
+
+/** Key of `Calibration.taskSamples` for one task of one menu item. */
+export function taskKey(itemId: string, taskId: string): string {
+  return `${itemId}\u0000${taskId}`;
+}
 
 export interface Calibration {
   /** Walking speed (pace.speedMps). */
@@ -30,6 +40,8 @@ export interface Calibration {
   readonly walkSpeedSamples: number;
   /** Work time per step at each station (seconds), walking removed. */
   readonly workSamples: Readonly<Record<string, readonly number[]>>;
+  /** The same samples keyed by menu item and task (`taskKey`), in the same order. */
+  readonly taskSamples: Readonly<Record<string, readonly number[]>>;
   readonly sampleCount: number;
   /** Samples that came out below MIN_WORK_S and were raised to it. */
   readonly clampedCount: number;
@@ -62,18 +74,22 @@ function arrivalTime(order: OrderTrace, k: number, plan: ItemPlan, pace: Pace): 
 
 const fetchSeconds = (pace: Pace, sp: StepPlan): number => sp.fetchLegs.reduce((s, l) => s + 2 * walkSeconds(pace, l.oneWayM), 0);
 
-/** Calibrate from a reconstructed run in the world it was recorded in. */
-export function calibrate(
-  world: World,
-  run: RunReconstruction,
-  positions: readonly PositionSample[],
-  options: CalibrationOptions = {},
-): Calibration {
-  const est = estimatePace(world, positions);
-  const pace = est.pace;
+/** Work samples and what came with them; local accumulators of one calibration. */
+interface WorkResult {
+  readonly samples: Record<string, number[]>;
+  readonly byTask: Record<string, number[]>;
+  readonly clamped: number;
+  readonly used: ReadonlySet<string>;
+  readonly warnings: readonly string[];
+}
+
+/** Chain kitchens with fixed workers: per station, workers free one carry back after each tap. */
+function chainWork(world: World, run: RunReconstruction, pace: Pace, options: CalibrationOptions): WorkResult {
   const plans = planItems(world);
-  const warnings: string[] = [...est.warnings];
+  const warnings: string[] = [];
   const samples: Record<string, number[]> = {};
+  const byTask: Record<string, number[]> = {};
+  const taskIds = new Map(world.menu.map((m) => [m.id, itemTasks(m).map((t) => t.id)] as const));
   let clamped = 0;
   const used = new Set<string>();
   const stations = [...new Set(world.menu.flatMap((m) => m.steps.map((s) => s.stationId)))];
@@ -97,7 +113,10 @@ export function calibrate(
         const start = Math.max(arrival, freeAt.get(wid) as number);
         const work = tap - start - fetchSeconds(pace, sp);
         if (work < MIN_WORK_S) clamped += 1;
-        (samples[stationId] as number[]).push(Math.max(work, MIN_WORK_S));
+        const value = Math.max(work, MIN_WORK_S);
+        (samples[stationId] as number[]).push(value);
+        const key = taskKey(order.itemId, taskIds.get(order.itemId)?.[step.step] ?? `s${step.step}`);
+        (byTask[key] ??= []).push(value);
         used.add(order.orderId);
       }
       if (wid !== undefined) freeAt.set(wid, tap + 2 * walkSeconds(pace, sp.carry.oneWayM));
@@ -105,6 +124,43 @@ export function calibrate(
     if (workers.length === 0) warnings.push(`No worker was at "${stationId}" in this layout.`);
     if ((samples[stationId] as number[]).length === 0) warnings.push(`No usable work times at "${stationId}".`);
   }
+  return { samples, byTask, clamped, used, warnings };
+}
+
+/** Other kitchens: the engine's rules replayed over each worker's taps (task-work.ts). */
+function taskWork(world: World, run: RunReconstruction, pace: Pace, options: CalibrationOptions): WorkResult {
+  const replay = replayTaskWork(world, run, pace, options);
+  const stations = [...new Set(world.menu.flatMap((m) => m.steps.map((s) => s.stationId)))];
+  const samples: Record<string, number[]> = Object.fromEntries(stations.map((id) => [id, []]));
+  const byTask: Record<string, number[]> = {};
+  const used = new Set<string>();
+  let clamped = 0;
+  for (const r of replay.work) {
+    if (r.work < MIN_WORK_S) clamped += 1;
+    const value = Math.max(r.work, MIN_WORK_S);
+    (samples[r.stationId] ??= []).push(value);
+    (byTask[taskKey(r.itemId, r.taskId)] ??= []).push(value);
+    used.add(r.orderId);
+  }
+  const stationWarnings = stations.flatMap((id) => [
+    ...(world.workers.some((w) => workerCovers(w).includes(id)) ? [] : [`No worker was at "${id}" in this layout.`]),
+    ...((samples[id] ?? []).length === 0 ? [`No usable work times at "${id}".`] : []),
+  ]);
+  return { samples, byTask, clamped, used, warnings: [...replay.warnings, ...stationWarnings] };
+}
+
+/** Calibrate from a reconstructed run in the world it was recorded in. */
+export function calibrate(
+  world: World,
+  run: RunReconstruction,
+  positions: readonly PositionSample[],
+  options: CalibrationOptions = {},
+): Calibration {
+  const est = estimatePace(world, positions);
+  const pace = est.pace;
+  const learn = isChainKitchen(world.menu, world.workers) ? chainWork : taskWork;
+  const { samples, byTask, clamped, used, warnings: workWarnings } = learn(world, run, pace, options);
+  const warnings = [...est.warnings, ...workWarnings];
   const sampleCount = Object.values(samples).reduce((n, s) => n + s.length, 0);
   return {
     walkSpeedMps: pace.speedMps,
@@ -114,6 +170,7 @@ export function calibrate(
     walkSpeedAssumed: est.method === "assumed",
     walkSpeedSamples: est.samples,
     workSamples: samples,
+    taskSamples: byTask,
     sampleCount,
     clampedCount: clamped,
     orderIds: run.orders.map((o) => o.orderId).filter((id) => used.has(id)),

@@ -16,9 +16,8 @@
  * model. Pure: no DOM, no I/O.
  */
 import type { Calibration } from "./calibrate";
-import { compileModel } from "./model";
 import { mixSeed } from "./rng";
-import { runReplication, type Releases } from "./sim";
+import { compileEngineModel, runEngine, type Releases } from "./engine/index";
 import { rangeOf, type Range } from "./stats";
 import type { Setup } from "./types";
 import { buildPathTable, type PathTable } from "./walking";
@@ -112,13 +111,13 @@ export function capacityPerHour(world: World, calibration: Calibration, opts: Ca
   const reps = Math.max(1, Math.floor(opts.reps ?? PROFIT_REPS));
   const seed = mixSeed(opts.seed ?? PROFIT_SEED, 0xca9);
   const table = opts.table ?? buildPathTable(world);
-  const model = compileModel(world, calibration, table);
+  const model = compileEngineModel(world, calibration, table);
   const outside = walkExtrapolation(world, calibration, table).outside;
   const releases = rushReleases(world.setup);
   if (releases.length < 2) return { p10: 0, p50: 0, p90: 0 };
   const rates: number[] = [];
   for (let r = 0; r < reps; r += 1) {
-    const rep = runReplication(model, releases, seed, r, { bootstrap: true, paceModels: outside ? "fit-or-speed" : "calibrated" });
+    const rep = runEngine(model, releases, seed, r, { bootstrap: true, paceModels: outside ? "fit-or-speed" : "calibrated" });
     const done = rep.finishedAt.filter((t) => Number.isFinite(t));
     if (done.length < 2) {
       rates.push(0);

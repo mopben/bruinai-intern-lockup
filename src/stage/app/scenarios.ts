@@ -38,6 +38,6 @@ export function shiftOrders(kitchen: Kitchen, calibration: Calibration | null): 
 
 export const ASSUMED_CALIBRATION: Calibration = {
   walkSpeedMps: 1.2, walkOverheadS: 0, paceMethod: "assumed", paceTrips: [],
-  walkSpeedAssumed: true, walkSpeedSamples: 0, workSamples: {}, sampleCount: 0,
+  walkSpeedAssumed: true, walkSpeedSamples: 0, workSamples: {}, taskSamples: {}, sampleCount: 0,
   clampedCount: 0, orderIds: [], warnings: ["Walking speed assumed at 1.2 m/s."],
 };

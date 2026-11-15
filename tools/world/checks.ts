@@ -1,9 +1,12 @@
 /**
  * Checks across files: ids that must match, taps in protocol order,
- * tracks that jump. Runs on whatever parts of the folder could be read.
+ * tracks that jump, actions that fit the room. Runs on whatever parts of the
+ * folder could be read.
  */
-import type { Layout, PositionSample, PositionsHeader, RunMeta, Scan, Setup, TapEvent, TapsHeader } from "../../src/core/types";
+import type { ActionSegment, ActionsHeader, Layout, PositionSample, PositionsHeader, RunMeta, Scan, Setup, TapEvent, TapsHeader, WorkerDef } from "../../src/core/types";
+import { checkActions } from "./check-actions";
 import { checkPositions } from "./check-positions";
+import { checkTasks } from "./check-tasks";
 import { checkTaps } from "./check-taps";
 
 export interface Issue {
@@ -25,6 +28,8 @@ export interface Parsed {
   readonly layout?: Layout;
   readonly taps?: { readonly header?: TapsHeader; readonly events: readonly Lined<TapEvent>[] };
   readonly positions?: { readonly header?: PositionsHeader; readonly events: readonly Lined<PositionSample>[] };
+  /** Only when the folder has the optional actions.jsonl. */
+  readonly actions?: { readonly header?: ActionsHeader; readonly events: readonly Lined<ActionSegment>[] };
 }
 
 export interface CrossResult {
@@ -85,6 +90,7 @@ function checkSetup(scan: Scan, setup: Setup, s: Sink): void {
       (st.fetchFrom ?? []).forEach((f, fi) => needRole(f, "storage", `menu[${mi}].steps[${si}].fetchFrom[${fi}]`));
     }),
   );
+  checkTasks(setup.menu, s);
   const items = new Set(setup.menu.map((m) => m.id));
   for (const id of dupes(setup.schedule.orders.map((o) => o.orderId))) s.error("setup.json", `schedule order id "${id}" is used more than once.`);
   setup.schedule.orders.forEach((o, i) => {
@@ -103,6 +109,14 @@ function hue(hex: string): number {
   return (h * 60 + 360) % 360;
 }
 
+function checkCovers(w: WorkerDef, i: number, inScan: ReadonlySet<string>, setup: Setup | undefined, s: Sink): void {
+  for (const id of w.covers ?? []) {
+    const r = setup?.items.find((it) => it.boxId === id)?.role;
+    if (!inScan.has(id)) s.error("layout.json", `workers[${i}] ("${w.id}") covers "${id}", which is not in scan.json.`);
+    else if (setup && r !== "station") s.error("layout.json", `workers[${i}] ("${w.id}") covers ${boxLabel(id, setup)}, which is not a station (role "${r ?? "none"}").`);
+  }
+}
+
 function checkLayout(scan: Scan, setup: Setup | undefined, layout: Layout, s: Sink): void {
   const inScan = new Set(scan.boxes.map((b) => b.id));
   for (const id of Object.keys(layout.placements)) {
@@ -113,15 +127,16 @@ function checkLayout(scan: Scan, setup: Setup | undefined, layout: Layout, s: Si
     const r = setup?.items.find((it) => it.boxId === w.stationId)?.role;
     if (!inScan.has(w.stationId)) s.error("layout.json", `workers[${i}] ("${w.id}") stands at "${w.stationId}", which is not in scan.json.`);
     else if (setup && r !== "station") s.error("layout.json", `workers[${i}] ("${w.id}") stands at ${boxLabel(w.stationId, setup)}, which is not a station (role "${r ?? "none"}").`);
+    checkCovers(w, i, inScan, setup, s);
     layout.workers.slice(0, i).forEach((o) => {
       const gap = Math.abs(hue(w.color) - hue(o.color));
       if (Math.min(gap, 360 - gap) < 25) s.warn("layout.json", `hat colours of "${o.id}" (${o.color}) and "${w.id}" (${w.color}) are close in hue; the camera may mix them up.`);
     });
   });
-  const staffed = new Set(layout.workers.map((w) => w.stationId));
+  const staffed = new Set(layout.workers.flatMap((w) => [w.stationId, ...(w.covers ?? [])]));
   const used = new Set((setup?.menu ?? []).flatMap((m) => m.steps.map((st) => st.stationId)));
   for (const id of used) {
-    if (inScan.has(id) && !staffed.has(id)) s.error("layout.json", `nobody works at ${boxLabel(id, setup)}, which a menu step needs. Add a worker with "stationId": "${id}".`);
+    if (inScan.has(id) && !staffed.has(id)) s.error("layout.json", `nobody works at ${boxLabel(id, setup)}, which a menu step needs. Add a worker with "stationId": "${id}", or add it to a worker's "covers".`);
   }
 }
 
@@ -139,9 +154,13 @@ export function crossCheck(p: Parsed): CrossResult {
   if (p.scan && p.layout) checkLayout(p.scan, p.setup, p.layout, sink);
   const tapFacts = p.taps ? checkTaps(p.taps.events, p.setup, p.layout, sink) : undefined;
   const posFacts = p.positions ? checkPositions(p.positions.header, p.positions.events, p.scan, p.layout, sink) : undefined;
+  const actionFacts = p.actions
+    ? checkActions(p.actions.events, { scan: p.scan, setup: p.setup, layout: p.layout, runEnd: tapFacts?.duration }, sink)
+    : undefined;
+  const actionText = actionFacts ? `, ${actionFacts.segments} action segments` : "";
   const facts =
     tapFacts && posFacts && errors.length === 0
-      ? `${tapFacts.orders} orders, ${tapFacts.duration.toFixed(1)} s, ${posFacts.workers} workers tracked, ${posFacts.samples} position samples`
+      ? `${tapFacts.orders} orders, ${tapFacts.duration.toFixed(1)} s, ${posFacts.workers} workers tracked, ${posFacts.samples} position samples${actionText}`
       : undefined;
   return { errors, warnings, ...(facts ? { facts } : {}) };
 }

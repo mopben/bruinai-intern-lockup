@@ -10,7 +10,7 @@ import { runFitsKitchen } from "../app/kitchen-edit";
 import { changeKind, layoutsMatch, matchRecordedRun, type Candidate } from "../app/layout-match";
 import { stepIndex, stepOf, type ViewId } from "../app/steps";
 import { runStory, testOutcome } from "../app/words";
-import { cancelSuggest } from "./suggest";
+import { cancelOptimize } from "./optimize";
 import { calibration, firstMeasuredS, originalLayout, usableFirstRun } from "./derive";
 import { settleReveal } from "./kitchen-actions";
 import { preloadedBundle } from "./preload";
@@ -192,14 +192,14 @@ export function applyRehearsed(key: "m" | "w"): void {
   const k = kitchen.value;
   const original = originalLayout.value;
   if (!k || !original) return;
-  cancelSuggest();
+  cancelOptimize();
   const want = key === "m" ? "move" : "staff";
   const c = candidates.value.find((x) => changeKind(k.scan, k.setup, original, x.layout) === want);
   if (c) playLayout.value = c.layout;
 }
 
 export function resetPlay(): void {
-  cancelSuggest();
+  cancelOptimize();
   const original = originalLayout.value;
   if (original) playLayout.value = original;
 }
@@ -212,7 +212,7 @@ export function goTo(next: ViewId): void {
   if (next === prev) return;
   if (prev === "scan") settleReveal();
   if (prev === "play") {
-    cancelSuggest();
+    cancelOptimize();
     freezeNow();
   }
   if (prev === "orders") freezeNow();

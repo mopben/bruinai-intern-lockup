@@ -1,5 +1,4 @@
-import { compileModel } from './model';
-import { runReplication } from './sim';
+import { compileEngineModel, runEngine } from './engine/index';
 import { rangeOf, type Range } from './stats';
 import type { World } from './world';
 import type { Calibration } from './calibrate';
@@ -30,11 +29,11 @@ export function estimateShiftProfit(world: World, cal: Calibration, economics: P
     prices[id] = { price: cost(p?.price, 4.5, `Price for ${id}`), ingredients: cost(p?.ingredients, 1.2, `Ingredients for ${id}`) };
   }
   const releases = world.setup.schedule.orders.filter(o => o.t < duration);
-  const model = releases.length ? compileModel(world, cal) : null;
+  const model = releases.length ? compileEngineModel(world, cal) : null;
   const paceModels = model && walkExtrapolation(world, cal, model.table).outside ? 'fit-or-speed' : 'calibrated';
   const samples: FinancialSample[] = [];
   for (let rep = 0; rep < Math.max(1, Math.floor(reps)); rep++) {
-    const result = model ? runReplication(model, releases, DEFAULT_SEED, rep, { trace: true, bootstrap: true, paceModels }) : null;
+    const result = model ? runEngine(model, releases, DEFAULT_SEED, rep, { trace: true, bootstrap: true, paceModels }) : null;
     let revenue = 0, ingredients = 0, completed = 0;
     for (const order of result?.trace?.orders ?? []) {
       const p = prices[order.itemId]!;

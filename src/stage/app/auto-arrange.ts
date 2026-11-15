@@ -3,7 +3,7 @@
  * kitchen most profitable per hour.
  *
  * Pure and synchronous, but written as a generator so the stage can run it in
- * small slices between frames (see state/auto-arrange.ts). Nothing here
+ * small slices between frames (optimize.ts drives it; see state/optimize.ts). Nothing here
  * touches the screen.
  *
  * What it ranks layouts by, in order:
@@ -77,6 +77,13 @@ export interface ArrangeInput {
   readonly setup: Setup;
   /** Where to start: the layout on screen. Its workers are kept. */
   readonly start: Layout;
+  /**
+   * The owner's own layout, when the search starts somewhere else (optimize.ts
+   * tries several starting arrangements). Moves are reported, and undone when
+   * they do not pay, against this layout; nobody's spot may be worse than in
+   * it. Defaults to `start`.
+   */
+  readonly home?: Layout;
   /** Floor area boxes may stand in (the same area a drag is held to). */
   readonly area: Rect;
   readonly calibration: Calibration;
@@ -235,7 +242,7 @@ class Evaluator {
   constructor(private readonly input: ArrangeInput) {
     let start: World | null = null;
     try {
-      start = resolveWorld(input.scan, input.setup, input.start);
+      start = resolveWorld(input.scan, input.setup, input.home ?? input.start);
     } catch {
       start = null;
     }
@@ -299,7 +306,7 @@ function keyOf(layout: Layout): string {
 }
 
 /** Spots for one box with the others where they are: on a grid, every quarter turn, with room. */
-function spotsFor(input: ArrangeInput, layout: Layout, id: string, grid: { readonly step: number; readonly around?: Placement; readonly reach?: number }): Placement[] {
+export function spotsFor(input: ArrangeInput, layout: Layout, id: string, grid: { readonly step: number; readonly around?: Placement; readonly reach?: number }): Placement[] {
   const box = input.scan.boxes.find((b) => b.id === id);
   if (!box) return [];
   const others = [...footprints(input.scan, input.setup, layout).rects].filter(([k]) => k !== id).map(([, r]) => r);
@@ -388,7 +395,7 @@ function fits(input: ArrangeInput, layout: Layout, ids: readonly string[]): bool
 function* tidy(input: ArrangeInput, ev: Evaluator, current: Scored, ids: readonly string[]): Generator<void, Scored> {
   let best = current;
   for (const id of ids) {
-    const start = placementOf(input.scan, input.start, id);
+    const start = placementOf(input.scan, input.home ?? input.start, id);
     const now = placementOf(input.scan, best.layout, id);
     if (start.x === now.x && start.z === now.z && start.yaw === now.yaw) continue;
     const layout = withPlacement(best.layout, id, start);
@@ -404,7 +411,7 @@ function movedIds(input: ArrangeInput, layout: Layout): string[] {
   return input.scan.boxes
     .map((b) => b.id)
     .filter((id) => {
-      const a = placementOf(input.scan, input.start, id);
+      const a = placementOf(input.scan, input.home ?? input.start, id);
       const b = placementOf(input.scan, layout, id);
       return Math.hypot(a.x - b.x, a.z - b.z) > 1e-3 || Math.abs(a.yaw - b.yaw) > 1e-3;
     });

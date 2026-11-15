@@ -54,11 +54,12 @@ export interface QueueTimeline {
   readonly endT: number;
 }
 
-export type MovementKind = "fetch-out" | "fetch-back" | "work" | "carry-out" | "carry-back";
+/** "walk": a worker who covers several stations walking between them, or home, with nothing in hand. */
+export type MovementKind = "fetch-out" | "fetch-back" | "work" | "carry-out" | "carry-back" | "walk";
 
 /**
  * A worker moving (or working in place) from t0 to t1 along `path` at constant
- * speed. Between segments the worker stands at their station's stand point.
+ * speed. Between segments the worker stands where the last segment ended.
  */
 export interface MovementSegment {
   readonly workerId: string;

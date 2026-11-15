@@ -2,7 +2,7 @@
  * Small inline run used by the input and server tests. Not a fixture: just
  * enough to exercise formats and feeds with known answers.
  */
-import type { Layout, RunBundle, Scan, Setup } from "../core/types";
+import type { Layout, RunActions, RunBundle, Scan, Setup } from "../core/types";
 import { createListeners, type LinkState, type MessageLink } from "./socket";
 import type { Channel } from "./protocol";
 
@@ -77,6 +77,19 @@ export const testBundle: RunBundle = {
     { type: "pos" as const, t, workerId: "red", x: -1.5, z: -0.4 },
     { type: "pos" as const, t, workerId: "blue", x: 0 + (t % 3) * 0.1, z: -0.4 },
   ]),
+};
+
+/** An actions.jsonl for testBundle, as loaded. Not part of testBundle: the file is optional. */
+export const testActions: RunActions = {
+  header: { type: "header", format: "dryrun.actions", version: 1, startedAt: "2026-11-13T10:00:00Z", source: "zones+model", model: "test-labeller" },
+  segments: [
+    { type: "action", workerId: "red", t0: 0, t1: 2, kind: "work", boxId: "b-till" },
+    { type: "action", workerId: "blue", t0: 0, t1: 6, kind: "idle" },
+    { type: "action", workerId: "red", t0: 2, t1: 4, kind: "carry", boxId: "b-make" },
+    { type: "action", workerId: "blue", t0: 6, t1: 8, kind: "work", boxId: "b-make", label: "pulling a shot", confidence: 0.8 },
+    { type: "action", workerId: "blue", t0: 8, t1: 9.5, kind: "carry", boxId: "b-pick" },
+    { type: "action", workerId: "blue", t0: 9.5, t1: 11, kind: "walk" },
+  ],
 };
 
 /** An in-memory hub of links: what one sends, every other link receives. Like the server relay. */

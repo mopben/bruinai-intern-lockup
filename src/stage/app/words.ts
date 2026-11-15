@@ -120,3 +120,26 @@ export function changeDirection(before: number, after: number): "faster" | "slow
   if (d === 0) return "about the same";
   return d < 0 ? "faster" : "slower";
 }
+
+/** The simulated Test's bar: it never hides that it is a simulation. */
+export const SIMULATED_BAR = "Simulated. Same orders, same luck.";
+
+/** Where the ranges come from, and what the animation is: "Ranges from 200 runs. The animation is one of them." */
+export function simulationBasis(reps: number): string {
+  return `Ranges from ${reps} runs. The animation is one of them.`;
+}
+
+/** The busiest worker as a name and a whole percent, "Ben 91%"; null with no workers. */
+export function busiestWorker(
+  workers: readonly { readonly workerId: string; readonly busyShare: number }[],
+  nameOf: (id: string) => string,
+): string | null {
+  if (workers.length === 0) return null;
+  const top = workers.reduce((a, b) => (b.busyShare > a.busyShare ? b : a));
+  return `${nameOf(top.workerId)} ${Math.round(top.busyShare * 100)}%`;
+}
+
+/** The station orders wait at most, by name, or "No waiting" when no station holds orders up. */
+export function waitsMostAt(stationId: string | null, nameOf: (id: string) => string): string {
+  return stationId === null ? "No waiting" : nameOf(stationId);
+}

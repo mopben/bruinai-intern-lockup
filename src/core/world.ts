@@ -16,6 +16,7 @@ import {
 } from "./types";
 import { growRect, localToWorld, rectCorners, vec, type OrientedRect } from "./geometry";
 import type { Obstacle } from "./path";
+import { taskIssues } from "./tasks";
 
 export class WorldError extends Error {
   readonly issues: readonly string[];
@@ -95,8 +96,13 @@ function checkProcess(setup: Setup, layout: Layout, roles: ReadonlyMap<string, I
   const roleIs = (id: string, role: ItemRole): boolean => roles.get(id) === role;
   if (!roleIs(setup.pickupId, "pickup")) issues.push(`Pickup "${setup.pickupId}" is not a box with role "pickup".`);
   if (setup.menu.length === 0) issues.push("The menu has no items.");
+  for (const it of setup.items) {
+    const c = it.capacity;
+    if (c !== undefined && !(Number.isInteger(c) && c >= 1)) issues.push(`"${it.name}" has capacity ${c}; it must be a whole number of at least 1.`);
+  }
   for (const m of setup.menu) {
     if (m.steps.length === 0) issues.push(`Menu item "${m.name}" has no steps.`);
+    issues.push(...taskIssues(m));
     m.steps.forEach((s, i) => {
       if (s.workSeconds !== undefined && (!Number.isFinite(s.workSeconds) || s.workSeconds < 0)) issues.push(`Menu item "${m.name}" step ${i + 1} has an invalid preparation time.`);
       if (!roleIs(s.stationId, "station")) issues.push(`"${m.name}" step ${i + 1} is at "${s.stationId}", which is not a station.`);
@@ -115,6 +121,9 @@ function checkProcess(setup: Setup, layout: Layout, roles: ReadonlyMap<string, I
   const workerIds = new Set<string>();
   for (const w of layout.workers) {
     if (!roleIs(w.stationId, "station")) issues.push(`Worker "${w.name}" stands at "${w.stationId}", which is not a station.`);
+    for (const c of w.covers ?? []) {
+      if (!roleIs(c, "station")) issues.push(`Worker "${w.name}" covers "${c}", which is not a station.`);
+    }
     if (workerIds.has(w.id)) issues.push(`Worker id "${w.id}" appears twice.`);
     workerIds.add(w.id);
   }

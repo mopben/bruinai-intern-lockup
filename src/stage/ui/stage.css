@@ -1015,7 +1015,7 @@
   white-space: nowrap;
 }
 
-/* --- profit and suggestions (Play) ---------------------------------------- */
+/* --- profit and the optimizer (Play) ---------------------------------------- */
 /* Profit is the headline of Edit: on top, the biggest numeral in the rail. */
 .st-money {
   display: grid;
@@ -1055,24 +1055,55 @@
     display: none;
   }
 }
-.st-suggestions {
+.st-plan {
   display: grid;
-  gap: 6px;
-}
-.st-suggestion {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
   gap: 10px;
+  padding-top: 12px;
+  border-top: 2px dashed var(--dr-board-edge);
+}
+.st-plan h2 {
+  margin: 0;
+  font-family: var(--dr-font-display);
+  font-size: var(--dr-size-body);
+  line-height: 1.15;
+}
+.st-plan-facts {
+  display: grid;
+  gap: 4px;
+}
+.st-plan-fact {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0 12px;
   font-size: var(--dr-size-small);
   font-weight: 700;
 }
-.st-suggestion .gain {
+.st-plan-fact .what {
+  color: var(--dr-ink-soft);
+}
+.st-plan-fact .value {
   font-weight: 800;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-.st-suggestion.on .text {
+.st-plan-fact .was {
+  color: var(--dr-ink-soft);
+  font-weight: 700;
+}
+.st-plan-fact .note {
+  color: var(--dr-role-station);
+}
+.st-plan-steps {
+  margin: 0;
+  padding-left: 1.2em;
+  display: grid;
+  gap: 4px;
+  font-size: var(--dr-size-small);
+  font-weight: 700;
+}
+.st-plan.on .st-plan-steps {
   text-decoration: underline;
   text-decoration-color: var(--dr-path);
   text-decoration-thickness: 3px;

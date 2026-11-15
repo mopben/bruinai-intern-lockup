@@ -17,6 +17,7 @@ export interface KitBox {
   readonly role: ItemRole;
   readonly standSide?: BoxSide;
   readonly locked?: boolean;
+  readonly capacity?: number;
 }
 
 export interface KitSpec {
@@ -57,6 +58,7 @@ export function kitSetup(spec: KitSpec): Setup {
       role: b.role,
       locked: b.locked ?? false,
       ...(b.standSide ? { standSide: b.standSide } : {}),
+      ...(b.capacity !== undefined ? { capacity: b.capacity } : {}),
     })),
     menu: spec.menu,
     pickupId: pickup,
@@ -68,15 +70,15 @@ export function kitLayout(spec: KitSpec): Layout {
   return { format: "dryrun.layout", version: 1, placements: {}, workers: spec.workers };
 }
 
-export function worker(id: string, stationId: string): WorkerDef {
-  return { id, name: id, color: "#ff0000", stationId };
+export function worker(id: string, stationId: string, covers?: readonly string[]): WorkerDef {
+  return { id, name: id, color: "#ff0000", stationId, ...(covers ? { covers } : {}) };
 }
 
 export function evenOrders(n: number, gap: number, itemId = "latte", start = 0): readonly { orderId: string; itemId: string; t: number }[] {
   return Array.from({ length: n }, (_, i) => ({ orderId: `o${i + 1}`, itemId, t: start + i * gap }));
 }
 
-export function fixedCalibration(samples: Record<string, readonly number[]>, speed = 1.2): Calibration {
+export function fixedCalibration(samples: Record<string, readonly number[]>, speed = 1.2, taskSamples: Record<string, readonly number[]> = {}): Calibration {
   return {
     walkSpeedMps: speed,
     walkOverheadS: 0,
@@ -85,6 +87,7 @@ export function fixedCalibration(samples: Record<string, readonly number[]>, spe
     walkSpeedAssumed: false,
     walkSpeedSamples: 100,
     workSamples: samples,
+    taskSamples,
     sampleCount: Object.values(samples).flat().length,
     clampedCount: 0,
     orderIds: [],
@@ -130,8 +133,11 @@ export function cafeKit(fridge: { x: number; z: number } = { x: -1.8, z: 1.2 }, 
   };
 }
 
-/** Tap log a recorded run would have, from a (simulated) trace. */
-export function traceToTaps(trace: RunTrace): readonly TapEvent[] {
+/**
+ * Tap log a recorded run would have, from a (simulated) trace: order events, done events
+ * (with `workerId` when the trace knows it) and one end event, in time order.
+ */
+export function tapsFromTrace(trace: RunTrace): TapEvent[] {
   const events: TapEvent[] = [];
   for (const o of trace.orders) {
     events.push({ type: "order", t: o.releasedAt, orderId: o.orderId, itemId: o.itemId });
@@ -144,6 +150,9 @@ export function traceToTaps(trace: RunTrace): readonly TapEvent[] {
   events.push({ type: "end", t: trace.endT });
   return [...events].sort((a, b) => a.t - b.t);
 }
+
+/** The same tap log, read-only (older name). */
+export const traceToTaps = (trace: RunTrace): readonly TapEvent[] => tapsFromTrace(trace);
 
 function pointAlong(path: readonly Vec2[], f: number): Vec2 {
   const total = polylineLength(path);

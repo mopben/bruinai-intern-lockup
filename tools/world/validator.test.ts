@@ -107,6 +107,90 @@ describe("validator", () => {
     expect(messages(withFile("scan.json", JSON.stringify(big))).warnings.some((w) => w.includes("is this centimetres?"))).toBe(true);
   });
 
+  it("accepts tasks, covers and capacity without unknown-field warnings", () => {
+    const setup = JSON.parse(good["setup.json"]) as { items: { boxId: string }[]; menu: { steps: { stationId: string; fetchFrom?: string[] }[] }[] };
+    const layout = JSON.parse(good["layout.json"]) as { workers: { stationId: string }[] };
+    const menu = setup.menu.map((m) => ({ ...m, tasks: m.steps.map((s, k) => ({ id: `t${k}`, ...s, ...(k > 0 ? { after: [`t${k - 1}`] } : {}) })) }));
+    const items = setup.items.map((i) => (i.boxId === MAKE ? { ...i, capacity: 2 } : i));
+    const workers = layout.workers.map((w, i) => (i === 0 ? { ...w, covers: [MAKE] } : w));
+    const r = messages({ ...good, "setup.json": JSON.stringify({ ...setup, items, menu }), "layout.json": JSON.stringify({ ...layout, workers }) });
+    expect(r.errors).toEqual([]);
+    expect(r.warnings.filter((w) => /unknown field/.test(w))).toEqual([]);
+  });
+
+  it("reports a task cycle naming setup.json, the menu item and the task", () => {
+    const setup = JSON.parse(good["setup.json"]) as { menu: { id: string; steps: { stationId: string; fetchFrom?: string[] }[] }[] };
+    const menu = setup.menu.map((m, mi) =>
+      mi === 0 ? { ...m, tasks: m.steps.map((s, k) => ({ id: `t${k}`, ...s, after: k === 0 ? [`t${m.steps.length - 1}`] : [`t${k - 1}`] })) } : m,
+    );
+    const { errors } = messages(withFile("setup.json", JSON.stringify({ ...setup, menu })));
+    const last = `t${(setup.menu[0]?.steps.length ?? 1) - 1}`;
+    expect(errors).toContain(`setup.json menu[0] ("${setup.menu[0]?.id}"): task "t0" waits for "${last}", which must come earlier in the list.`);
+  });
+
+  it("reports a covers id that is not a station", () => {
+    const layout = JSON.parse(good["layout.json"]) as { workers: { id: string }[] };
+    const workers = layout.workers.map((w, i) => (i === 0 ? { ...w, covers: [MAKE, "nope", base.ids.fridge] } : w));
+    const { errors } = messages(withFile("layout.json", JSON.stringify({ ...layout, workers })));
+    const who = layout.workers[0]?.id;
+    expect(errors).toContain(`layout.json workers[0] ("${who}") covers "nope", which is not in scan.json.`);
+    expect(errors.some((e) => e.startsWith(`layout.json workers[0] ("${who}") covers "`) && e.includes("which is not a station"))).toBe(true);
+  });
+
+  describe("join items and covered stations", () => {
+    type Step = { stationId: string; fetchFrom?: string[] };
+    const setup = JSON.parse(good["setup.json"]) as { menu: { id: string; steps: Step[] }[] };
+    // p and q start on release; r waits for both.
+    const joinSetup = JSON.stringify({
+      ...setup,
+      menu: setup.menu.map((m) => ({
+        ...m,
+        tasks: m.steps.map((s, k) => ({ id: ["p", "q", "r"][k] ?? `t${k}`, ...s, ...(k === 2 ? { after: ["p", "q"] } : {}) })),
+      })),
+    });
+    type Tap = { type: string; t: number; orderId?: string; step?: number };
+    /** Swaps the times of two done taps of order o4, keeping the file's line order. */
+    const swapTimes = (a: number, b: number) => (ls: string[]) => {
+      const parsed = ls.map((l) => (l.trim() ? (JSON.parse(l) as Tap) : undefined));
+      const find = (step: number) => parsed.findIndex((p) => p?.type === "done" && p.orderId === "o4" && p.step === step);
+      const [ia, ib] = [find(a), find(b)];
+      const [ta, tb] = [parsed[ia]?.t, parsed[ib]?.t];
+      return ls.map((l, i) => (i === ia ? JSON.stringify({ ...parsed[i], t: tb }) : i === ib ? JSON.stringify({ ...parsed[i], t: ta }) : l));
+    };
+    const tapErrors = (files: Partial<Record<RunFileName, string>>) => messages(files).errors.filter((e) => e.startsWith("taps.jsonl"));
+
+    it("accepts join taps in an order the graph allows but a chain does not (q before p)", () => {
+      const taps = edit("taps.jsonl", swapTimes(0, 1))["taps.jsonl"];
+      expect(tapErrors({ ...good, "taps.jsonl": taps })).not.toEqual([]); // a chain still rejects it
+      expect(tapErrors({ ...good, "setup.json": joinSetup, "taps.jsonl": taps })).toEqual([]);
+    });
+
+    it("still flags a join task tapped before a task it waits for (r before p)", () => {
+      const taps = edit("taps.jsonl", swapTimes(0, 2))["taps.jsonl"];
+      const errors = tapErrors({ ...good, "setup.json": joinSetup, "taps.jsonl": taps });
+      expect(errors.some((e) => e.includes('order "o4" task "r" (step 2) is tapped before task "p" (step 0), which it waits for.'))).toBe(true);
+    });
+
+    it("counts a station as staffed when a worker covers it", () => {
+      const layout = JSON.parse(good["layout.json"]) as { workers: { id: string; stationId: string; covers?: string[] }[] };
+      const moved = (covers: boolean) =>
+        JSON.stringify({
+          ...layout,
+          workers: layout.workers.map((w) => (w.stationId === MAKE ? { ...w, stationId: ORDER, ...(covers ? { covers: [MAKE] } : {}) } : w)),
+        });
+      const nobody = (text: string) => messages(withFile("layout.json", text)).errors.filter((e) => e.includes("nobody works at"));
+      expect(nobody(moved(true))).toEqual([]);
+      expect(nobody(moved(false)).some((e) => e.includes('nobody works at "Espresso machine"'))).toBe(true);
+    });
+  });
+
+  it("still passes the three fixture folders", () => {
+    for (const name of ["counter-a", "counter-b-fridge-closer", "counter-c-fourth-worker"]) {
+      const path = join("fixtures", name);
+      expect(formatReport(path, validateRunFolder(path))).toMatch(/^OK: /);
+    }
+  });
+
   it("reads a folder from disk and warns when run.json id and folder name differ", () => {
     const dir = mkdtempSync(join(tmpdir(), "dryrun-validate-"));
     try {

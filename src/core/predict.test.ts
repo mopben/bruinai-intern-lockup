@@ -3,6 +3,7 @@ import { resolveWorld } from "./world";
 import { predict, simulateRun } from "./predict";
 import { buildPathTable } from "./walking";
 import { cafeKit, evenOrders, fixedCalibration, kitLayout, kitScan, kitSetup, worker, type KitSpec } from "./testkit";
+import { exactCalibration, walledOffKitchen } from "./engine/test-kitchens";
 
 const build = (spec: KitSpec) => resolveWorld(kitScan(spec), kitSetup(spec), kitLayout(spec));
 const cafeCal = fixedCalibration({ order: [3, 4, 5, 4], make: [7, 9, 11, 8, 10], finish: [3, 4, 3.5] }, 1.2);
@@ -25,13 +26,27 @@ describe("predict", () => {
       orders: evenOrders(4, 1),
     };
     const p = predict(build(spec), fixedCalibration({ A: [2], B: [5] }), { reps: 20, byTime: 12 });
-    // Order times 7, 11, 15, 19 (see sim test) -> mean 13; last finish 22; by 12 s two are done.
+    // Order times 7, 11, 15, 19 (see the engine run test) -> mean 13; last finish 22; by 12 s two are done.
     expect(p.meanOrderTime).toEqual({ p10: 13, p50: 13, p90: 13 });
     expect(p.lastFinish).toEqual({ p10: 22, p50: 22, p90: 22 });
     expect(p.completedBy).toEqual({ t: 12, orders: { p10: 2, p50: 2, p90: 2 } });
     expect(p.walkingPerOrderM).toBe(0);
     expect(p.perOrderMean).toEqual([7, 11, 15, 19]);
     expect(p.assumption).toMatch(/pace we measured/);
+  });
+
+  it("says so when steps use typed times, and not otherwise", () => {
+    const boxes = [
+      { id: "A", x: 0, z: 0, role: "station" as const },
+      { id: "B", x: 1, z: 0, role: "station" as const },
+      { id: "P", x: 2, z: 0, role: "pickup" as const },
+    ];
+    const kit = (menu: KitSpec["menu"]): KitSpec => ({ boxes, menu, workers: [worker("a", "A"), worker("b", "B")], orders: evenOrders(2, 1) });
+    const cal = fixedCalibration({ A: [2], B: [5] });
+    const text = (menu: KitSpec["menu"]) => predict(build(kit(menu)), cal, { reps: 2 }).assumption;
+    expect(text([{ id: "latte", name: "Latte", steps: [{ stationId: "A" }, { stationId: "B" }] }])).not.toMatch(/typed/);
+    expect(text([{ id: "latte", name: "Latte", steps: [{ stationId: "A", workSeconds: 4 }, { stationId: "B" }] }])).toContain("1 step uses a time you typed, not a measured time.");
+    expect(text([{ id: "latte", name: "Latte", steps: [{ stationId: "A", workSeconds: 4 }, { stationId: "B", workSeconds: 6 }] }])).toContain("2 steps use times you typed, not measured times.");
   });
 
   it("gives a real range with varied work times, and the same answer for the same seed", () => {
@@ -43,6 +58,13 @@ describe("predict", () => {
     expect(a.meanOrderTime.p10).toBeLessThanOrEqual(a.meanOrderTime.p50);
     expect(a.reps).toBe(200);
     expect(a.anyBlocked).toBe(false);
+  });
+
+  it("flags a covering worker walled off from its second station, though every menu walk has a path", () => {
+    const w = build(walledOffKitchen());
+    const p = predict(w, exactCalibration({ a: 1, b: 1, z: 1 }), { reps: 5 });
+    expect(p.walking.anyBlocked).toBe(false);
+    expect(p.anyBlocked).toBe(true);
   });
 
   it("moving the fridge next to Make cuts walking and order time", () => {

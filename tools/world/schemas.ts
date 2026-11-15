@@ -8,6 +8,8 @@
  */
 import { z } from "zod";
 import {
+  ACTIONS_FORMAT,
+  BOXED_ACTION_KINDS,
   FORMAT_VERSION,
   LAYOUT_FORMAT,
   POSITIONS_FORMAT,
@@ -15,6 +17,9 @@ import {
   SCAN_FORMAT,
   SETUP_FORMAT,
   TAPS_FORMAT,
+  UNBOXED_ACTION_KINDS,
+  type ActionSegment,
+  type ActionsHeader,
   type DoneEvent,
   type EndEvent,
   type Layout,
@@ -25,6 +30,7 @@ import {
   type Scan,
   type Setup,
   type TapsHeader,
+  type TaskDef,
 } from "../../src/core/types";
 
 /** Error text, or "is missing" when the field is absent. */
@@ -32,6 +38,7 @@ const e = (msg: string) => (iss: { input?: unknown }) => (iss.input === undefine
 const num = () => z.number({ error: e("must be a number") }).refine(Number.isFinite, "must be a finite number");
 const time = () => num().refine((n) => n >= 0, "must be 0 or more (seconds since the run started)");
 const positive = () => num().refine((n) => n > 0, "must be more than 0 (metres)");
+const whole = () => z.number({ error: e("must be a number") }).int("must be a whole number");
 const text = () => z.string({ error: e("must be text in quotes") });
 const id = () => text().min(1, "must not be empty");
 const iso = () =>
@@ -39,6 +46,8 @@ const iso = () =>
 const literal = <T extends string | number>(v: T) => z.literal(v, { error: e(`must be ${JSON.stringify(v)}`) });
 const oneOf = <const T extends readonly [string, ...string[]]>(values: T) =>
   z.enum(values, { error: e(`must be one of ${values.map((v) => `"${v}"`).join(", ")}`) });
+const CONFIDENCE_MAX = 1;
+const confidence = () => num().refine((n) => n >= 0 && n <= CONFIDENCE_MAX, `must be between 0 and ${CONFIDENCE_MAX}`);
 const hex = () => text().regex(/^#[0-9a-fA-F]{6}$/, "must be a colour like #e8312f");
 
 export function buildSchemas(strict: boolean) {
@@ -64,6 +73,7 @@ export function buildSchemas(strict: boolean) {
       }),
     ),
   });
+  const task = obj({ id: id(), stationId: id(), fetchFrom: z.array(id()).optional(), after: z.array(id()).optional() });
   const setup = obj({
     format: literal(SETUP_FORMAT),
     version: literal(FORMAT_VERSION),
@@ -74,6 +84,7 @@ export function buildSchemas(strict: boolean) {
         role: oneOf(["station", "storage", "pickup", "queue", "fixture", "ignore"]),
         locked: z.boolean({ error: e("must be true or false") }),
         standSide: oneOf(["front", "back", "left", "right"]).optional(),
+        capacity: whole().min(1, "must be 1 or more (people who can work here at once)").optional(),
       }),
     ),
     menu: z.array(
@@ -81,6 +92,8 @@ export function buildSchemas(strict: boolean) {
         id: id(),
         name: text(),
         steps: z.array(obj({ stationId: id(), fetchFrom: z.array(id()).optional(), workSeconds: time().optional() })).min(1, "needs at least one step"),
+        // The graph itself (ids, order, steps matching tasks) is checked in check-tasks.ts.
+        tasks: z.array(task).min(1, "must list at least one task").optional(),
       }),
     ),
     pickupId: id(),
@@ -90,7 +103,9 @@ export function buildSchemas(strict: boolean) {
     format: literal(LAYOUT_FORMAT),
     version: literal(FORMAT_VERSION),
     placements: z.record(z.string(), obj({ x: num(), z: num(), yaw: num() })),
-    workers: z.array(obj({ id: id(), name: text(), color: hex(), stationId: id() })),
+    workers: z.array(
+      obj({ id: id(), name: text(), color: hex(), stationId: id(), covers: z.array(id()).min(1, "must name at least one station").optional() }),
+    ),
   });
   const run = obj({
     format: literal(RUN_FORMAT),
@@ -124,7 +139,22 @@ export function buildSchemas(strict: boolean) {
     hz: num().refine((n) => n > 0, "must be more than 0 (samples per second)"),
   });
   const pos = obj({ type: literal("pos"), t: time(), workerId: id(), x: num(), z: num() });
-  return { scan, setup, layout, run, tapsHeader, order, done, end, tapEvent, positionsHeader, pos };
+  const actionsHeader = obj({
+    type: literal("header"),
+    format: literal(ACTIONS_FORMAT),
+    version: literal(FORMAT_VERSION),
+    startedAt: iso(),
+    source: oneOf(["zones", "zones+model"]),
+    model: text().optional(),
+  });
+  // t1 > t0 and overlaps are checked in check-actions.ts, where the message can name both times.
+  const actionFields = { type: literal("action"), workerId: id(), t0: time(), t1: time(), label: text().optional(), confidence: confidence().optional() };
+  const action = z.discriminatedUnion(
+    "kind",
+    [obj({ ...actionFields, kind: z.enum(BOXED_ACTION_KINDS), boxId: id() }), obj({ ...actionFields, kind: z.enum(UNBOXED_ACTION_KINDS) })],
+    { error: e('must be "work", "fetch", "carry", "walk" or "idle"') },
+  );
+  return { scan, task, setup, layout, run, tapsHeader, order, done, end, tapEvent, positionsHeader, pos, actionsHeader, action };
 }
 
 export const STRICT = buildSchemas(true);
@@ -136,6 +166,7 @@ type L = typeof LOOSE;
 export type SchemaDriftChecks = [
   Assert<Fits<z.infer<L["scan"]>, Scan>>,
   Assert<Fits<z.infer<L["setup"]>, Setup>>,
+  Assert<Fits<z.infer<L["task"]>, TaskDef>>,
   Assert<Fits<z.infer<L["layout"]>, Layout>>,
   Assert<Fits<z.infer<L["run"]>, RunMeta>>,
   Assert<Fits<z.infer<L["tapsHeader"]>, TapsHeader>>,
@@ -144,4 +175,6 @@ export type SchemaDriftChecks = [
   Assert<Fits<z.infer<L["end"]>, EndEvent>>,
   Assert<Fits<z.infer<L["positionsHeader"]>, PositionsHeader>>,
   Assert<Fits<z.infer<L["pos"]>, PositionSample>>,
+  Assert<Fits<z.infer<L["actionsHeader"]>, ActionsHeader>>,
+  Assert<Fits<z.infer<L["action"]>, ActionSegment>>,
 ];

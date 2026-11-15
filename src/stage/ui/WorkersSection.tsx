@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import type { Layout, WorkerDef } from "../../core";
 import { addWorker } from "../app/kitchen-edit";
 import { economics, setWorkerSalary, workersOpen } from "../state/economics";
-import { cancelSuggest } from "../state/suggest";
+import { cancelOptimize } from "../state/optimize";
 import { kitchen, playLayout } from "../state/store";
 import { Btn } from "./bits";
 
@@ -27,7 +27,7 @@ export function WorkersSection() {
   const stationId = stations.some((station) => station.boxId === newStation) ? newStation : stations[0]?.boxId ?? "";
   const close = () => (workersOpen.value = false);
   const update = (next: Layout) => {
-    cancelSuggest();
+    cancelOptimize();
     playLayout.value = next;
   };
   const changeWorker = (id: string, change: Partial<WorkerDef>) => {
@@ -59,7 +59,7 @@ export function WorkersSection() {
                 <label class="st-field st-cost"><span>Hourly salary</span><span class="st-cost-input"><input class="st-input" type="number" min={0} step="0.01" value={econ.workerWages?.[worker.id] ?? econ.wagePerHour} aria-label={`Hourly salary for ${worker.name}`} data-testid={`worker-salary-${worker.id}`} onChange={(event) => {
                   const input = event.currentTarget;
                   if (input.value.trim() && input.validity.valid && Number.isFinite(input.valueAsNumber)) {
-                    cancelSuggest();
+                    cancelOptimize();
                     setWorkerSalary(worker.id, input.valueAsNumber);
                   } else input.value = String(econ.workerWages?.[worker.id] ?? econ.wagePerHour);
                 }} /><span class="unit">{econ.currency}/h</span></span></label>

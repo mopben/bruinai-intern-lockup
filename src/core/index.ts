@@ -45,6 +45,8 @@ export * from "./types";
 // World
 export { resolveWorld, standPoint, itemOf, WorldError } from "./world";
 export type { World, WorldItem, WorldWall } from "./world";
+export { itemTasks, taskIssues, workerCovers, isChainKitchen } from "./tasks";
+export type { ResolvedTask } from "./tasks";
 
 // Geometry and walking (exact, from the layout alone)
 export type { OrientedRect } from "./geometry";
@@ -76,12 +78,26 @@ export { detectTrips, TRIP_EXCURSION_M, TRIP_HOME_M, TRIP_MATCH_M, REST_SPEED_MP
 export type { Trip } from "./trips";
 
 // Simulation and prediction
-export { compileModel, SimError } from "./model";
-export type { SimModel } from "./model";
-export { runReplication } from "./sim";
-export type { Releases, Replication, ReplicationOptions } from "./sim";
-export { predict, simulateRun, assumptionText, hasSharedStation, DEFAULT_REPS, DEFAULT_SEED } from "./predict";
+export { compileEngineModel, runEngine, oldestFirst, walkKey, SimError } from "./engine/index";
+export type {
+  EngineLeg,
+  EngineModel,
+  EngineOptions,
+  EngineTask,
+  EngineWorker,
+  ReadyTask,
+  Releases,
+  Replication,
+  ReplicationOptions,
+  ReplicationStats,
+  RuleWorker,
+  TaskRule,
+  WorkPool,
+} from "./engine/index";
+export { predict, simulateRun, assumptionText, hasSharedStation, typedStepCount, DEFAULT_REPS, DEFAULT_SEED } from "./predict";
 export type { Prediction, PredictOptions, SimulateRunOptions } from "./predict";
+export { BOTTLENECK_MIN_WAIT_S, SLOW_ORDER_QUANTILE } from "./engine/metrics";
+export type { StationMetric, WorkerMetric } from "./engine/metrics";
 
 // Trust and checking a prediction
 export { trustCheck, MIN_CHECK_ORDERS, TRUST_SCOPE } from "./trust";

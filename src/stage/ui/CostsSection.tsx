@@ -1,18 +1,18 @@
 /**
  * The Prices and costs section of the Edit panel (key C): what each menu item
  * sells for and costs to make, wages, electricity, other running costs, and
- * how many orders come in a busy hour. Profit per hour and the suggestions
+ * how many orders come in a busy hour. Profit per hour and the optimizer
  * use these.
  */
 import { type Economics } from "../../core";
-import { cancelSuggest } from "../state/suggest";
+import { cancelOptimize } from "../state/optimize";
 import { costsOpen, economics, economicsAreExamples, setEconomics, useExampleEconomics } from "../state/economics";
 import { kitchen } from "../state/store";
 import { Btn } from "./bits";
 
-/** Changing a number makes any suggestions out of date. */
+/** Changing a number makes the optimizer's answer out of date. */
 function change(c: Partial<Economics>): void {
-  cancelSuggest();
+  cancelOptimize();
   setEconomics(c);
 }
 
@@ -73,7 +73,7 @@ export function CostsSection() {
         </label>
       </div>
       <div class="st-row">
-        <Btn small label="Use the example numbers" onClick={() => { cancelSuggest(); useExampleEconomics(); }} disabled={economicsAreExamples.value} testId="btn-example-costs" />
+        <Btn small label="Use the example numbers" onClick={() => { cancelOptimize(); useExampleEconomics(); }} disabled={economicsAreExamples.value} testId="btn-example-costs" />
       </div>
     </section>
   );

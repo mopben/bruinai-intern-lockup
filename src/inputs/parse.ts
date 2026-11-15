@@ -7,6 +7,8 @@
  */
 import type { z } from "zod";
 import type {
+  ActionSegment,
+  ActionsHeader,
   Layout,
   PositionSample,
   PositionsHeader,
@@ -17,7 +19,11 @@ import type {
   TapsHeader,
 } from "../core/types";
 import {
+  actionSegmentSchema,
+  actionsHeaderSchema,
+  firstOverlap,
   layoutSchema,
+  overlapText,
   positionSampleSchema,
   positionsHeaderSchema,
   runMetaSchema,
@@ -121,13 +127,18 @@ interface JsonlParts<H, E> {
   readonly events: readonly E[];
 }
 
-function parseJsonl<H, E extends { readonly t: number }>(
-  text: string,
-  fileName: string,
-  headerSchema: z.ZodType<H>,
-  eventSchema: z.ZodType<E>,
-  headerExample: string,
-): ParseResult<JsonlParts<H, E>> {
+interface JsonlFormat<H, E> {
+  readonly headerSchema: z.ZodType<H>;
+  readonly eventSchema: z.ZodType<E>;
+  readonly headerExample: string;
+  /** The time a line is sorted by. */
+  readonly timeOf: (event: E) => number;
+}
+
+const byT = (event: { readonly t: number }): number => event.t;
+
+function parseJsonl<H, E>(text: string, fileName: string, format: JsonlFormat<H, E>): ParseResult<JsonlParts<H, E>> {
+  const { headerSchema, eventSchema, headerExample, timeOf } = format;
   const lines = jsonlLines(text);
   const first = lines[0];
   if (first === undefined) return fail(`${fileName} is empty; line 1 must be the header ${headerExample}`);
@@ -147,7 +158,7 @@ function parseJsonl<H, E extends { readonly t: number }>(
     events.push(event.value);
   }
   // Stable sort: the rest of the product may assume time order.
-  const sorted = events.map((e, i) => ({ e, i })).sort((a, b) => a.e.t - b.e.t || a.i - b.i).map(({ e }) => e);
+  const sorted = events.map((e, i) => ({ e, i })).sort((a, b) => timeOf(a.e) - timeOf(b.e) || a.i - b.i).map(({ e }) => e);
   return ok({ header: header.value, events: sorted });
 }
 
@@ -163,13 +174,12 @@ export interface ParsedPositions {
 
 /** Parses taps.jsonl. Events come back sorted by t (stable). */
 export function parseTaps(text: string, fileName = "taps.jsonl"): ParseResult<ParsedTaps> {
-  const parsed = parseJsonl(
-    text,
-    fileName,
-    tapsHeaderSchema,
-    tapEventSchema,
-    '{"type":"header","format":"dryrun.taps","version":1,"startedAt":"..."}',
-  );
+  const parsed = parseJsonl(text, fileName, {
+    headerSchema: tapsHeaderSchema,
+    eventSchema: tapEventSchema,
+    headerExample: '{"type":"header","format":"dryrun.taps","version":1,"startedAt":"..."}',
+    timeOf: byT,
+  });
   if (!parsed.ok) return fail(parsed.error);
   const ends = parsed.value.events.filter((e) => e.type === "end");
   if (ends.length > 1) return fail(`${fileName} has ${ends.length} "end" lines; a run has at most one`);
@@ -182,12 +192,33 @@ export function parseTaps(text: string, fileName = "taps.jsonl"): ParseResult<Pa
 
 /** Parses positions.jsonl. Samples come back sorted by t (stable). */
 export function parsePositions(text: string, fileName = "positions.jsonl"): ParseResult<ParsedPositions> {
-  const parsed = parseJsonl(
-    text,
-    fileName,
-    positionsHeaderSchema,
-    positionSampleSchema,
-    '{"type":"header","format":"dryrun.positions","version":1,"startedAt":"...","hz":10}',
-  );
+  const parsed = parseJsonl(text, fileName, {
+    headerSchema: positionsHeaderSchema,
+    eventSchema: positionSampleSchema,
+    headerExample: '{"type":"header","format":"dryrun.positions","version":1,"startedAt":"...","hz":10}',
+    timeOf: byT,
+  });
   return parsed.ok ? ok({ header: parsed.value.header, samples: parsed.value.events }) : fail(parsed.error);
+}
+
+export interface ParsedActions {
+  readonly header: ActionsHeader;
+  readonly segments: readonly ActionSegment[];
+}
+
+/**
+ * Parses actions.jsonl (optional in a run folder). Segments come back sorted by
+ * t0 (stable). One worker's segments must not overlap.
+ */
+export function parseActions(text: string, fileName = "actions.jsonl"): ParseResult<ParsedActions> {
+  const parsed = parseJsonl(text, fileName, {
+    headerSchema: actionsHeaderSchema,
+    eventSchema: actionSegmentSchema,
+    headerExample: '{"type":"header","format":"dryrun.actions","version":1,"startedAt":"...","source":"zones"}',
+    timeOf: (segment) => segment.t0,
+  });
+  if (!parsed.ok) return fail(parsed.error);
+  const overlap = firstOverlap(parsed.value.events);
+  if (overlap) return fail(`${fileName}: ${overlapText(overlap)}`);
+  return ok({ header: parsed.value.header, segments: parsed.value.events });
 }
